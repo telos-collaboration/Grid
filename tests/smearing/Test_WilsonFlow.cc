@@ -33,8 +33,7 @@ namespace Grid{
     GRID_SERIALIZABLE_CLASS_MEMBERS(WFParameters,
             int, steps,
             double, step_size,
-            int, meas_interval,
-            double, maxTau); // for the adaptive algorithm
+            int, meas_interval);
        
 
     template <class ReaderClass >
@@ -96,9 +95,7 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Initial plaquette: "
     << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
 
-  int t=WFPar.maxTau;
-  WilsonFlowAdaptive<PeriodicGimplR> WF(WFPar.step_size, WFPar.maxTau,
-					1.0e-4,
+  WilsonFlow<PeriodicGimplR> WF(WFPar.step_size, WFPar.steps,
 					WFPar.meas_interval);
 
   WF.smear(Uflow, Umu);
