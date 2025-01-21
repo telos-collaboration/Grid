@@ -67,7 +67,7 @@ class InvG5LinearOperator : public LinearOperatorBase<Field> {
   Gamma g5;
 
 public:
-  InvG5LinearOperator(Matrix &Mat,RealD num): _Mat(Mat),_num(num), _Tol(1e-8),_MaxIt(10000), g5(Gamma::Algebra::Gamma5) {};
+  InvG5LinearOperator(Matrix &Mat,RealD num): _Mat(Mat),_num(num), _Tol(1e-12),_MaxIt(10000), g5(Gamma::Algebra::Gamma5) {};
 
   // Support for coarsening to a multigrid
   void OpDiag (const Field &in, Field &out) {
@@ -102,9 +102,9 @@ public:
      ConjugateGradient<Field> CG(_Tol,_MaxIt); 
      _Mat.M(in,tmp);
      tmp += _num*in;
+     _Mat.Mdag(tmp,out);
+     CG(denom,out,tmp);
      out = g5*tmp;
-     _Mat.Mdag(out,tmp);
-     CG(denom,tmp,out);
   }
 };
 
