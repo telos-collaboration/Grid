@@ -689,6 +689,7 @@ public:
 	}
       }
     }
+    std::cout << "BuildSurfaceList size is "<<surface_list_size<<std::endl;
     surface_list.resize(surface_list_size);
     std::vector<int> surface_list_host(surface_list_size);
     int32_t ss=0;
