@@ -318,8 +318,11 @@ public:
         //
 
         staple += Gimpl::ShiftStaple(
-          Gimpl::CovShiftForward(Umu[nu], nu,
-            Gimpl::CovShiftBackward(Umu[mu], mu, Gimpl::CovShiftIdentityBackward(Umu[nu], nu))), mu);
+				     Gimpl::CovShiftForward(
+							    U[nu], nu,
+							    Gimpl::CovShiftBackward(
+										    U[mu], mu, Gimpl::CovShiftIdentityBackward(U[nu], nu))),
+				     mu);
 
         //  __
         // |
@@ -328,8 +331,8 @@ public:
         //
 
         staple += Gimpl::ShiftStaple(
-          Gimpl::CovShiftBackward(Umu[nu], nu,
-            Gimpl::CovShiftBackward(Umu[mu], mu, Umu[nu])), mu);
+				     Gimpl::CovShiftBackward(U[nu], nu,
+							     Gimpl::CovShiftBackward(U[mu], mu, U[nu])), mu);
       }
     }
   }
