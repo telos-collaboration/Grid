@@ -1,0 +1,90 @@
+The purpose of this file is to collate all non-obvious known magic shell variables
+and compiler flags required for either correctness or performance on various systems.
+
+A repository of work-arounds.
+
+Contents:
+1. Interconnect + MPI
+2. Compilation
+
+
+* 1. INTERCONNECT + MPI
+
+--------------------------------------------------------------------
+MPI2-IO correctness: force OpenMPI to use the MPICH romio implementation for parallel I/O 
+--------------------------------------------------------------------
+export OMPI_MCA_io=romio321
+
+--------------------------------------
+ROMIO fail with > 2GB per node read (32 bit issue)
+--------------------------------------
+
+Use later MPICH
+
+https://github.com/paboyle/Grid/issues/381
+
+https://github.com/pmodels/mpich/commit/3a479ab0
+
+--------------------------------------------------------------------
+Slingshot: Frontier and Perlmutter libfabric slow down 
+and physical memory fragmentation 
+--------------------------------------------------------------------
+export FI_MR_CACHE_MONITOR=disabled
+or
+export FI_MR_CACHE_MONITOR=kdreg2
+
+--------------------------------------------------------------------
+Mellanox performance with A100 GPU 
+--------------------------------------------------------------------
+export OMPI_MCA_btl=^uct,openib
+export UCX_TLS=gdr_copy,rc,rc_x,sm,cuda_copy,cuda_ipc
+export UCX_RNDV_SCHEME=put_zcopy
+export UCX_RNDV_THRESH=16384
+export UCX_IB_GPU_DIRECT_RDMA=yes
+
+--------------------------------------------------------------------
+Mellanox + A100 correctness 
+--------------------------------------------------------------------
+export UCX_MEMTYPE_CACHE=n
+
+--------------------------------------------------------------------
+MPICH/Aurora/PVC correctness and performance (Peter Boyle)
+--------------------------------------------------------------------
+
+https://github.com/pmodels/mpich/issues/7302
+
+--enable-cuda-aware-mpi=no  
+(Grid's internal D-H-H-D pipeline mode, avoid device memory in MPI)
+
+Ideally use MPICH with fix:
+
+https://github.com/pmodels/mpich/pull/7312
+
+Ideally:
+MPIR_CVAR_CH4_IPC_GPU_HANDLE_CACHE=generic
+
+Alternatives:
+export MPIR_CVAR_NOLOCAL=1
+export MPIR_CVAR_CH4_IPC_GPU_P2P_THRESHOLD=1000000000
+
+
+* 2. COMPILATION
+
+--------------------------------------------------------------------
+G++ bugs
+--------------------------------------------------------------------
+
+
+--------------------------------------------------------------------
+AMD GPU nodes : multiple ROCM versions broken; use 5.3.0
+--------------------------------------------------------------------
+https://github.com/paboyle/Grid/issues/464
+
+--------------------------------------------------------------------
+Aurora/PVC
+
+SYCL ahead of time compilation (fixes rare runtime JIT errors and faster runtime, PB)
+SYCL slow link and relocatable code issues (Christoph Lehner)
+--------------------------------------------------------------------
+export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -fPIC -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc" 
+export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -fPIC"
