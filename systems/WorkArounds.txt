@@ -170,6 +170,23 @@ export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"
 export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -fPIC -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc" 
 export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -fPIC"
 
+--------------------------------------------------------------------
+Aurora/PVC useful extra options
+--------------------------------------------------------------------
+
+Host only sanitizer:
+-Xarch_host -fsanitize=leak
+-Xarch_host -fsanitize=address
+
+Deterministic MPI reduction:
+export MPIR_CVAR_ALLREDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_REDUCE_DEVICE_COLLECTIVE=0
+export MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=recursive_doubling
+unset MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE
+unset MPIR_CVAR_CH4_POSIX_COLL_SELECTION_TUNING_JSON_FILE
+
+
 
 ************************
 * 3. Visual profile tools
