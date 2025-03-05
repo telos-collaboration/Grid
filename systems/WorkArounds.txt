@@ -68,7 +68,7 @@ srun ./select_gpu BINARY
 
 
 --------------------------------------------------------------------
-Mellanox performance with A100 GPU 
+Mellanox performance with A100 GPU (Tursa, Booster, Leonardo)
 --------------------------------------------------------------------
 export OMPI_MCA_btl=^uct,openib
 export UCX_TLS=gdr_copy,rc,rc_x,sm,cuda_copy,cuda_ipc
@@ -77,12 +77,12 @@ export UCX_RNDV_THRESH=16384
 export UCX_IB_GPU_DIRECT_RDMA=yes
 
 --------------------------------------------------------------------
-Mellanox + A100 correctness 
+Mellanox + A100 correctness (Tursa, Booster, Leonardo)
 --------------------------------------------------------------------
 export UCX_MEMTYPE_CACHE=n
 
 --------------------------------------------------------------------
-MPICH/Aurora/PVC correctness and performance (Peter Boyle)
+MPICH/Aurora/PVC correctness and performance 
 --------------------------------------------------------------------
 
 https://github.com/pmodels/mpich/issues/7302
@@ -105,7 +105,7 @@ export MPIR_CVAR_NOLOCAL=1
 export MPIR_CVAR_CH4_IPC_GPU_P2P_THRESHOLD=1000000000
 
 --------------------------------------------------------------------
-MPICH/Aurora/PVC correctness and performance (James Osborne)
+MPICH/Aurora/PVC correctness and performance 
 --------------------------------------------------------------------
 
 Broken:
@@ -114,7 +114,7 @@ export MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE=1
 This gives good peformance without requiring 
 --enable-cuda-aware-mpi=no  
 
-But is an open issue reported by James Osborne
+But is an open issue reported by James Osborn
 https://github.com/pmodels/mpich/issues/7139
 
 Possibly resolved but unclear if in the installed software yet.
