@@ -71,9 +71,28 @@ export MPIR_CVAR_CH4_IPC_GPU_P2P_THRESHOLD=1000000000
 * 2. COMPILATION
 
 --------------------------------------------------------------------
-G++ bugs
+G++ compiler breakage / graveyard
 --------------------------------------------------------------------
 
+9.3.0, 10.3.1, 
+https://github.com/paboyle/Grid/issues/290
+https://github.com/paboyle/Grid/issues/264
+
+Working (-) Broken (X):
+
+4.9.0 -
+4.9.1 -
+5.1.0 X
+5.2.0 X
+5.3.0 X
+5.4.0 X
+6.1.0 X
+6.2.0 X
+6.3.0 -
+7.1.0 -
+8.0.0 (HEAD) -
+
+https://github.com/paboyle/Grid/issues/100
 
 --------------------------------------------------------------------
 AMD GPU nodes : multiple ROCM versions broken; use 5.3.0
