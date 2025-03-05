@@ -168,3 +168,21 @@ Opt large register file required for good performance in fp64
 export SYCL_PROGRAM_COMPILE_OPTIONS="-ze-opt-large-register-file"
 export LDFLAGS="-fiopenmp -fsycl -fsycl-device-code-split=per_kernel -fsycl-targets=spir64_gen -Xs -device -Xs pvc -fsycl-device-lib=all -lze_loader -L${MKLROOT}/lib -qmkl=parallel  -fsycl  -lsycl -fPIC -fsycl-max-parallel-link-jobs=16 -fno-sycl-rdc" 
 export CXXFLAGS="-O3 -fiopenmp -fsycl-unnamed-lambda -fsycl -Wno-tautological-compare -qmkl=parallel  -fsycl -fno-exceptions -fPIC"
+
+
+************************
+* 3. Visual profile tools
+************************
+
+--------------------------------------------------------------------
+Frontier/rocprof
+--------------------------------------------------------------------
+
+--------------------------------------------------------------------
+Aurora/unitrace
+--------------------------------------------------------------------
+
+
+--------------------------------------------------------------------
+Tursa/nsight-sys
+--------------------------------------------------------------------
