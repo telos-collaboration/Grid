@@ -746,26 +746,34 @@ double CartesianCommunicator::StencilSendToRecvFromBegin(std::vector<CommsReques
 }
 void CartesianCommunicator::StencilSendToRecvFromComplete(std::vector<CommsRequest_t> &list,int dir)
 {
-  //  int nreq=list.size();
+  acceleratorCopySynchronise(); // Complete all pending copy transfers D2D
 
-  //  if (nreq==0) return;
-  //  std::vector<MPI_Status> status(nreq);
-  //  std::vector<MPI_Request> MpiRequests(nreq);
+  std::vector<MPI_Status> status;
+  std::vector<MPI_Request> MpiRequests;
+    
+  for(int r=0;r<list.size();r++){
+    // Must check each Send buf is clear to reuse
+    if ( list[r].PacketType == InterNodeXmitISend ) MpiRequests.push_back(list[r].req);
+    //    if ( list[r].PacketType == InterNodeRecv ) MpiRequests.push_back(list[r].req); // Already "Test" passed
+  }
 
-  //  for(int r=0;r<nreq;r++){
-  //    MpiRequests[r] = list[r].req;
-  //  }
+  int nreq=MpiRequests.size();
+
+  std::cout << GridLogMessage << " StencilSendToRevFromComplete "<<nreq<<" Mpi Requests"<<std::endl;
+
+
+  if (nreq>0) {
+    status.resize(MpiRequests.size());
+    int ierr = MPI_Waitall(MpiRequests.size(),&MpiRequests[0],&status[0]); // Sends are guaranteed in order. No harm in not completing.
+    assert(ierr==0);
+  }
   
-  //  int ierr = MPI_Waitall(nreq,&MpiRequests[0],&status[0]); // Sends are guaranteed in order. No harm in not completing.
-  //  assert(ierr==0);
-
   //  for(int r=0;r<nreq;r++){
   //    if ( list[r].PacketType==InterNodeRecv ) {
   //      acceleratorCopyToDeviceAsynch(list[r].host_buf,list[r].device_buf,list[r].bytes);
   //    }
   //  }
   
-  acceleratorCopySynchronise(); // Complete all pending copy transfers D2D
   
   list.resize(0);               // Delete the list
   this->HostBufferFreeAll();    // Clean up the buffer allocs

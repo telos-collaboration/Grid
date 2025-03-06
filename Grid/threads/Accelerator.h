@@ -676,7 +676,7 @@ inline void acceleratorCopyDeviceToDevice(void *from,void *to,size_t bytes)
 
 template<class T> void acceleratorPut(T& dev,const T&host)
 {
-  acceleratorCopyToDevice(&host,&dev,sizeof(T));
+  acceleratorCopyToDevice((void *)&host,&dev,sizeof(T));
 }
 template<class T> T acceleratorGet(T& dev)
 {
