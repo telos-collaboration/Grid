@@ -466,6 +466,12 @@ public:
     static deviceVector<vobj> recv_buf;
     send_buf.resize(buffer_size*2*depth);    
     recv_buf.resize(buffer_size*2*depth);
+#ifndef ACCELERATOR_AWARE_MPI
+    static hostVector<vobj> hsend_buf; 
+    static hostVector<vobj> hrecv_buf;
+    hsend_buf.resize(buffer_size*2*depth);    
+    hrecv_buf.resize(buffer_size*2*depth);
+#endif    
 
     std::vector<MpiCommsRequest_t> fwd_req;   
     std::vector<MpiCommsRequest_t> bwd_req;   
@@ -495,9 +501,17 @@ public:
       t_gather+=usecond()-t;
 
       t=usecond();
+#ifdef ACCELERATOR_AWARE_MPI
       grid->SendToRecvFromBegin(fwd_req,
 				(void *)&send_buf[d*buffer_size], xmit_to_rank,
 				(void *)&recv_buf[d*buffer_size], recv_from_rank, bytes, tag);
+#else
+      acceleratorCopyFromDevice(&send_buf[d*buffer_size],&hsend_buf[d*buffer_size],bytes);
+      grid->SendToRecvFromBegin(fwd_req,
+				(void *)&hsend_buf[d*buffer_size], xmit_to_rank,
+				(void *)&hrecv_buf[d*buffer_size], recv_from_rank, bytes, tag);
+      acceleratorCopyToDevice(&hrecv_buf[d*buffer_size],&recv_buf[d*buffer_size],bytes);
+#endif
       t_comms+=usecond()-t;
      }
     for ( int d=0;d < depth ; d ++ ) {
@@ -508,9 +522,17 @@ public:
       t_gather+= usecond() - t;
 
       t=usecond();
+#ifdef ACCELERATOR_AWARE_MPI
       grid->SendToRecvFromBegin(bwd_req,
 				(void *)&send_buf[(d+depth)*buffer_size], recv_from_rank,
 				(void *)&recv_buf[(d+depth)*buffer_size], xmit_to_rank, bytes,tag);
+#else
+      acceleratorCopyFromDevice(&send_buf[(d+depth)*buffer_size],&hsend_buf[(d+depth)*buffer_size],bytes);
+      grid->SendToRecvFromBegin(bwd_req,
+				(void *)&hsend_buf[(d+depth)*buffer_size], recv_from_rank,
+				(void *)&hrecv_buf[(d+depth)*buffer_size], xmit_to_rank, bytes,tag);
+      acceleratorCopyToDevice(&hrecv_buf[(d+depth)*buffer_size],&recv_buf[(d+depth)*buffer_size],bytes);
+#endif      
       t_comms+=usecond()-t;
     }
 
