@@ -316,30 +316,3 @@ static void Omega(iScalar<iScalar<iMatrix<vtype, N> > > &in) {
   in = Omega;
 }
 
-template<typename Gimpl>
-static void SpGaugeTransform(typename Gimpl::GaugeField &Umu, typename Gimpl::GaugeLinkField &g){
-  GridBase *grid = Umu.Grid();
-  conformable(grid,g.Grid());
-
-  typename Gimpl::GaugeLinkField U(grid);
-  typename Gimpl::GaugeLinkField ag(grid); ag = adj(g);
-
-  for(int mu=0;mu<Nd;mu++){
-    U= PeekIndex<LorentzIndex>(Umu,mu);
-    U = g*U*Gimpl::CshiftLink(ag, mu, 1); //BC-aware
-    PokeIndex<LorentzIndex>(Umu,U,mu);
-  }
-}
-template<typename Gimpl>
-static void SpGaugeTransform( std::vector<typename Gimpl::GaugeLinkField> &U, typename Gimpl::GaugeLinkField &g){
-  GridBase *grid = g.Grid();
-  typename Gimpl::GaugeLinkField ag(grid); ag = adj(g);
-  for(int mu=0;mu<Nd;mu++){
-    U[mu] = g*U[mu]*Gimpl::CshiftLink(ag, mu, 1); //BC-aware
-  }
-}
-template<typename Gimpl>
-static void SpRandomGaugeTransform(GridParallelRNG &pRNG, typename Gimpl::GaugeField &Umu, typename Gimpl::GaugeLinkField &g){
-  LieRandomize(pRNG,g,1.0);
-  GaugeTransform<Gimpl>(Umu,g);
-}
