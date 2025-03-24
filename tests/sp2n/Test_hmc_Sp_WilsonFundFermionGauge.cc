@@ -64,8 +64,8 @@ int main(int argc, char **argv) {
   TheHMC.TheAction.push_back(Level1);
   TheHMC.TheAction.push_back(Level2);
     
-  TheHMC.Parameters.MD.MDsteps = 2;
-  TheHMC.Parameters.MD.trajL   = 0.1;
+  TheHMC.Parameters.MD.MDsteps = 36;
+  TheHMC.Parameters.MD.trajL   = 1.0;
     
   TheHMC.ReadCommandLine(argc, argv);
   TheHMC.Run();
