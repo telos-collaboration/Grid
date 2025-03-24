@@ -187,6 +187,9 @@ typedef CompactWilsonClover<WilsonTwoIndexAntiSymmetricImplD> CompactWilsonClove
 typedef DomainWallFermion<WilsonImplF> DomainWallFermionF;
 typedef DomainWallFermion<WilsonImplD> DomainWallFermionD;
 typedef DomainWallFermion<WilsonImplD2> DomainWallFermionD2;
+// Sp(2N) group case
+typedef DomainWallFermion<SpWilsonImplF> SpDomainWallFermionF;
+typedef DomainWallFermion<SpWilsonImplD> SpDomainWallFermionD;
 
 typedef DomainWallEOFAFermion<WilsonImplD2> DomainWallEOFAFermionD2;
 typedef DomainWallEOFAFermion<WilsonImplF> DomainWallEOFAFermionF;
@@ -195,6 +198,9 @@ typedef DomainWallEOFAFermion<WilsonImplD> DomainWallEOFAFermionD;
 typedef MobiusFermion<WilsonImplD2> MobiusFermionD2;
 typedef MobiusFermion<WilsonImplF> MobiusFermionF;
 typedef MobiusFermion<WilsonImplD> MobiusFermionD;
+// Sp(2N) group case
+typedef MobiusFermion<SpWilsonImplF> SpMobiusFermionF;
+typedef MobiusFermion<SpWilsonImplD> SpMobiusFermionD;
 
 typedef MobiusEOFAFermion<WilsonImplD2> MobiusEOFAFermionD2;
 typedef MobiusEOFAFermion<WilsonImplF> MobiusEOFAFermionF;
@@ -203,6 +209,10 @@ typedef MobiusEOFAFermion<WilsonImplD> MobiusEOFAFermionD;
 typedef ZMobiusFermion<ZWilsonImplD2> ZMobiusFermionD2;
 typedef ZMobiusFermion<ZWilsonImplF> ZMobiusFermionF;
 typedef ZMobiusFermion<ZWilsonImplD> ZMobiusFermionD;
+// Sp(2N) group
+typedef ZMobiusFermion<ZSpWilsonImplF> SpZMobiusFermionF;
+typedef ZMobiusFermion<ZSpWilsonImplD> SpZMobiusFermionD;
+
 
 typedef ScaledShamirFermion<WilsonImplD2> ScaledShamirFermionD2;
 typedef ScaledShamirFermion<WilsonImplF> ScaledShamirFermionF;
