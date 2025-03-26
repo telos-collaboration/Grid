@@ -418,9 +418,9 @@ template<class vobj> void Cshift_local(Lattice<vobj> &ret,const Lattice<vobj> &r
 
       if ( (ly>2) && (permute_slice) ) {
       	assert(permute_type & RotateBit);
-	      permute_type_dist = permute_type|permute_slice;
+	permute_type_dist = permute_type|permute_slice;
       } else {
-	      permute_type_dist = permute_type;
+        permute_type_dist = permute_type;
       }
     }
 
