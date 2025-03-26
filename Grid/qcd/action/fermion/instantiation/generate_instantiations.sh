@@ -29,12 +29,15 @@ COMPACT_WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD "
 
+
 DWF_IMPL_LIST=" \
-	   WilsonImplF \
-	   WilsonImplD \
-	   WilsonImplD2 \
-	   ZWilsonImplF \
-	   ZWilsonImplD2 "
+           SpWilsonImplF \
+           SpWilsonImplD \
+           WilsonImplF \
+           WilsonImplD \
+           WilsonImplD2 \
+           ZWilsonImplF \
+           ZWilsonImplD2 "
 
 GDWF_IMPL_LIST=" \
 	   GparityWilsonImplF \

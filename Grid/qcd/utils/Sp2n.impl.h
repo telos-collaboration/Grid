@@ -315,3 +315,4 @@ static void Omega(iScalar<iScalar<iMatrix<vtype, N> > > &in) {
     
   in = Omega;
 }
+
