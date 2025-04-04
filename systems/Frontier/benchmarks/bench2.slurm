@@ -30,7 +30,7 @@ source ${root}/sourceme.sh
 
 export OMP_NUM_THREADS=7
 export MPICH_GPU_SUPPORT_ENABLED=1
-export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
+#export MPICH_SMP_SINGLE_COPY_MODE=XPMEM
 #64.64.32.96
 for vol in 64.64.32.64
 do
