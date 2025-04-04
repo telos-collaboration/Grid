@@ -446,6 +446,7 @@ public:
     Communicate();
     CommsMergeSHM(compress);
     CommsMerge(compress);
+    accelerator_barrier();
   }
 
   template<class compressor> int HaloGatherDir(const Lattice<vobj> &source,compressor &compress,int point,int & face_idx)
