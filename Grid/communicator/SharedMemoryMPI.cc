@@ -1018,14 +1018,12 @@ void SharedMemory::SharedMemoryTest(void)
   ShmBarrier();
   for(uint64_t r=0;r<ShmSize;r++){
     acceleratorCopyFromDevice(ShmCommBufs[r],check,3*sizeof(uint64_t));
-    //      accelerator_barrier();
-    //    std::cerr << " ShmRank "<<ShmRank<<" read "<<check[0]<<","<<check[1]<<","<<std::hex<<check[2]<<" from buf "<<ShmCommBufs[r]
-    //	      <<std::dec<<std::endl;
     assert(check[0]==GlobalSharedMemory::WorldNode);
     assert(check[1]==r);
     assert(check[2]==magic);
   }
   ShmBarrier();
+  std::cout << GridLogDebug << " SharedMemoryTest has passed "<<std::endl;
 }
 
 void *SharedMemory::ShmBuffer(int rank)
