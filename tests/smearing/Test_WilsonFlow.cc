@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
   WFParameters WFPar(Reader);
   ConfParameters CPar(Reader);
   CheckpointerParameters CPPar(CPar.conf_prefix, CPar.rng_prefix);
-  BinaryHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
+  NerscHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
 
   for (int conf = CPar.StartConfiguration; conf <= CPar.EndConfiguration; conf+= CPar.Skip){
 
