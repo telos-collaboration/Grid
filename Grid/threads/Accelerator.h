@@ -251,7 +251,7 @@ inline void acceleratorCopyToDevice(const void *from,void *to,size_t bytes)  { c
 inline void acceleratorCopyFromDevice(const void *from,void *to,size_t bytes){ cudaMemcpy(to,from,bytes, cudaMemcpyDeviceToHost);}
 inline void acceleratorMemSet(void *base,int value,size_t bytes) { cudaMemset(base,value,bytes);}
 inline acceleratorEvent_t acceleratorCopyToDeviceAsynch(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) {
-  acceleratorCopyToDevice(to,from,bytes, cudaMemcpyHostToDevice);
+  acceleratorCopyToDevice(from,to,bytes);
   return 0;
 }
 inline acceleratorEvent_t acceleratorCopyFromDeviceAsynch(void *from, void *to, size_t bytes, cudaStream_t stream = copyStream) {
