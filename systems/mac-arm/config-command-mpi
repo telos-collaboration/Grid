@@ -7,8 +7,6 @@ CXX=mpicxx ../../configure \
 	   --enable-unified=yes \
 	   --prefix /Users/peterboyle/QCD/vtk/Grid/install \
 	   --with-lime=$CLIME \
-	   --with-hdf5=$HDF5 \
-	   --with-fftw=$FFTW \
 	   --with-openssl=$OPENSSL \
 	   --with-gmp=$GMP \
 	   --with-mpfr=$MPFR \

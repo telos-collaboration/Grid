@@ -48,15 +48,14 @@ typedef vtkMarchingCubes isosurface;
 
 int mpeg = 0 ;
 int xlate = 0 ;
+int framerate = 10;
 
 template <class T> void readFile(T& out, std::string const fname){
-#ifdef HAVE_LIME
   Grid::emptyUserRecord record;
   Grid::ScidacReader RD;
   RD.open(fname);
   RD.readScidacFieldRecord(out,record);
   RD.close();
-#endif
 }
 using namespace Grid;
 
@@ -208,6 +207,10 @@ int main(int argc, char* argv[])
     xlate = 1;
   }
 
+  if( GridCmdOptionExists(argv,argv+argc,"--fps") ){
+    arg=GridCmdOptionPayload(argv,argv+argc,"--fps");
+    GridCmdOptionInt(arg,framerate);
+  }
   if( GridCmdOptionExists(argv,argv+argc,"--isosurface") ){
     arg=GridCmdOptionPayload(argv,argv+argc,"--isosurface");
     GridCmdOptionFloat(arg,default_contour);
@@ -420,7 +423,7 @@ int main(int argc, char* argv[])
     
     vtkFFMPEGWriter *writer = vtkFFMPEGWriter::New();
     writer->SetFileName("movie.avi");
-    writer->SetRate(1);
+    writer->SetRate(framerate);
     writer->SetInputConnection(imageFilter->GetOutputPort());
     writer->Start();
 
@@ -477,7 +480,7 @@ int main(int argc, char* argv[])
     slidercallback->fu_list = fu_list;
     sliderWidget->AddObserver(vtkCommand::InteractionEvent, slidercallback);
 
-    int timerId = iren->CreateRepeatingTimer(300);
+    int timerId = iren->CreateRepeatingTimer(1000/framerate);
     std::cout << "timerId: " << timerId << std::endl;
 
     // Start the interaction and timer
