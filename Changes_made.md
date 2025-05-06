@@ -27,3 +27,25 @@ inline void acceleratorCopyDeviceToDeviceAsynch(const void *from,void *to,size_t
    auto r = hipMemcpyAsync(to,from,bytes, hipMemcpyHostToDevice, stream);
 [Linux][10:59:16] dc-bonn2@a89612a82902:~/SwanSea/SourceCodes/Grid-DWF-Telos/Grid (develop)() =>$
 ```
+
+
+## Compilation issue on AMD systems Mi300 and Lumi.
+### 06 Apr 25 : 12:20
+
+update of the hipMallocHost 
+
+
+```
+inline void *acceleratorAllocHost(size_t bytes)
+{
+  void *ptr=NULL;
+  auto err = hipMallocHost((void **)&ptr,bytes);
+  //auto err = hipHostMalloc((void **)&ptr,bytes);
+
+  if( err != hipSuccess ) {
+    ptr = (void *) NULL;
+    fprintf(stderr," hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
+  }
+  return ptr;
+};
+```
