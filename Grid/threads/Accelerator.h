@@ -478,7 +478,9 @@ void LambdaApply(uint64_t numx, uint64_t numy, uint64_t numz, lambda Lambda)
 inline void *acceleratorAllocHost(size_t bytes)
 {
   void *ptr=NULL;
-  auto err = hipMallocHost((void **)&ptr,bytes);
+  //auto err = hipMallocHost((void **)&ptr,bytes);
+  auto err = hipHostMalloc((void **)&ptr,bytes);
+
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
     fprintf(stderr," hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
