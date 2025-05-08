@@ -479,6 +479,8 @@ inline void *acceleratorAllocHost(size_t bytes)
 {
   void *ptr=NULL;
   auto err = hipMallocHost((void **)&ptr,bytes);
+  //auto err = hipHostMalloc((void **)&ptr,bytes);
+
   if( err != hipSuccess ) {
     ptr = (void *) NULL;
     fprintf(stderr," hipMallocManaged failed for %ld %s \n",bytes,hipGetErrorString(err)); fflush(stderr);
@@ -518,7 +520,9 @@ inline void acceleratorMemSet(void *base,int value,size_t bytes) { auto discard=
 
 inline void acceleratorCopyDeviceToDeviceAsynch(const void *from,void *to,size_t bytes) // Asynch
 {
-  auto discard=hipMemcpyDtoDAsync(to,from,bytes, copyStream);
+  //auto discard=hipMemcpyDtoDAsync(to, from, bytes, copyStream);
+  void* from_c = const_cast<void*>(from);
+  auto discard=hipMemcpyDtoDAsync(to, from_c, bytes, copyStream);
 }
 inline void acceleratorCopyToDeviceAsync(const void *from, void *to, size_t bytes, hipStream_t stream = copyStream) {
   auto r = hipMemcpyAsync(to,from,bytes, hipMemcpyHostToDevice, stream);
