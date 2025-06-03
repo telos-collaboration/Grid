@@ -314,7 +314,7 @@ int main(int argc, char** argv) {
       }
     }
   }
-    for(int i = 0; i < Nconv; i++){
+  for(int i = 0; i < Nconv; i++){
     G5R5Herm.HermOpAndNorm(finalevec[i], G5R5Mevec[i], eMe[i], eMMe[i]);
   }
   cout << "Re<evec, G5R5M(evec)>: " << endl;
@@ -322,6 +322,7 @@ int main(int argc, char** argv) {
   cout << "<G5R5M(evec), G5R5M(evec)>" << endl;
   cout << eMMe << endl;
 
+  
 
 //  vector<LatticeFermion> finalevec(Nconv, FGrid);
 // temporary, until doing rotation
@@ -340,6 +341,20 @@ int main(int argc, char** argv) {
     }
     for(int j = Ls/2; j < Ls; j++){
       axpby_ssp(G5evec[i], -1., finalevec[i], 0., G5evec[i], j, j);
+    }
+  }
+  
+  for(int i = 0; i < Nconv; i++){
+    Ddwf.M(finalevec[i], G5R5Mevec[i]);
+    for(int j = 0; j < Nconv; j++){
+      std::cout << "<"<<j<<"|Ddwf|"<<i<<"> = "<<innerProduct(finalevec[j],G5R5Mevec[i])<<std::endl;
+    }
+  }
+  for(int i = 0; i < Nconv; i++){
+    RealD t1,t2;
+    G5R5Herm.HermOpAndNorm(finalevec[i], G5R5Mevec[i], t1, t2);
+    for(int j = 0; j < Nconv; j++){
+      std::cout << "<"<<j<<"|G5R5 M|"<<i<<"> = "<<innerProduct(finalevec[j],G5R5Mevec[i])<<std::endl;
     }
   }
   
@@ -380,7 +395,7 @@ int main(int argc, char** argv) {
   PYTHON_LINE("ax = fig.add_subplot(projection='3d')");
   PYTHON_LINE("");
   PYTHON_LINE("x, y = np.random.rand(2, 100) * 4");
-  PYTHON_LINE("hist, xedges, yedges = np.histogram2d(x, y, bins=10, range=[[0, 9], [0, 9]])");
+  fprintf(fp,"hist, xedges, yedges = np.histogram2d(x, y, bins=%d, range=[[0, %d], [0, %d]])\n",Nconv,Nconv-1,Nconv-1);
   PYTHON_LINE("");
   PYTHON_LINE("# Construct arrays for the anchor positions of the 16 bars");
   PYTHON_LINE("xpos, ypos = np.meshgrid(xedges[:-1] + 0.25, yedges[:-1] + 0.25, indexing=\"ij\")");
