@@ -81,6 +81,7 @@ int main (int argc, char ** argv)
   //////////////////
   // Domain decomposed
   //////////////////
+  /*
   Coordinate latt4  = GridDefaultLatt();
   Coordinate mpi    = GridDefaultMpi();
   Coordinate CommDim(Nd);
@@ -88,12 +89,9 @@ int main (int argc, char ** argv)
   GlobalSharedMemory::GetShmDims(mpi,shm);
 
 
-  //////////////////////
-  // Node level
-  //////////////////////
   std::cout << "\n\n\n\n\n\n" <<std::endl;
   std::cout << GridLogMessage<< "++++++++++++++++++++++++++++++++++++++++++++++++" <<std::endl;
-  std::cout << GridLogMessage<< " Testing without internode communication " <<std::endl;
+  //  std::cout << GridLogMessage<< " Testing without internode communication " <<std::endl;
   std::cout << GridLogMessage<< "++++++++++++++++++++++++++++++++++++++++++++++++" <<std::endl;
 
   for(int d=0;d<Nd;d++) CommDim[d]= (mpi[d]/shm[d])>1 ? 1 : 0;
@@ -108,13 +106,14 @@ int main (int argc, char ** argv)
   std::cout << "\n\n\n\n\n\n" <<std::endl;
 
   std::cout << GridLogMessage<< "++++++++++++++++++++++++++++++++++++++++++++++++" <<std::endl;
-  std::cout << GridLogMessage<< " Testing with sloppy intranode communication " <<std::endl;
+  std::cout << GridLogMessage<< " Testing with sloppy communication " <<std::endl;
   std::cout << GridLogMessage<< "++++++++++++++++++++++++++++++++++++++++++++++++" <<std::endl;
 
   for(int d=0;d<Nd;d++) CommDim[d]= mpi[d]>1 ? 1 : 0;
   
   Benchmark(Ls,Dirichlet,true);
-
+  */
+  
   Grid_finalize();
   exit(0);
 }
