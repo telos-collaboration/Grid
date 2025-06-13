@@ -7,3 +7,4 @@ module load MPFR
 module load NVHPC
 module load UCX
 module load OpenMPI
+ulimit -c 0
