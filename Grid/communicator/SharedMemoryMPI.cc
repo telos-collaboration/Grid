@@ -1010,11 +1010,13 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 {
   int gpeer = ShmRanks[rank];
   assert(gpeer!=ShmRank); // never send to self
+  //  std::cout << "ShmBufferTranslate for rank " << rank<<" peer "<<gpeer<<std::endl;
   if (gpeer == MPI_UNDEFINED){
     return NULL;
   } else { 
     uint64_t offset = (uint64_t)local_p - (uint64_t)ShmCommBufs[ShmRank];
     uint64_t remote = (uint64_t)ShmCommBufs[gpeer]+offset;
+    //    std::cout << "ShmBufferTranslate : local,offset,remote "<<std::hex<<local_p<<" "<<offset<<" "<<remote<<std::dec<<std::endl;
     return (void *) remote;
   }
 }
