@@ -295,6 +295,9 @@ void GridBanner(void)
     std::cout << std::setprecision(9);
 }
 
+int fileno_stdout;
+int fileno_stderr;
+
 void Grid_init(int *argc,char ***argv)
 {
 
@@ -347,6 +350,12 @@ void Grid_init(int *argc,char ***argv)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-signals") ){
     Grid_debug_handler_init();
   }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--debug-heartbeat") ){
+    Grid_debug_heartbeat();
+  }
+  if( GridCmdOptionExists(*argv,*argv+*argc,"--heartbeat") ){
+    Grid_heartbeat();
+  }
 
 #if defined(A64FX)
   if( GridCmdOptionExists(*argv,*argv+*argc,"--comms-overlap") ){
@@ -396,6 +405,9 @@ void Grid_init(int *argc,char ***argv)
     fp=freopen(ename.str().c_str(),"w",stderr);
     assert(fp!=(FILE *)NULL);
   }
+  fileno_stdout = fileno(stdout);
+  fileno_stderr = fileno(stderr) ;
+    
   ////////////////////////////////////////////////////
   // OK to use GridLogMessage etc from here on
   ////////////////////////////////////////////////////
@@ -459,7 +471,9 @@ void Grid_init(int *argc,char ***argv)
     std::cout<<GridLogMessage<<"  --decomposition : report on default omp,mpi and simd decomposition"<<std::endl;    
     std::cout<<GridLogMessage<<"  --debug-signals : catch sigsegv and print a blame report"<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-stdout  : print stdout from EVERY node"<<std::endl;
+    std::cout<<GridLogMessage<<"  --debug-heartbeat : periodic report of backtrace "<<std::endl;
     std::cout<<GridLogMessage<<"  --debug-mem     : print Grid allocator activity"<<std::endl;
+    std::cout<<GridLogMessage<<"  --heartbeat     : periodic itimer wakeup "<<std::endl;
     std::cout<<GridLogMessage<<"  --notimestamp   : suppress millisecond resolution stamps"<<std::endl;
     std::cout<<GridLogMessage<<std::endl;
     std::cout<<GridLogMessage<<"Performance:"<<std::endl;
@@ -556,13 +570,49 @@ void GridLogLayout() {
 
 void * Grid_backtrace_buffer[_NBACKTRACE];
 
+#define SIGLOG(A) ::write(fileno_stderr,A,strlen(A));
+
+void sig_print_dig(uint32_t dig)
+{
+  const char *digits[] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F" };
+  if ( dig>=0 && dig< 16){
+    SIGLOG(digits[dig]);
+  }
+}
+void sig_print_uint(uint32_t A)
+{
+  sig_print_dig((A/1000000000)%10);
+  sig_print_dig((A/100000000)%10);
+  sig_print_dig((A/10000000)%10);
+  sig_print_dig((A/1000000)%10);
+  sig_print_dig((A/100000)%10);
+  sig_print_dig((A/10000)%10);
+  sig_print_dig((A/1000)%10);
+  sig_print_dig((A/100)%10);
+  sig_print_dig((A/10)%10);
+  sig_print_dig((A/1)%10);
+}
+void sig_print_hex(uint64_t A)
+{
+  sig_print_dig((A>>7)&0xF);
+  sig_print_dig((A>>6)&0xF);
+  sig_print_dig((A>>5)&0xF);
+  sig_print_dig((A>>4)&0xF);
+  sig_print_dig((A>>3)&0xF);
+  sig_print_dig((A>>2)&0xF);
+  sig_print_dig((A>>1)&0xF);
+  sig_print_dig((A>>0)&0xF);
+}
+
 void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
+  /*
   fprintf(stderr,"Signal handler on host %s\n",hostname);
   fprintf(stderr,"FlightRecorder step %d stage %s \n",
 	  FlightRecorder::StepLoggingCounter,
 	  FlightRecorder::StepName);
   fprintf(stderr,"Caught signal %d\n",si->si_signo);
+  fprintf(stderr,"   process id %llu\n", (unsigned long long int)getpid());
   fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
   fprintf(stderr,"         code %d\n",si->si_code);
   // x86 64bit
@@ -578,57 +628,111 @@ void Grid_usr_signal_handler(int sig,siginfo_t *si,void * ptr)
   fprintf(stderr,"Called backtrace\n");
   fflush(stdout);
   fflush(stderr);
+  */
+  SIGLOG("Signal handler on host ");
+  SIGLOG(hostname);
+  SIGLOG("\n");
+  SIGLOG("FlightRecorder step ");
+  sig_print_uint(FlightRecorder::StepLoggingCounter);
+  SIGLOG("\n");
+  SIGLOG("FlightRecorder stage ");
+  SIGLOG(FlightRecorder::StepName);
+  SIGLOG("\n");
+  SIGLOG("Caught signal ");
+  sig_print_uint(si->si_signo);
+  SIGLOG("\n");
+  SIGLOG("   process id ");
+  sig_print_uint((uint32_t)getpid());
+  SIGLOG("\n");
+  SIGLOG("  mem address ");
+  sig_print_hex((uint64_t)si->si_addr);
+  SIGLOG("\n");
+  SIGLOG("  code ");
+  sig_print_uint(si->si_code);
+  SIGLOG("\n");
+  
+  SIGLOG("Backtrace:\n");
+  int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);
+  for (int i = 0; i < symbols; i++){
+    sig_print_hex((uint64_t)Grid_backtrace_buffer[i]);
+    SIGLOG("\n");
+  }
+
   return;
 }
 
 void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr)
 {
-  fprintf(stderr,"Signal handler on host %s\n",hostname);
-  fprintf(stderr,"Caught signal %d\n",si->si_signo);
-  fprintf(stderr,"  mem address %llx\n",(unsigned long long)si->si_addr);
-  fprintf(stderr,"         code %d\n",si->si_code);
-  // Linux/Posix
-#ifdef __linux__
-  // And x86 64bit
-#ifdef __x86_64__
-  ucontext_t * uc= (ucontext_t *)ptr;
-  struct sigcontext *sc = (struct sigcontext *)&uc->uc_mcontext;
-  fprintf(stderr,"  instruction %llx\n",(unsigned long long)sc->rip);
-#define REG(A)  fprintf(stderr,"  %s %lx\n",#A,sc-> A);
-  REG(rdi);
-  REG(rsi);
-  REG(rbp);
-  REG(rbx);
-  REG(rdx);
-  REG(rax);
-  REG(rcx);
-  REG(rsp);
-  REG(rip);
-
-
-  REG(r8);
-  REG(r9);
-  REG(r10);
-  REG(r11);
-  REG(r12);
-  REG(r13);
-  REG(r14);
-  REG(r15);
-#endif
-#endif
-  fflush(stderr);
-  BACKTRACEFP(stderr);
-  fprintf(stderr,"Called backtrace\n");
-  fflush(stdout);
-  fflush(stderr);
+  SIGLOG("Signal handler on host ");
+  SIGLOG(hostname);
+  SIGLOG("\n");
+  SIGLOG("FlightRecorder step ");
+  sig_print_uint(FlightRecorder::StepLoggingCounter);
+  SIGLOG("\n");
+  SIGLOG("FlightRecorder stage ");
+  SIGLOG(FlightRecorder::StepName);
+  SIGLOG("\n");
+  SIGLOG("Caught signal ");
+  sig_print_uint(si->si_signo);
+  SIGLOG("\n");
+  SIGLOG("   process id ");
+  sig_print_uint((uint32_t)getpid());
+  SIGLOG("\n");
+  SIGLOG("  mem address ");
+  sig_print_hex((uint64_t)si->si_addr);
+  SIGLOG("\n");
+  SIGLOG("  code ");
+  sig_print_uint(si->si_code);
+  SIGLOG("\n");
+  
+  SIGLOG("Backtrace:\n");
+  int symbols    = backtrace        (Grid_backtrace_buffer,_NBACKTRACE);
+  for (int i = 0; i < symbols; i++){
+    sig_print_hex((uint64_t)Grid_backtrace_buffer[i]);
+    SIGLOG("\n");
+  }
   exit(0);
   return;
 };
+void Grid_empty_signal_handler(int sig,siginfo_t *si,void * ptr)
+{
+}
+void Grid_debug_heartbeat(void)
+{
+  struct sigaction sa_ping;
 
+  sigemptyset (&sa_ping.sa_mask);
+  sa_ping.sa_sigaction= Grid_usr_signal_handler;
+  sa_ping.sa_flags    = SA_SIGINFO;
+  sigaction(SIGALRM,&sa_ping,NULL);
+
+  // repeating 10s heartbeat
+  struct itimerval it_val;
+  it_val.it_value.tv_sec = 10;
+  it_val.it_value.tv_usec = 1000;
+  it_val.it_interval = it_val.it_value;
+  setitimer(ITIMER_REAL, &it_val, NULL);
+}
+void Grid_heartbeat(void)
+{
+  struct sigaction sa_ping;
+
+  sigemptyset (&sa_ping.sa_mask);
+  sa_ping.sa_sigaction= Grid_empty_signal_handler;
+  sa_ping.sa_flags    = SA_SIGINFO;
+  sigaction(SIGALRM,&sa_ping,NULL);
+
+  // repeating 10s heartbeat
+  struct itimerval it_val;
+  it_val.it_value.tv_sec = 10;
+  it_val.it_value.tv_usec = 1000;
+  it_val.it_interval = it_val.it_value;
+  setitimer(ITIMER_REAL, &it_val, NULL);
+}
 void Grid_exit_handler(void)
 {
-  //  BACKTRACEFP(stdout);
-  //  fflush(stdout);
+  BACKTRACEFP(stdout);
+  fflush(stdout);
 }
 void Grid_debug_handler_init(void)
 {
