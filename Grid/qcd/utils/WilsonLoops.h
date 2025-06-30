@@ -294,7 +294,7 @@ public:
   //////////////////////////////////////////////////
   static void Staple(GaugeMat &staple, const GaugeLorentz &U, int mu) {
 
-    std::vector<GaugeMat> Umu(Nd, U.grid());
+    std::vector<GaugeMat> Umu(Nd, U.Grid());
     for (int d = 0; d < Nd; d++) {
       Umu[d] = PeekIndex<LorentzIndex>(U, d);
     }
