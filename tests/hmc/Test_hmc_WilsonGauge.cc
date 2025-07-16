@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
   // Grid from the command line
   TheHMC.Resources.AddFourDimGrid("gauge");
-  // Possibile to create the module by hand 
+  // Possible to create the module by hand
   // hardcoding parameters or using a Reader
 
 
