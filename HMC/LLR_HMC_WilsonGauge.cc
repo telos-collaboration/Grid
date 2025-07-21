@@ -35,9 +35,28 @@ int main(int argc, char **argv) {
     Grid::Grid_init(&argc, &argv);
     Grid::GridLogLayout();
 
+    typedef Grid::GenericHMCRunnerLLR<Grid::MinimumNorm2> HMCWrapperLLR;  // Uses the default minimum norm
+    HMCWrapperLLR TheHMC;
 
+    // Grid from the command line
+    TheHMC.Resources.AddFourDimGrid("gauge");
+    // Possible to create the module by hand
+    // hardcoding parameters or using a Reader
 
+    // Checking the parameters in the used, we will use the same as the
+    // Standard wilson ones.
+    Grid::CheckpointerParameters CPparams;
+    CPparams.config_prefix = "ckpoint_lat";
+    CPparams.rng_prefix = "ckpoint_rng";
+    CPparams.saveInterval = 1;
+    CPparams.format = "IEEE64BIG";
 
+    TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+
+    Grid::RNGModuleParameters RNGpar;
+    RNGpar.serial_seeds = "1 2 3 4 5";
+    RNGpar.parallel_seeds = "6 7 8 9 10";
+    TheHMC.Resources.SetRNGSeeds(RNGpar);
 
 
 
