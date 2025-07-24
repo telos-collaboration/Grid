@@ -223,15 +223,15 @@ template <template <typename, typename, typename> class Integrator>
 using ConjugateHMCRunnerD = HMCWrapperTemplate<ConjugateGimplD, Integrator>;
 
 
+// LLR
+template <template <typename, typename, typename> class Integrator>
+using GenericHMCRunnerLLR = HMCWrapperTemplate<PeriodicGimplR, Integrator>;
+
 // HiRep
 template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerHirep =
 				     HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
-
-// LLR
-template <template <typename, typename, typename> class Integrator>
-using GenericHMCRunnerLLR = HMCWrapperTemplate<PeriodicGimplR, Integrator>;
 
 // sp2n
 template <template <typename, typename, typename> class Integrator>

@@ -852,7 +852,7 @@ LIME (ILDG support)         : `if test "x$have_lime" = xtrue; then echo yes; els
 HDF5                        : `if test "x$have_hdf5" = xtrue; then echo yes; else echo no; fi`
 build DOXYGEN documentation : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
 Sp2n                        : ${ac_ENABLE_SP}
-With LLR                    : ${ac_ENABLE_LLR}
+LLR                         : ${ac_ENABLE_LLR}
 ----- BUILD FLAGS -------------------------------------
 CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`
