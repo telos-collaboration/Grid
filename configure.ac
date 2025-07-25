@@ -213,19 +213,19 @@ case ${ac_Nc} in
 esac
 
 ############### With LLR
-AC_ARG_ENABLE([LLR],
-    [AC_HELP_STRING([--enable-LLR=yes|no], [enable gauge group Sp2n])],
-    [ac_ENABLE_LLR=${enable_LLR}], [ac_ENABLE_LLR=no])
+AC_ARG_ENABLE([llr],
+    [AC_HELP_STRING([--enable-llr=yes|no], [enable gauge group Sp2n])],
+    [ac_ENABLE_LLR=${enable_llr}], [ac_ENABLE_LLR=no])
 
 AM_CONDITIONAL(BUILD_LLR, [ test "${ac_ENABLE_LLR}X" == "yesX" ])
 
 case ${ac_ENABLE_LLR} in
    yes)
-        AC_DEFINE([LLR_config],[1],[gauge group Sp2n], [have_sp2n=true]);;
+        AC_DEFINE([llr_config],[1],[gauge group Sp2n], [have_sp2n=true]);;
    no)
-        AC_DEFINE([LLR_config],[0],[gauge group SUn], [have_sp2n=false]);;
+        AC_DEFINE([llr_config],[0],[gauge group SUn], [have_sp2n=false]);;
     *)
-        AC_MSG_ERROR(["--enable-LLR is either yes or no"]);;
+        AC_MSG_ERROR(["--enable-llr is either yes or no"]);;
 esac
 
 ############### Symplectic group
@@ -852,7 +852,7 @@ LIME (ILDG support)         : `if test "x$have_lime" = xtrue; then echo yes; els
 HDF5                        : `if test "x$have_hdf5" = xtrue; then echo yes; else echo no; fi`
 build DOXYGEN documentation : `if test "$DX_FLAG_doc" = '1'; then echo yes; else echo no; fi`
 Sp2n                        : ${ac_ENABLE_SP}
-LLR                         : ${ac_ENABLE_LLR}
+llr                         : ${ac_ENABLE_LLR}
 ----- BUILD FLAGS -------------------------------------
 CXXFLAGS:
 `echo ${AM_CXXFLAGS} ${CXXFLAGS} | tr ' ' '\n' | sed 's/^-/    -/g'`

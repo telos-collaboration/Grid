@@ -35,34 +35,51 @@ int main(int argc, char **argv) {
     Grid::Grid_init(&argc, &argv);
     Grid::GridLogLayout();
 
-    typedef Grid::GenericHMCRunnerLLR<Grid::MinimumNorm2> HMCWrapperLLR;  // Uses the default minimum norm
-    HMCWrapperLLR TheHMC;
+    bool with_llr = false;
+    std::cout<<"<---- with_llr (initialized)     ---->: " << with_llr << std::endl;
+    std::cout<<"<---- llr_config                 ---->: " << llr_config << std::endl;
+#if defined(llr_config)
+    with_llr = true;
+#endif
+    std::cout<<"<---- with_llr (llr_config)      ---->: " << with_llr << std::endl;
+    std::cout<<"<---- Sp2n_config                ---->: " << Sp2n_config << std::endl;
 
-    // Grid from the command line
-    TheHMC.Resources.AddFourDimGrid("gauge");
-    // Possible to create the module by hand
-    // hardcoding parameters or using a Reader
+    // if --enable--LLR switch is activated
+    if (with_llr) {
+#if defined (Sp2n_config)
+        // Sp(2n) representation
+        typedef Grid::GenericHMCRunnerSpLLR<Grid::MinimumNorm2> HMCWrapperSpLLR;
+        HMCWrapperSpLLR TheHMC;
+#elif !defined(Sp2n_config)
+        // SU(N) representation
+        typedef Grid::GenericHMCRunnerLLR <Grid::MinimumNorm2> HMCWrapperLLR;  // Uses the default minimum norm
+        HMCWrapperLLR TheHMC;
+#endif
+        // Grid from the command line
+        TheHMC.Resources.AddFourDimGrid("gauge");
+        // Possible to create the module by hand
+        // hardcoding parameters or using a Reader
 
-    // Checking the parameters in the used, we will use the same as the
-    // Standard wilson ones.
-    Grid::CheckpointerParameters CPparams;
-    CPparams.config_prefix = "ckpoint_lat";
-    CPparams.rng_prefix = "ckpoint_rng";
-    CPparams.saveInterval = 1;
-    CPparams.format = "IEEE64BIG";
+        // Checking the parameters in the used, we will use the same as the
+        // Standard wilson ones.
+        Grid::CheckpointerParameters CPparams;
+        CPparams.config_prefix = "ckpoint_lat";
+        CPparams.rng_prefix = "ckpoint_rng";
+        CPparams.saveInterval = 1;
+        CPparams.format = "IEEE64BIG";
 
-    TheHMC.Resources.LoadNerscCheckpointer(CPparams);
+        TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
-    Grid::RNGModuleParameters RNGpar;
-    RNGpar.serial_seeds = "1 2 3 4 5";
-    RNGpar.parallel_seeds = "6 7 8 9 10";
-    TheHMC.Resources.SetRNGSeeds(RNGpar);
+        Grid::RNGModuleParameters RNGpar;
+        RNGpar.serial_seeds = "1 2 3 4 5";
+        RNGpar.parallel_seeds = "6 7 8 9 10";
+        TheHMC.Resources.SetRNGSeeds(RNGpar);
 
-
+    } /* [end-if] with_llr */
 
     // Finalizing the Grid library
     Grid::Grid_finalize();
     // End statement
-    std::cout<<"End LLR-HMC-WilsonGauge.cc" <<std::endl;
+    std::cout<<"<---- End LLR-HMC-WilsonGauge.cc ---->" <<std::endl;
 
 } /* end of main LLR-HMC-WilsonGauge.cc */

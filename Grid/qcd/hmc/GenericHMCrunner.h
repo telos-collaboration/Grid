@@ -227,6 +227,9 @@ using ConjugateHMCRunnerD = HMCWrapperTemplate<ConjugateGimplD, Integrator>;
 template <template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerLLR = HMCWrapperTemplate<PeriodicGimplR, Integrator>;
 
+template <template <typename, typename, typename> class Integrator>
+using GenericHMCRunnerSpLLR = HMCWrapperTemplate<SpPeriodicGimplR, Integrator>;
+
 // HiRep
 template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
