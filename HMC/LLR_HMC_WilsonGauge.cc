@@ -56,6 +56,7 @@ int main(int argc, char **argv) {
         HMCWrapperLLR TheHMC;
 #endif
         // Grid from the command line
+        TheHMC.ReadCommandLine(argc, argv);
         TheHMC.Resources.AddFourDimGrid("gauge");
         // Possible to create the module by hand
         // hardcoding parameters or using a Reader
@@ -74,6 +75,45 @@ int main(int argc, char **argv) {
         RNGpar.serial_seeds = "1 2 3 4 5";
         RNGpar.parallel_seeds = "6 7 8 9 10";
         TheHMC.Resources.SetRNGSeeds(RNGpar);
+
+        // Construct observables
+        // here there is too much indirection
+        typedef Grid::PlaquetteMod<HMCWrapperSpLLR::ImplPolicy> PlaqObs;
+        typedef Grid::TopologicalChargeMod<HMCWrapperSpLLR::ImplPolicy> QObs;
+        TheHMC.Resources.AddObservable<PlaqObs>();
+        Grid::TopologyObsParameters TopParams;
+        TopParams.interval = 5;
+        TopParams.do_smearing = true;
+        TopParams.Smearing.init_step_size = 0.01;
+        TopParams.Smearing.tolerance = 1e-5;
+        //TopParams.Smearing.steps = 200;
+        //TopParams.Smearing.step_size = 0.01;
+        TopParams.Smearing.meas_interval = 50;
+        TopParams.Smearing.maxTau = 2.0;
+        TheHMC.Resources.AddObservable<QObs>(TopParams);
+        //////////////////////////////////////////////
+
+        /////////////////////////////////////////////////////////////
+        // Collect actions, here use more encapsulation
+        // need wrappers of the fermionic classes
+        // that have a complex construction
+        // standard
+        Grid::RealD beta = 2.4;
+        Grid::SpWilsonGaugeActionR Waction(beta);
+
+        Grid::ActionLevel<HMCWrapperSpLLR::Field> Level1(1);
+        Level1.push_back(&Waction);
+        //Level1.push_back(WGMod.getPtr());
+        TheHMC.TheAction.push_back(Level1);
+        /////////////////////////////////////////////////////////////
+
+        // HMC parameters are serialisable
+        TheHMC.Parameters.MD.MDsteps = 10;
+        TheHMC.Parameters.MD.trajL   = 1.0;
+
+        TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
+        TheHMC.Run();  // no smearing
+
 
     } /* [end-if] with_llr */
 

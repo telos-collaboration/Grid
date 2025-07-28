@@ -47,6 +47,9 @@ template <class Implementation,
           class RepresentationsPolicy = NoHirep, class ReaderClass = XmlReader>
 class HMCWrapperTemplate: public HMCRunnerBase<ReaderClass> {
 public:
+  // The with LLR boolean switch
+  bool with_llr = false;
+  // Field_Types
   INHERIT_FIELD_TYPES(Implementation);
   typedef Implementation ImplPolicy;  // visible from outside
   template <typename S = NoSmearing<Implementation> >
@@ -78,6 +81,15 @@ public:
   void ReadCommandLine(int argc, char **argv) {
     std::string arg;
 
+    if (GridCmdOptionExists(argv, argv + argc, "--enable-llr")) {
+        arg = GridCmdOptionPayload(argv, argv + argc, "--enable-llr");
+
+        with_llr = true;
+
+        std::cout <<GridLogMessage << " with_llr         ---------->: "<<with_llr<<std::endl;
+        std::cout <<GridLogMessage << " GenericHMCrunner ---------->: --enable-llr"<<std::endl;
+    }
+
     if (GridCmdOptionExists(argv, argv + argc, "--StartingType")) {
       arg = GridCmdOptionPayload(argv, argv + argc, "--StartingType");
 
@@ -90,7 +102,7 @@ public:
         exit(1);
       }
       Parameters.StartingType = arg;
-      std::cout <<GridLogMessage << " GenericHMCrunner --StartingType "<<arg<<std::endl;
+        std::cout <<GridLogMessage << " GenericHMCrunner --StartingType "<<arg<<std::endl;
     }
 
     if (GridCmdOptionExists(argv, argv + argc, "--StartingTrajectory")) {
@@ -195,10 +207,17 @@ private:
 
     Smearing.set_Field(U);
 
+      std::cout <<GridLogMessage << "sizeof(U)         ---------->: "<< sizeof(U) <<std::endl;
+      //std::cout <<GridLogMessage << "U                 ---------->: "<< U <<std::endl;
+
+      std::cout <<GridLogMessage << "with_llr b4       ---------->: "<< with_llr     <<std::endl;
+      std::cout <<GridLogMessage << "HybridMonteCarlo call ------>: "<< __FUNCTION__ <<std::endl;
+
     HybridMonteCarlo<TheIntegrator> HMC(Parameters, MDynamics,
                                         Resources.GetSerialRNG(),
                                         Resources.GetParallelRNG(), 
-                                        Resources.GetObservables(), U);
+                                        Resources.GetObservables(), U,
+                                        with_llr);
 
     // Run it
     HMC.evolve();

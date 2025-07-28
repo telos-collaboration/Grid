@@ -97,6 +97,9 @@ class HybridMonteCarlo {
 private:
   const HMCparameters Params;
 
+  // llr switch passed in the constructor of
+  bool with_llr = false;
+
   typedef typename IntegratorType::Field Field;
   typedef typename IntegratorType::FieldImplementation FieldImplementation;
   typedef std::vector< HmcObservable<Field> * > ObsListType;
@@ -237,16 +240,24 @@ private:
 
 public:
   /////////////////////////////////////////
+  // public variables
+  /////////////////////////////////////////
+
+  /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
   HybridMonteCarlo(HMCparameters _Pams, IntegratorType &_Int,
                    GridSerialRNG &_sRNG, GridParallelRNG &_pRNG, 
-                   ObsListType _Obs, Field &_U)
-    : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U) {}
+                   ObsListType _Obs, Field &_U,
+                   bool _with_llr)
+    : Params(_Pams), TheIntegrator(_Int), sRNG(_sRNG), pRNG(_pRNG), Observables(_Obs), Ucur(_U), with_llr(_with_llr) {}
   ~HybridMonteCarlo(){};
 
   void evolve(void) {
     Real DeltaH;
+
+      std::cout <<GridLogMessage << "with_llr in       ---------->: "<< with_llr     <<std::endl;
+      std::cout <<GridLogMessage << "HybridMonteCarlo  ---------->: "<< __FUNCTION__ <<std::endl;
 
     Field Ucopy(Ucur.Grid());
 
