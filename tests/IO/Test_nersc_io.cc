@@ -44,7 +44,7 @@ int main (int argc, char ** argv)
   Coordinate mpi_layout  = GridDefaultMpi();
   //std::vector<int> latt_size  ({48,48,48,96});
   //std::vector<int> latt_size  ({32,32,32,32});
-  Coordinate latt_size  ({16,16,16,32});
+  Coordinate latt_size  ({24,24,24,32});
   Coordinate clatt_size  ({4,4,4,8});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
@@ -62,7 +62,7 @@ int main (int argc, char ** argv)
   sRNGa.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
   std::cout <<GridLogMessage<< " ...done "<<std::endl;
 
-  std::string rfile("./ckpoint_rng.4000");
+  std::string rfile("/home/dp208/dp208/dc-forz1/grid_dwf/Grid/build-gpu3/HMC/dwf_trials_verybigR1/ckpoint_EODWF_rng.520");
   FieldMetaData rngheader;
   NerscIO::writeRNGState(sRNGa,pRNGa,rfile);
   NerscIO::readRNGState (sRNGb,pRNGb,rngheader,rfile);
@@ -87,8 +87,7 @@ int main (int argc, char ** argv)
   SU<Nc>::HotConfiguration(pRNGa,Umu);
 
   FieldMetaData header;
-  std::string file("./ckpoint_lat.4000");
-
+  std::string file("/home/dp208/dp208/dc-forz1/grid_dwf/Grid/build-gpu3/HMC/dwf_trials_verybigR1/ckpoint_EODWF_lat.520");
   int precision32 = 0;
   int tworow      = 0;
   NerscIO::writeConfiguration(Umu,file,tworow,precision32);
@@ -115,15 +114,15 @@ int main (int argc, char ** argv)
   LatticeComplex cPlaq(&Coarse);
 
   Plaq = Zero();
-#if 1
+
   for(int mu=1;mu<Nd;mu++){
     for(int nu=0;nu<mu;nu++){
       Plaq = Plaq + trace(U[mu]*Cshift(U[nu],mu,1)*adj(Cshift(U[mu],nu,1))*adj(U[nu]));
     }
   }
-#endif
+
   double vol = Fine.gSites();
-  Complex PlaqScale(1.0/vol/6.0/3.0);
+  Complex PlaqScale(1.0/vol/6.0/4.0);
 
   std::vector<TComplex> Plaq_T(orthosz);
   sliceSum(Plaq,Plaq_T,Nd-1);
@@ -159,8 +158,8 @@ int main (int argc, char ** argv)
 
   const string stNc   = to_string( Nc   ) ;
   const string stNcM1 = to_string( Nc-1 ) ;
-  std::string clone2x3("./ckpoint_clone"+stNcM1+"x"+stNc+".4000");
-  std::string clone3x3("./ckpoint_clone"+stNc+"x"+stNc+".4000");
+  std::string clone2x3("./ckpoint_clone2"+stNcM1+"x"+stNc+".4000");
+  std::string clone3x3("./ckpoint_clone2"+stNc+"x"+stNc+".4000");
 
   NerscIO::writeConfiguration(Umu,clone3x3,0,precision32);
   NerscIO::writeConfiguration(Umu,clone2x3,1,precision32);
