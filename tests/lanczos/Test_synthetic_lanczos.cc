@@ -143,12 +143,15 @@ int main (int argc, char ** argv)
     std::vector<RealD>          eval(Nm);
     std::vector<LatticeComplex> evec(Nm,grid);
     IRL.calc(eval,evec,src, Nconv);
+    std::cout << eval << std::endl;
   }
   
   {
-    std::vector<RealD>          eval(Nm);
-    std::vector<LatticeComplex> evec(Nm,grid);
-    ChebyIRL.calc(eval,evec,src, Nconv);
+    std::cout << "Computing ChebyIRL" << std::endl;	  
+    std::vector<RealD>          eval2(Nm);
+    std::vector<LatticeComplex> evec2(Nm,grid);
+    ChebyIRL.calc(eval2,evec2,src, Nconv);
+    std::cout << eval2 << std::endl;
   }
 
   Grid_finalize();
