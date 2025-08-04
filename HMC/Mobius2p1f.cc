@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   CheckpointerParameters CPparams;
   CPparams.config_prefix = "ckpoint_EODWF_lat";
   CPparams.rng_prefix    = "ckpoint_EODWF_rng";
-  CPparams.saveInterval  = 10;
+  CPparams.saveInterval  = 1;
   CPparams.format        = "IEEE64BIG";
   TheHMC.Resources.LoadNerscCheckpointer(CPparams);
 
@@ -85,14 +85,14 @@ int main(int argc, char **argv) {
   TheHMC.Resources.AddObservable<PlaqObs>();
   //////////////////////////////////////////////
 
-  const int Ls      = 16;
+  const int Ls      = 8;
   Real beta         = 2.13;
-  Real light_mass   = 0.01;
+  Real light_mass   = 0.0001;
   Real strange_mass = 0.04;
   Real pv_mass      = 1.0;
   RealD M5  = 1.8;
-  RealD b   = 1.0; // Scale factor two
-  RealD c   = 0.0;
+  RealD b   = 1.5; // Scale factor two
+  RealD c   = 0.5;
 
   OneFlavourRationalParams OFRp;
   OFRp.lo       = 1.0e-2;
