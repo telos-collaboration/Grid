@@ -82,7 +82,7 @@ public:
       arg = GridCmdOptionPayload(argv, argv + argc, "--StartingType");
 
       if (arg != "HotStart" && arg != "ColdStart" && arg != "TepidStart" &&
-          arg != "CheckpointStart") {
+          arg != "CheckpointStart" && arg != "CheckpointStartReseed") {
         std::cout << GridLogError << "Unrecognized option in --StartingType\n";
         std::cout
 	  << GridLogError
