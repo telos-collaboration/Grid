@@ -47,7 +47,7 @@ public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
   explicit WilsonFlowBase(unsigned int meas_interval =1):
-    SG(WilsonGaugeAction<Gimpl>(3.0)) {
+    SG(WilsonGaugeAction<Gimpl>(6.9)) {
     // WilsonGaugeAction with beta 3.0
     setDefaultMeasurements(meas_interval);
   }
@@ -140,7 +140,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 template <class Gimpl>
 RealD WilsonFlowBase<Gimpl>::energyDensityPlaquette(const RealD t, const GaugeField& U){
-  static WilsonGaugeAction<Gimpl> SG(3.0);
+  static WilsonGaugeAction<Gimpl> SG(6.9);
   return 2.0 * t * t * SG.S(U)/U.Grid()->gSites();
 }
 

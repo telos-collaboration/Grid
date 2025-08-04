@@ -28,13 +28,32 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+
+struct hmc_params {
+    std::string input_file;
+};
+
+
+
+hmc_params ReadCommandLineHMC(int argc, char** argv) {
+  hmc_params HMCParams;
+  if (Grid::GridCmdOptionExists(argv, argv + argc, "--inputfile")) {
+     HMCParams.input_file = Grid::GridCmdOptionPayload(argv, argv + argc, "--inputfile");
+  } else {
+    std::cout << Grid::GridLogError << "--inputfile must be specified" << std::endl;
+  }
+
+
+  return HMCParams;
+}
+
+
 namespace Grid{
   struct WFParameters: Serializable {
     GRID_SERIALIZABLE_CLASS_MEMBERS(WFParameters,
             int, steps,
             double, step_size,
-            int, meas_interval,
-            double, maxTau); // for the adaptive algorithm
+            int, meas_interval);
        
 
     template <class ReaderClass >
@@ -63,7 +82,8 @@ namespace Grid{
 int main(int argc, char **argv) {
   using namespace Grid;
    ;
-
+  
+  hmc_params HMCParams = ReadCommandLineHMC(argc, argv);
   Grid_init(&argc, &argv);
   GridLogLayout();
 
@@ -73,20 +93,24 @@ int main(int argc, char **argv) {
   GridCartesian               Grid(latt_size, simd_layout, mpi_layout);
   GridRedBlackCartesian     RBGrid(&Grid);
 
+
   std::vector<int> seeds({1, 2, 3, 4, 5});
   GridSerialRNG sRNG;
   GridParallelRNG pRNG(&Grid);
   pRNG.SeedFixedIntegers(seeds);
 
-  LatticeGaugeField Umu(&Grid), Uflow(&Grid);
-  SU<Nc>::HotConfiguration(pRNG, Umu);
-  
+  //LatticeGaugeField Umu(&Grid), Uflow(&Grid);
+  SpFundamentalRepresentation::LatticeField Umu(&Grid), Uflow(&Grid);
+  //SU<Nc>::HotConfiguration(pRNG, Umu);
+  Sp<Nc>::HotConfiguration(pRNG, Umu);
+
   typedef Grid::XmlReader       Serialiser;
-  Serialiser Reader("input.xml");
+  //Serialiser Reader("input.xml");
+  Serialiser Reader(HMCParams.input_file);
   WFParameters WFPar(Reader);
   ConfParameters CPar(Reader);
   CheckpointerParameters CPPar(CPar.conf_prefix, CPar.rng_prefix);
-  BinaryHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
+  NerscHmcCheckpointer<PeriodicGimplR> CPBin(CPPar);
 
   for (int conf = CPar.StartConfiguration; conf <= CPar.EndConfiguration; conf+= CPar.Skip){
 
@@ -96,19 +120,13 @@ int main(int argc, char **argv) {
   std::cout << GridLogMessage << "Initial plaquette: "
     << WilsonLoops<PeriodicGimplR>::avgPlaquette(Umu) << std::endl;
 
-  int t=WFPar.maxTau;
-  WilsonFlowAdaptive<PeriodicGimplR> WF(WFPar.step_size, WFPar.maxTau,
-					1.0e-4,
+  WilsonFlow<PeriodicGimplR> WF(WFPar.step_size, WFPar.steps,
 					WFPar.meas_interval);
 
   WF.smear(Uflow, Umu);
 
   RealD WFlow_plaq = WilsonLoops<PeriodicGimplR>::avgPlaquette(Uflow);
-  RealD WFlow_TC   = WilsonLoops<PeriodicGimplR>::TopologicalCharge(Uflow);
-  RealD WFlow_T0   = WF.energyDensityPlaquette(t,Uflow);
   std::cout << GridLogMessage << "Plaquette          "<< conf << "   " << WFlow_plaq << std::endl;
-  std::cout << GridLogMessage << "T0                 "<< conf << "   " << WFlow_T0 << std::endl;
-  std::cout << GridLogMessage << "TopologicalCharge  "<< conf << "   " << WFlow_TC   << std::endl;
 
   std::cout<< GridLogMessage << " Admissibility check:\n";
   const double sp_adm = 0.067;                // admissible threshold
