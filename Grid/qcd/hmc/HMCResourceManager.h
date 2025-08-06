@@ -32,38 +32,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <unordered_map>
 
-// One function per Checkpointer, use a macro to simplify
-#define RegisterLoadCheckPointerFunction(NAME)                           \
-  void Load##NAME##Checkpointer(const CheckpointerParameters& Params_) { \
-    if (!have_CheckPointer) {                                            \
-      std::cout << GridLogDebug << "Loading Checkpointer " << #NAME      \
-                << std::endl;                                            \
-      CP = std::unique_ptr<CheckpointerBaseModule>(                      \
-        new NAME##CPModule<ImplementationPolicy>(Params_));              \
-      have_CheckPointer = true;                                          \
-    } else {                                                             \
-      std::cout << GridLogError << "Checkpointer already loaded "        \
-                << std::endl;                                            \
-      exit(1);                                                           \
-    }                                                                    \
-  }
-
-#define RegisterLoadCheckPointerMetadataFunction(NAME)                   \
-  template < class Metadata >                                            \
-  void Load##NAME##Checkpointer(const CheckpointerParameters& Params_, const Metadata& M_) { \
-    if (!have_CheckPointer) {                                            \
-      std::cout << GridLogDebug << "Loading Metadata Checkpointer " << #NAME      \
-                << std::endl;                                            \
-      CP = std::unique_ptr<CheckpointerBaseModule>(                      \
-        new NAME##CPModule<ImplementationPolicy, Metadata >(Params_, M_));   \
-      have_CheckPointer = true;                                          \
-    } else {                                                             \
-      std::cout << GridLogError << "Checkpointer already loaded "        \
-                << std::endl;                                            \
-      exit(1);                                                           \
-    }                                                                    \
-  }
-
 NAMESPACE_BEGIN(Grid);
 
 // HMC Resource manager
@@ -285,11 +253,44 @@ public:
     }
   }
 
-  RegisterLoadCheckPointerFunction(Binary);
-  RegisterLoadCheckPointerFunction(Nersc);
+  template<template<class CPImplementationPolicy> class CheckpointModule>
+  void LoadCheckpointer(const CheckpointerParameters& Params_) {
+    typedef CheckpointModule<ImplementationPolicy> CPM;
+    if (!have_CheckPointer)
+    {
+      std::cout << GridLogDebug << "Loading Checkpointer " << CPM::Name << std::endl;
+      CP = std::unique_ptr<CheckpointerBaseModule>(new CPM(Params_));
+      have_CheckPointer = true;
+    } else {
+      std::cout << GridLogError << "Checkpointer already loaded " << std::endl;
+      exit(1);
+    }
+  }
+  
+  template<template<class CPImplementationPolicy, class Metadata> class CheckpointModule, class Metadata>
+  void LoadCheckpointer(const CheckpointerParameters& Params_, const Metadata& M_) {
+    typedef CheckpointModule<ImplementationPolicy, Metadata> CPM;
+    if (!have_CheckPointer) {
+      std::cout << GridLogDebug << "Loading Metadata Checkpointer " << CPM::Name << std::endl;
+      CP = std::unique_ptr<CheckpointerBaseModule>( new CPM(Params_, M_));
+      have_CheckPointer = true;
+    } else {
+      std::cout << GridLogError << "Checkpointer already loaded " << std::endl;
+      exit(1);
+    }
+  }
+
+  void LoadBinaryCheckpointer(const CheckpointerParameters& Params_) { LoadCheckpointer<BinaryCPModule>(Params_); }
+  void LoadNerscCheckpointer (const CheckpointerParameters& Params_) { LoadCheckpointer<NerscCPModule>(Params_); }
 #ifdef HAVE_LIME
-  RegisterLoadCheckPointerFunction(ILDG);
-  RegisterLoadCheckPointerMetadataFunction(Scidac);
+  void LoadILDGCheckpointer  (const CheckpointerParameters& Params_) { LoadCheckpointer<ILDGCPModule>(Params_); }
+
+  template<class Metadata>
+  void LoadScidacCheckpointer(const CheckpointerParameters& Params_, const Metadata&  M_) 
+  { 
+    LoadCheckpointer<ScidacCPModule, Metadata>(Params_, M_); 
+  }
+
 #endif
 
   ////////////////////////////////////////////////////////

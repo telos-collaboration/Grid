@@ -96,7 +96,8 @@ class BinaryCPModule: public CheckPointerModule< ImplementationPolicy> {
   virtual void initialize(){
     this->CheckPointPtr.reset(new BinaryHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
-
+public:
+  constexpr static const char* const Name = "Binary";
 };
 
 
@@ -109,7 +110,8 @@ class NerscCPModule: public CheckPointerModule< ImplementationPolicy> {
   virtual void initialize(){
     this->CheckPointPtr.reset(new NerscHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
-
+public:
+  constexpr static const char* const Name = "Nersc";
 };
 
 
@@ -124,7 +126,8 @@ class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
   virtual void initialize(){
     this->CheckPointPtr.reset(new ILDGHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
-
+public:
+  constexpr static const char* const Name = "ILDG";
 };
 
 template<class ImplementationPolicy, class Metadata>
@@ -140,6 +143,9 @@ public:
   ScidacCPModule(typename CPBase::APar Par, Metadata M_):M(M_), CPBase(Par) {}
   template <class ReaderClass>
   ScidacCPModule(Reader<ReaderClass>& Reader) : Parametrized<typename CPBase::APar>(Reader), M(Reader){};
+public:
+  constexpr static const char* const Name = "Scidac";
+  
 };
 #endif
 
