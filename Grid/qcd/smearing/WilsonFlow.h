@@ -47,8 +47,7 @@ public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
   explicit WilsonFlowBase(unsigned int meas_interval =1):
-    SG(WilsonGaugeAction<Gimpl>(3.0)) {
-    // WilsonGaugeAction with beta 3.0
+    SG(WilsonGaugeAction<Gimpl>(Gimpl::num_colours)) {
     setDefaultMeasurements(meas_interval);
   }
     
@@ -138,9 +137,11 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 // Implementations
 ////////////////////////////////////////////////////////////////////////////////
+
+//Compute t^E <E(t)> for time from the plaquette form
 template <class Gimpl>
 RealD WilsonFlowBase<Gimpl>::energyDensityPlaquette(const RealD t, const GaugeField& U){
-  static WilsonGaugeAction<Gimpl> SG(3.0);
+  static WilsonGaugeAction<Gimpl> SG(Gimpl::num_colours);
   return 2.0 * t * t * SG.S(U)/U.Grid()->gSites();
 }
 
@@ -252,11 +253,6 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const{
 
   out = in;
   RealD taus = 0.;
-
-  // Perform initial t=0 measurements
-  for(auto const &meas : this->functions)
-    meas.second(0,taus,out);
-  
   for (unsigned int step = 1; step <= Nstep; step++) { //step indicates the number of smearing steps applied at the time of measurement
     auto start = std::chrono::high_resolution_clock::now();
     evolve_step(out, taus);
@@ -341,11 +337,6 @@ void WilsonFlowAdaptive<Gimpl>::smear(GaugeField& out, const GaugeField& in) con
   RealD taus = 0.;
   RealD eps = init_epsilon;
   unsigned int step = 0;
-
-  // Perform initial t=0 measurements
-  for(auto const &meas : this->functions)
-    meas.second(step,taus,out);
-  
   do{
     int step_success = evolve_step_adaptive(out, taus, eps); 
     step += step_success; //step will not be incremented if the integration step fails
