@@ -46,6 +46,13 @@ protected:
 public:
   INHERIT_GIMPL_TYPES(Gimpl)
 
+//Define the action used to evolve the plaquettes
+//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 1.4)
+//V'(t) = -g^2 * ( d/dVt S[Vt](g) ) * Vt
+//      = -g^2 * ( d/dVt (1/g^2 * sum_p Re tr{ 1 - Vt(p) } ) ) * Vt
+//      = - d/dVt ( sum_p ( Nc - Re tr Vt(p) ) * Vt
+//      = - d/dVt ( Nc * sum_p ( 1 - Re tr Vt(p)/Nc ) ) * Vt
+//      = - d/dVt SG[Vt](Nc) * Vt
   explicit WilsonFlowBase(unsigned int meas_interval =1):
     SG(WilsonGaugeAction<Gimpl>(Gimpl::num_colours)) {
     setDefaultMeasurements(meas_interval);
@@ -138,7 +145,13 @@ public:
 // Implementations
 ////////////////////////////////////////////////////////////////////////////////
 
-//Compute t^E <E(t)> for time from the plaquette form
+//Compute t^2 <E(t)> for time from the plaquette form
+//(Lüscher: https://arxiv.org/pdf/1006.4518 eq. 3.1)
+//E(t) = 2 * sum_p Retr{ 1 - Vt(p) } =
+//     = 2 * sum_p ( Nc - Retr Vt(p) ) =
+//     = 2 * Nc * sum_p ( 1 - Retr Vt(p)/Nc )
+//     = 2 * SG[Vt](Nc)
+//We divide by the volume to get an energy density per site, as is convention
 template <class Gimpl>
 RealD WilsonFlowBase<Gimpl>::energyDensityPlaquette(const RealD t, const GaugeField& U){
   static WilsonGaugeAction<Gimpl> SG(Gimpl::num_colours);
@@ -253,6 +266,11 @@ void WilsonFlow<Gimpl>::smear(GaugeField& out, const GaugeField& in) const{
 
   out = in;
   RealD taus = 0.;
+
+  // Perform initial t=0 measurements
+  for(auto const &meas : this->functions)
+    meas.second(0,taus,out);
+  
   for (unsigned int step = 1; step <= Nstep; step++) { //step indicates the number of smearing steps applied at the time of measurement
     auto start = std::chrono::high_resolution_clock::now();
     evolve_step(out, taus);
@@ -337,6 +355,11 @@ void WilsonFlowAdaptive<Gimpl>::smear(GaugeField& out, const GaugeField& in) con
   RealD taus = 0.;
   RealD eps = init_epsilon;
   unsigned int step = 0;
+
+  // Perform initial t=0 measurements
+  for(auto const &meas : this->functions)
+    meas.second(step,taus,out);
+  
   do{
     int step_success = evolve_step_adaptive(out, taus, eps); 
     step += step_success; //step will not be incremented if the integration step fails
