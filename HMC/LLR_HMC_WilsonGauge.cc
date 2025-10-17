@@ -29,12 +29,38 @@ directory
 /*  END LEGAL */
 #include <Grid/Grid.h>
 
+// Application includes
+
+#include <Grid/qcd/llr_hmc/llr_hmc.h>
+
 int main(int argc, char **argv) {
     std::cout<<"Start LLR-HMC-WilsonGauge.cc" <<std::endl;
     // Initializing Grid library
     Grid::Grid_init(&argc, &argv);
     Grid::GridLogLayout();
 
+    // Instantiating the inout parameter structure as a pointer.
+    namespace_LLR::llrparams* s_llrparams_in = (struct namespace_LLR::llrparams*)malloc(sizeof(struct namespace_LLR::llrparams));
+    // Initialising the structure
+    s_llrparams_in->nrm = 700;
+    s_llrparams_in->nth = 300;
+    s_llrparams_in->it = 1;
+    s_llrparams_in->umb_RM_freq = 1;
+    s_llrparams_in->umb_meas_freq = 1;
+    s_llrparams_in->umb_therm_freq = 1;
+    s_llrparams_in->cfactor = 1;
+    s_llrparams_in->starta = 7.60982;
+    s_llrparams_in->a = 1.0;
+    s_llrparams_in->S0 = 173088.00000;
+    s_llrparams_in->dS = 4.51765;
+
+    namespace_LLR::llr_hmc* p_llr_hmc_main_o = new namespace_LLR::llr_hmc(s_llrparams_in);
+
+    // printing the structure to see how it is constructed.
+    p_llr_hmc_main_o->init_robbinsmonro(s_llrparams_in);
+    p_llr_hmc_main_o->print_s_llrparams(s_llrparams_in);
+
+    // Start of the main commands.
     bool with_llr = false;
     std::cout<<"<---- with_llr (initialized)     ---->: " << with_llr << std::endl;
     std::cout<<"<---- llr_config                 ---->: " << llr_config << std::endl;
@@ -52,7 +78,7 @@ int main(int argc, char **argv) {
         HMCWrapperSpLLR TheHMC;
 #elif !defined(Sp2n_config)
         // SU(N) representation
-        typedef Grid::GenericHMCRunnerLLR <Grid::MinimumNorm2> HMCWrapperLLR;  // Uses the default minimum norm
+        typedef Grid::GenericHMCRunnerLLR <Grid::MinimumNorm2> HMCWrapperLLR;
         HMCWrapperLLR TheHMC;
 #endif
         // Grid from the command line
@@ -82,8 +108,8 @@ int main(int argc, char **argv) {
         typedef Grid::TopologicalChargeMod<HMCWrapperSpLLR::ImplPolicy> QObs;
         TheHMC.Resources.AddObservable<PlaqObs>();
         Grid::TopologyObsParameters TopParams;
-        TopParams.interval = 5;
-        TopParams.do_smearing = true;
+        TopParams.interval = 1;
+        TopParams.do_smearing = false;
         TopParams.Smearing.init_step_size = 0.01;
         TopParams.Smearing.tolerance = 1e-5;
         //TopParams.Smearing.steps = 200;
@@ -99,19 +125,24 @@ int main(int argc, char **argv) {
         // that have a complex construction
         // standard
         Grid::RealD beta = 2.4;
-        Grid::SpWilsonGaugeActionR Waction(beta);
+
+        //Grid::SpWilsonGaugeActionR Waction(beta);
+
+        //typedef Grid::LLRGaugeAction<Grid::SpWilsonGaugeActionR , Grid::PeriodicGimplR> LLRGaugeActionR;
+        typedef Grid::LLRGaugeAction<Grid::WilsonGaugeActionR , Grid::PeriodicGimplR> LLRGaugeActionR;
+
+        LLRGaugeActionR LLRaction(s_llrparams_in, beta);
 
         Grid::ActionLevel<HMCWrapperSpLLR::Field> Level1(1);
-        Level1.push_back(&Waction);
+        Level1.push_back(&LLRaction);
         //Level1.push_back(WGMod.getPtr());
         TheHMC.TheAction.push_back(Level1);
         /////////////////////////////////////////////////////////////
 
         // HMC parameters are serialisable
-        TheHMC.Parameters.MD.MDsteps = 10;
+        TheHMC.Parameters.MD.MDsteps = 20;
         TheHMC.Parameters.MD.trajL   = 1.0;
 
-        TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
         TheHMC.Run();  // no smearing
 
 

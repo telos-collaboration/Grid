@@ -179,21 +179,33 @@ private:
     }
 
     TheIntegrator.reset_timer();
-    
+
+      std::cout <<GridLogMessage << "\x1b[31m"<< "with_llr b4 Integrator.refresh ---->: "<< with_llr<<"\x1b[0m"
+                <<std::endl;
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // set U and initialize P and phi's
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     std::cout << GridLogMessage << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "Refresh momenta and pseudofermions";
-    TheIntegrator.refresh(U, sRNG, pRNG);  
+    std::cout << GridLogMessage << "Refresh momenta and pseudofermions"<< std::endl;
+    TheIntegrator.refresh(U, sRNG, pRNG);
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      // initial state action
+      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      if (with_llr) {
+          RealD S0 = TheIntegrator.Sinitial(U);
+          std::cout << GridLogMessage << "\x1b[35m" << "   S0 from Sinitial(U)             ----->: " << S0 << "\x1b[0m"<< std::endl;
+          RealD S0_llr = TheIntegrator.Sinitial_llr(U);
+          std::cout << GridLogMessage << "\x1b[35m" << "   S0_llr from Sinitial_llr(U)     ----->: " << S0_llr << "\x1b[0m"<< std::endl;
+      }
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // initial state action
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     std::cout << GridLogMessage << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "Compute initial action";
-    RealD H0 = TheIntegrator.Sinitial(U);  
+    std::cout << GridLogMessage << "Compute initial action"<< std::endl;
+     RealD H0 = TheIntegrator.Sinitial(U);
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 
     std::streamsize current_precision = std::cout.precision();
@@ -202,7 +214,7 @@ private:
     std::cout.precision(current_precision);
 
     std::cout << GridLogMessage << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << " Molecular Dynamics evolution ";
+    std::cout << GridLogMessage << " Molecular Dynamics evolution "<< std::endl;
     TheIntegrator.integrate(U);
     std::cout << GridLogMessage << "--------------------------------------------------\n";
 
@@ -210,12 +222,17 @@ private:
     // updated state action
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     std::cout << GridLogMessage << "--------------------------------------------------\n";
-    std::cout << GridLogMessage << "Compute final action";
-    RealD H1 = TheIntegrator.S(U);  
-    std::cout << GridLogMessage << "--------------------------------------------------\n";
+    std::cout << GridLogMessage << "Compute final action"<< std::endl;
+    RealD H1 = TheIntegrator.S(U);
 
+      if (with_llr) {
+          RealD S1 = TheIntegrator.S_llr(U);
+          std::cout << GridLogMessage << "\x1b[35m" << "S1 from S_llr(U)            --->: " << S1 << "\x1b[0m"
+                    << std::endl;
 
-    
+          std::cout << GridLogMessage << "--------------------------------------------------\n";
+
+      }
     ///////////////////////////////////////////////////////////
     if(0){
       std::cout << "------------------------- Reversibility test" << std::endl;
@@ -278,11 +295,14 @@ public:
       double t0=usecond();
       Ucopy = Ucur;
 
+        std::cout <<GridLogMessage << "\x1b[33m"<<"DeltaH b4 evolve_hmc_step      --------->: "<< DeltaH <<"\x1b[0m"<<std::endl;
       DeltaH = evolve_hmc_step(Ucopy);
+        std::cout <<GridLogMessage << "\x1b[33m"<<"DeltaH                         --------->: "<< DeltaH <<"\x1b[0m"<<std::endl;
       // Metropolis-Hastings test
       bool accept = true;
       if (Params.MetropolisTest && traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
         accept = metropolis_test(DeltaH);
+          std::cout <<GridLogMessage << "DeltaH      (accept) ---------->: "<< DeltaH <<std::endl;
       } else {
       	std::cout << GridLogHMC << "Skipping Metropolis test" << std::endl;
       }

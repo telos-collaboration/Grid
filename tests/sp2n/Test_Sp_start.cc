@@ -72,7 +72,7 @@ bool is_element_of_sp2n_group(const T& U) {
 int main (int argc, char **argv)
 {
     Grid_init(&argc,&argv);
-    
+
     Coordinate latt_size   = GridDefaultLatt();
     Coordinate simd_layout = GridDefaultSimd(Nd,vComplex::Nsimd());
     Coordinate mpi_layout  = GridDefaultMpi();
@@ -102,9 +102,9 @@ int main (int argc, char **argv)
     Sp<Nc>::TepidConfiguration(pRNG,Umu);
     U = PeekIndex<LorentzIndex>(Umu,1);
     assert(is_element_of_sp2n_group(U));
-    
+
     Grid_finalize();
 
 
-    }
+}
 

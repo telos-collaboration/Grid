@@ -32,6 +32,9 @@ directory
 #include <Grid/qcd/action/gauge/GaugeImplementations.h>
 #include <Grid/qcd/utils/WilsonLoops.h>
 #include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
+
+#include <Grid/qcd/action/gauge/LLRGaugeAction.h>
+
 #include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
 
 NAMESPACE_BEGIN(Grid);
@@ -42,26 +45,33 @@ typedef WilsonGaugeAction<PeriodicGimplD>          WilsonGaugeActionD;
 typedef WilsonGaugeAction<SpPeriodicGimplR>        SpWilsonGaugeActionR;
 typedef WilsonGaugeAction<SpPeriodicGimplF>        SpWilsonGaugeActionF;
 typedef WilsonGaugeAction<SpPeriodicGimplD>        SpWilsonGaugeActionD;
+
+//typedef LLRWilsonGaugeAction<PeriodicGimplR>          LLRWilsonGaugeActionR;
+
 typedef PlaqPlusRectangleAction<PeriodicGimplR>    PlaqPlusRectangleActionR;
 typedef PlaqPlusRectangleAction<PeriodicGimplF>    PlaqPlusRectangleActionF;
 typedef PlaqPlusRectangleAction<PeriodicGimplD>    PlaqPlusRectangleActionD;
+
 typedef IwasakiGaugeAction<PeriodicGimplR>         IwasakiGaugeActionR;
 typedef IwasakiGaugeAction<PeriodicGimplF>         IwasakiGaugeActionF;
 typedef IwasakiGaugeAction<PeriodicGimplD>         IwasakiGaugeActionD;
+
 typedef SymanzikGaugeAction<PeriodicGimplR>        SymanzikGaugeActionR;
 typedef SymanzikGaugeAction<PeriodicGimplF>        SymanzikGaugeActionF;
 typedef SymanzikGaugeAction<PeriodicGimplD>        SymanzikGaugeActionD;
 
-
 typedef WilsonGaugeAction<ConjugateGimplR>          ConjugateWilsonGaugeActionR;
 typedef WilsonGaugeAction<ConjugateGimplF>          ConjugateWilsonGaugeActionF;
 typedef WilsonGaugeAction<ConjugateGimplD>          ConjugateWilsonGaugeActionD;
+
 typedef PlaqPlusRectangleAction<ConjugateGimplR>    ConjugatePlaqPlusRectangleActionR;
 typedef PlaqPlusRectangleAction<ConjugateGimplF>    ConjugatePlaqPlusRectangleActionF;
 typedef PlaqPlusRectangleAction<ConjugateGimplD>    ConjugatePlaqPlusRectangleActionD;
+
 typedef IwasakiGaugeAction<ConjugateGimplR>         ConjugateIwasakiGaugeActionR;
 typedef IwasakiGaugeAction<ConjugateGimplF>         ConjugateIwasakiGaugeActionF;
 typedef IwasakiGaugeAction<ConjugateGimplD>         ConjugateIwasakiGaugeActionD;
+
 typedef SymanzikGaugeAction<ConjugateGimplR>        ConjugateSymanzikGaugeActionR;
 typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeActionF;
 typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;

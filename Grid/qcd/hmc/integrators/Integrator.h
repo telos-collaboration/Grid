@@ -34,6 +34,8 @@ directory
 
 #include <memory>
 
+#include "Grid/qcd/llr_hmc/llr_hmc.h"
+
 NAMESPACE_BEGIN(Grid);
 
 class IntegratorParameters: Serializable {
@@ -144,6 +146,9 @@ public:
       MemoryManager::Print();
 
       auto name = as[level].actions.at(a)->action_name();
+        std::cout <<GridLogIntegrator << "\x1b[31m"<<"Action name action_name() ----->: "<< name <<"\x1b[0m"<<std::endl;
+        std::cout <<GridLogIntegrator << "\x1b[32m"<<"Fdt_max_average()         ----->: "<< as[level].actions.at(a)->Fdt_max_average() <<"\x1b[0m"<<std::endl;
+        std::cout <<GridLogIntegrator << "\x1b[36m"<<"Fdt_norm_average()        ----->: "<< as[level].actions.at(a)->Fdt_norm_average() <<"\x1b[0m"<<std::endl;
 
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
@@ -162,7 +167,7 @@ public:
       Real impulse_max = force_max * ep * HMC_MOMENTUM_DENOMINATOR;    
 
       as[level].actions.at(a)->deriv_log(force_abs,force_max,impulse_abs,impulse_max);
-      
+
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] dt           : " << ep <<" "<<name<<std::endl;
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force average: " << force_abs <<" "<<name<<std::endl;
       std::cout << GridLogIntegrator<< "["<<level<<"]["<<a<<"] Force max    : " << force_max <<" "<<name<<std::endl;
@@ -484,6 +489,35 @@ public:
     return H;
   }
 
+  RealD S_llr(Field& U) {
+      assert(as.size()==LevelForces.size());
+      std::cout << GridLogIntegrator << "Integrator action for LLR\n";
+
+      RealD S = 0.0;
+
+      // Actions
+      for (int level = 0; level < as.size(); ++level) {
+          for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+
+              MemoryManager::Print();
+              // get gauge field from the SmearingPolicy and
+              // based on the boolean is_smeared in actionID
+              std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
+              as[level].actions.at(actionID)->S_timer_start();
+              S = as[level].actions.at(actionID)->S(Smearer);
+              as[level].actions.at(actionID)->S_timer_stop();
+              std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] S = " << S << std::endl;
+              //H += Hterm;
+              MemoryManager::Print();
+
+          }
+          as[level].apply(S_hireps, Representations, level, S);
+      }
+
+      return S;
+  }
+
+
   struct _Sinitial {
     template <class FieldType, class Repr>
     void operator()(std::vector<Action<FieldType>*> repr_set, Repr& Rep, int level, RealD& H) {
@@ -499,7 +533,32 @@ public:
     }
   } Sinitial_hireps{};
 
-  RealD Sinitial(Field& U) 
+  // LLR- implementation
+  RealD Sinitial_llr(Field& U) {
+      std::cout << GridLogIntegrator << "Integrator initial action for LLR\n";
+      RealD S0 = 0.0;
+
+
+      // Actions
+      for (int level = 0; level < as.size(); ++level) {
+          for (int actionID = 0; actionID < as[level].actions.size(); ++actionID) {
+              // get gauge field from the SmearingPolicy and
+              // based on the boolean is_smeared in actionID
+              std::cout << GridLogMessage << "S_llr [" << level << "][" << actionID << "] action eval " << std::endl;
+
+              as[level].actions.at(actionID)->S_timer_start();
+              S0 = as[level].actions.at(actionID)->S(Smearer);
+              as[level].actions.at(actionID)->S_timer_stop();
+
+              std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << S0 << std::endl;
+          }
+          as[level].apply(Sinitial_hireps, Representations, level, S0);
+      }
+
+      return S0;
+  }
+
+  RealD Sinitial(Field& U)
   {  // here also U not used
 
     std::cout << GridLogIntegrator << "Integrator initial action\n";
