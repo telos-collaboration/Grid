@@ -484,7 +484,7 @@ class GridLimeWriter : public BinaryIO
       err=limeWriterCloseRecord(LimeW);  assert(err>=0);
     }
     ////////////////////////////////////////
-    // Write checksum element, propagaing forward from the BinaryIO
+    // Write checksum element, propagating forward from the BinaryIO
     // Always pair a checksum with a binary object, and close message
     ////////////////////////////////////////
     scidacChecksum checksum;
@@ -620,7 +620,7 @@ class IldgWriter : public ScidacWriter {
   {
     uint64_t PayloadSize = LFN.size();
     int err;
-    createLimeRecordHeader(ILDG_DATA_LFN, 0 , 0, PayloadSize);
+    createLimeRecordHeader(ILDG_DATA_LFN, 1 , 1, PayloadSize);
     err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize,LimeW); assert(err>=0);
     err=limeWriterCloseRecord(LimeW); assert(err>=0);
   }
@@ -631,7 +631,7 @@ class IldgWriter : public ScidacWriter {
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
   template <class stats = PeriodicGaugeStatistics>
-  void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,int sequence,std::string LFN,std::string description) 
+  void writeConfiguration(Lattice<vLorentzColourMatrixD> &Umu,int sequence,std::string LFN,std::string description, bool reducedStorage = false) 
   {
     GridBase * grid = Umu.Grid();
     typedef Lattice<vLorentzColourMatrixD> GaugeField;
@@ -661,17 +661,25 @@ class IldgWriter : public ScidacWriter {
 
     //////////////////////////////////////////////////////
     // Fill ILDG header data struct
+    // Needs to be able to figure out what type of field
+    // is being written and change ilgfmt.field accordngly
     //////////////////////////////////////////////////////
     ildgFormat ildgfmt ;
     const std::string stNC = std::to_string( Nc ) ;
     ildgfmt.field          = std::string("su"+stNC+"gauge");
 
+    if ( reducedStorage ) { 
+      ildgfmt.rows = Nc-1;
+    } else { 
+      ildgfmt.rows = Nc;
+    }
+ 
     if ( format == std::string("IEEE32BIG") ) { 
       ildgfmt.precision = 32;
     } else { 
       ildgfmt.precision = 64;
     }
-    ildgfmt.version = 1.0;
+    ildgfmt.version = 1.0; //update to 1.2
     ildgfmt.lx = header.dimension[0];
     ildgfmt.ly = header.dimension[1];
     ildgfmt.lz = header.dimension[2];
@@ -704,8 +712,9 @@ class IldgWriter : public ScidacWriter {
     writeLimeObject(1,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
     writeLimeObject(0,0,info,info.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
     writeLimeObject(0,0,ildgfmt,std::string("ildgFormat")   ,std::string(ILDG_FORMAT)); // rec
-    writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
+    //writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
     writeLimeLatticeBinaryObject(Umu,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
+    writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
     //    limeDestroyWriter(LimeW);
   }
 };

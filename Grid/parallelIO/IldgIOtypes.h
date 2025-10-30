@@ -150,6 +150,7 @@ public:
 				  double, version,
 				  std::string, field,
 				  int, precision,
+				  int, rows,
 				  int, lx,
 				  int, ly,
 				  int, lz,
