@@ -38,6 +38,10 @@ directory
 #include <sys/utsname.h>
 #include <unistd.h>
 
+//#include <sstream>
+//#include <Grid/pugixml/pugixml.h>
+//#include <Grid/GridCore.h>
+
 //C-Lime is a must have for this functionality
 extern "C" {  
 #include "lime.h"
@@ -630,8 +634,8 @@ class IldgWriter : public ScidacWriter {
   // Don't require scidac records EXCEPT checksum
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class stats = PeriodicGaugeStatistics>
-  void writeConfiguration(Lattice<vLorentzColourMatrixD> &Umu,int sequence,std::string LFN,std::string description, bool reducedStorage = false) 
+  template <class group_name = GroupName::SU, class stats = PeriodicGaugeStatistics, bool reducedStorage = false >
+  void writeConfiguration(Lattice<vLorentzColourMatrixD> &Umu,int sequence,std::string LFN,std::string description) 
   {
     GridBase * grid = Umu.Grid();
     typedef Lattice<vLorentzColourMatrixD> GaugeField;
@@ -665,21 +669,38 @@ class IldgWriter : public ScidacWriter {
     // is being written and change ilgfmt.field accordngly
     //////////////////////////////////////////////////////
     ildgFormat ildgfmt ;
-    const std::string stNC = std::to_string( Nc ) ;
-    ildgfmt.field          = std::string("su"+stNC+"gauge");
+    const std::string stNC = std::to_string(Nc) ;
 
-    if ( reducedStorage ) { 
-      ildgfmt.rows = Nc-1;
-    } else { 
-      ildgfmt.rows = Nc;
-    }
- 
+	// check which gauge group is being written	
+	is_su<group_name> is_su;
+	is_sp<group_name> is_sp;
+
+    if constexpr ( is_su.value ) {
+		std::cout << GridLogMessage << "is_su returned TRUE" << std::endl;
+		ildgfmt.field = std::string("su"+stNC+"gauge");
+	} else if constexpr ( is_sp.value ) {
+		std::cout << GridLogMessage << "is_sp returned TRUE" << std::endl;
+		ildgfmt.field = std::string("sp"+stNC+"gauge");
+	} else {
+		static_assert(is_su.value || is_sp.value, "Can't tell whether SU or Sp is being written!");
+	}
+
+	// populate 'rows' element accordingly
+    if constexpr( reducedStorage && is_su.value ) {
+        ildgfmt.rows = Nc-1 ; 
+    } else if constexpr( reducedStorage && is_sp.value ) {
+        ildgfmt.rows = Nc/2 ; 
+    } else {
+	 	ildgfmt.rows = Nc ;
+	}
+
     if ( format == std::string("IEEE32BIG") ) { 
       ildgfmt.precision = 32;
     } else { 
       ildgfmt.precision = 64;
     }
-    ildgfmt.version = 1.0; //update to 1.2
+
+    ildgfmt.version = 1.2; 
     ildgfmt.lx = header.dimension[0];
     ildgfmt.ly = header.dimension[1];
     ildgfmt.lz = header.dimension[2];
@@ -753,12 +774,12 @@ class IldgReader : public GridLimeReader {
     FieldNormMetaData FieldNormMetaData_;
 
     // track what we read from file
-    int found_ildgFormat    =0;
-    int found_ildgLFN       =0;
-    int found_scidacChecksum=0;
-    int found_usqcdInfo     =0;
-    int found_ildgBinary =0;
-    int found_FieldMetaData =0;
+    int found_ildgFormat        =0;
+    int found_ildgLFN           =0;
+    int found_scidacChecksum    =0;
+    int found_usqcdInfo         =0;
+    int found_ildgBinary        =0;
+    int found_FieldMetaData     =0;
     int found_FieldNormMetaData =0;
     uint32_t nersc_csum;
     uint32_t scidac_csuma;
@@ -788,19 +809,48 @@ class IldgReader : public GridLimeReader {
 	// Copy out the string
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
-	//	std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
+	//std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<"\n"<<(&xmlc[0])<<std::endl;
 
 	//////////////////////////////////
 	// ILDG format record
 
 	std::string xmlstring(&xmlc[0]);
+	//std::cout << GridLogMessage << "size of xmlc" << xmlc.size() << std::endl;
+
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
+
+      // if there is no rows element in ildg-format insert such an element with value of Nc 
+      pugi::xml_document doc;
+	  doc.load_string(xmlstring.c_str());
+
+      if(doc.child("ildgFormat").child("rows")) {
+	  	std::string rows = doc.child("ildgFormat").child("rows").child_value();
+        std::cout << GridLogMessage << "rows element found in ildg-format and is " << rows << " so this lattice could be ildg 1.2 compliant!" << std::endl;
+    } else {
+        std::cout << GridLogMessage << "rows element is not present in ildg-format - let's add it to make cfg ildg 1.2 compliant when written out." << std::endl;
+        pugi::xml_node ildgfmt = doc.child("ildgFormat");
+		const std::string stNC = std::to_string(Nc);
+		ildgfmt.insert_child_after("rows", ildgfmt.child("field")).text().set(stNC.c_str());
+        //pugi::xml_node row = ildgfmt.insert_child_after("rows", ildgfmt.child("field"));
+	    //row.append_child(pugi::node_pcdata).set_value(stNC.c_str());
+
+        // write result back into xmlstring
+        std::ostringstream ss;
+        doc.save(ss);
+        xmlstring = ss.str();
+
+		//std::cout << GridLogMessage << "[inside if] size of xmlstring" << xmlstring.size() << std::endl;
+		//std::cout << GridLogMessage << "[inside if] size of xmlc" << xmlc.size() << std::endl;
+		//xmlc.resize(xmlstring.size());
+        }
 
 	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"ildgFormat",ildgFormat_);
 
 	  if ( ildgFormat_.precision == 64 ) format = std::string("IEEE64BIG");
 	  if ( ildgFormat_.precision == 32 ) format = std::string("IEEE32BIG");
+
+	  std::cout << GridLogMessage << "ildgFormat_.rows is " << ildgFormat_.rows << std::endl;
 
 	  assert( ildgFormat_.lx == dims[0]);
 	  assert( ildgFormat_.ly == dims[1]);
@@ -885,7 +935,7 @@ class IldgReader : public GridLimeReader {
 
     if ( found_FieldMetaData ) {
 
-      std::cout << GridLogMessage<<"Grid MetaData was record found: configuration was probably written by Grid ! Yay ! "<<std::endl;
+      std::cout << GridLogMessage<<"Grid MetaData record found: configuration was probably written by Grid ! Yay ! "<<std::endl;
 
     } else { 
 
