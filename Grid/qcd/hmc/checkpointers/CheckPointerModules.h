@@ -145,7 +145,6 @@ public:
   ScidacCPModule(Reader<ReaderClass>& Reader) : Parametrized<typename CPBase::APar>(Reader), M(Reader){};
 public:
   constexpr static const char* const Name = "Scidac";
-  
 };
 #endif
 

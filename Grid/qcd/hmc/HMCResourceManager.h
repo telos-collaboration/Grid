@@ -266,7 +266,7 @@ public:
       exit(1);
     }
   }
-  
+
   template<template<class CPImplementationPolicy, class Metadata> class CheckpointModule, class Metadata>
   void LoadCheckpointer(const CheckpointerParameters& Params_, const Metadata& M_) {
     typedef CheckpointModule<ImplementationPolicy, Metadata> CPM;
@@ -286,9 +286,9 @@ public:
   void LoadILDGCheckpointer  (const CheckpointerParameters& Params_) { LoadCheckpointer<ILDGCPModule>(Params_); }
 
   template<class Metadata>
-  void LoadScidacCheckpointer(const CheckpointerParameters& Params_, const Metadata&  M_) 
-  { 
-    LoadCheckpointer<ScidacCPModule, Metadata>(Params_, M_); 
+  void LoadScidacCheckpointer(const CheckpointerParameters& Params_, const Metadata&  M_)
+  {
+    LoadCheckpointer<ScidacCPModule, Metadata>(Params_, M_);
   }
 
 #endif
