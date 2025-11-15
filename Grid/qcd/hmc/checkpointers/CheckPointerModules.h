@@ -65,6 +65,8 @@ public:
   }
 
 private:
+  /* Implementations of initialize() must set CheckPointPtr to an instance of the relevant checkpointer
+     (i.e. child class of BaseHmcCheckpointer). */
   virtual void initialize() = 0;
 
 };

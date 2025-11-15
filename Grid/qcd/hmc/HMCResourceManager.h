@@ -253,6 +253,20 @@ public:
     }
   }
 
+  /* Load a checkpointer with no attached metadata.
+     HMCResourceManager must have a single checkpointer loaded.
+     Starting a HMC run without a checkpointer loaded,
+     or attempting to load multiple checkpointers,
+     will cause the application to exit with an error.
+
+     Instantiations for built-in checkpointers are below;
+     see LoadBinaryCheckpointer, LoadNerscCheckpointer, LoadILDGCheckpointer,
+     and LoadScidacCheckpointer.
+     To load your own checkpointer,
+     use a line similar to
+
+         TheHMC.Resources.template LoadCheckpointer<MyCheckPointer>(params);
+  */
   template<template<class CPImplementationPolicy> class CheckpointModule>
   void LoadCheckpointer(const CheckpointerParameters& Params_) {
     typedef CheckpointModule<ImplementationPolicy> CPM;
@@ -267,6 +281,9 @@ public:
     }
   }
 
+  /* Load a checkpointer with attached metadata;
+     see the definition of LoadCheckpointer(const CheckpointerParameters& Params_)
+     for further details. */
   template<template<class CPImplementationPolicy, class Metadata> class CheckpointModule, class Metadata>
   void LoadCheckpointer(const CheckpointerParameters& Params_, const Metadata& M_) {
     typedef CheckpointModule<ImplementationPolicy, Metadata> CPM;
@@ -280,6 +297,7 @@ public:
     }
   }
 
+  /* Checkpoint loaders for built-in checkpointers. */
   void LoadBinaryCheckpointer(const CheckpointerParameters& Params_) { LoadCheckpointer<BinaryCPModule>(Params_); }
   void LoadNerscCheckpointer (const CheckpointerParameters& Params_) { LoadCheckpointer<NerscCPModule>(Params_); }
 #ifdef HAVE_LIME
