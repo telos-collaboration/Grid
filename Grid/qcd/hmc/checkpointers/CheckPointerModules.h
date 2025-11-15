@@ -39,6 +39,12 @@ NAMESPACE_BEGIN(Grid);
 template <class ImplementationPolicy>
 class CheckPointerModule: public Parametrized<CheckpointerParameters>, public HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> >  {
 public:
+  /* In addition to the virtual method initialize() below,
+     subclasses of CheckPointerModule must define a public attribute
+     constexpr static const char* const Name
+     such that the LoadCheckpointer template method can report which checkpointer it has loaded.
+     Once Grid supports C++20, this may be enforced via concepts. */
+
   std::unique_ptr<BaseHmcCheckpointer<ImplementationPolicy> > CheckPointPtr;
   typedef CheckpointerParameters APar;
   typedef HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> > Base;
