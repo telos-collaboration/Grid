@@ -27,6 +27,10 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+
+#include "disable_examples_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 int main(int argc, char **argv) {
@@ -193,5 +197,4 @@ int main(int argc, char **argv) {
   Grid_finalize();
 } // main
 
-
-
+#endif

@@ -25,6 +25,10 @@ directory
 *************************************************************************************/
 /*  END LEGAL */
 
+
+#include "disable_examples_without_instantiations.h"
+#ifdef ENABLE_FERMION_INSTANTIATIONS
+
 #include <Grid/Grid.h>
 
 #if Nc == 3
@@ -231,5 +235,4 @@ int main(int argc, char **argv)
 #endif
 } // main
 
-
-
+#endif
