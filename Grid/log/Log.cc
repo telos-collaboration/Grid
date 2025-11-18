@@ -85,7 +85,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogPerformance.Active(0);
   GridLogDslash.Active(0);
   GridLogIntegrator.Active(1);
-  GridLogColours.Active(0);
+  GridLogColours.Active(1);
   GridLogHMC.Active(1);
 
   for (int i = 0; i < logstreams.size(); i++) {

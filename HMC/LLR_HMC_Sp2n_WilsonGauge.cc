@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./HMC/LLR-HMC-WilsonGauge.cc
+Source file: ./HMC/LLR_HMC_SpWilsonGauge.cc
 
 Copyright (C) 2015
 
@@ -34,8 +34,8 @@ directory
 #include <Grid/qcd/llr_hmc/llr_hmc.h>
 
 int main(int argc, char **argv) {
-    std::cout<<"Start LLR-HMC-WilsonGauge.cc" <<std::endl;
-    // Initializing Grid library
+    std::cout<<C_RED<<"Start LLR_HMC_Sp2n_WilsonGauge.cc"<<C_RESET<<std::endl;
+    // Initializing Grid library environment.
     Grid::Grid_init(&argc, &argv);
     Grid::GridLogLayout();
 
@@ -49,15 +49,15 @@ int main(int argc, char **argv) {
     s_llrparams_in->umb_meas_freq = 1;
     s_llrparams_in->umb_therm_freq = 1;
     s_llrparams_in->cfactor = 1;
-    s_llrparams_in->starta = 7.60982;
-    s_llrparams_in->a = 1.0;
-    s_llrparams_in->S0 = 173088.00000;
-    s_llrparams_in->dS = 4.51765;
+    s_llrparams_in->starta = 5.6;
+    s_llrparams_in->a = 5.66;
+    s_llrparams_in->S0 = 13281.000;
+    s_llrparams_in->dS = 3.0;
 
     namespace_LLR::llr_hmc* p_llr_hmc_main_o = new namespace_LLR::llr_hmc(s_llrparams_in);
 
     // printing the structure to see how it is constructed.
-    p_llr_hmc_main_o->init_robbinsmonro(s_llrparams_in);
+    p_llr_hmc_main_o->init_robbins_monro(s_llrparams_in);
     p_llr_hmc_main_o->print_s_llrparams(s_llrparams_in);
 
     // Start of the main commands.
@@ -72,41 +72,33 @@ int main(int argc, char **argv) {
 
     // if --enable--LLR switch is activated
     if (with_llr) {
-#if defined (Sp2n_config)
+        std::cout<<C_CYAN<<"Start of if block ...  with_llr ----->: "<< with_llr << C_RESET <<std::endl;
         // Sp(2n) representation
         typedef Grid::GenericHMCRunnerSpLLR<Grid::MinimumNorm2> HMCWrapperSpLLR;
         HMCWrapperSpLLR TheHMC;
-#elif !defined(Sp2n_config)
-        // SU(N) representation
-        typedef Grid::GenericHMCRunnerLLR <Grid::MinimumNorm2> HMCWrapperLLR;
-        HMCWrapperLLR TheHMC;
-#endif
+
         // Grid from the command line
         TheHMC.ReadCommandLine(argc, argv);
         TheHMC.Resources.AddFourDimGrid("gauge");
-        // Possible to create the module by hand
-        // hardcoding parameters or using a Reader
 
-        // Checking the parameters in the used, we will use the same as the
-        // Standard wilson ones.
+        // Getting the check point parameters setup
         Grid::CheckpointerParameters CPparams;
         CPparams.config_prefix = "ckpoint_lat";
         CPparams.rng_prefix = "ckpoint_rng";
-        CPparams.saveInterval = 1;
+        CPparams.saveInterval = 100;
         CPparams.format = "IEEE64BIG";
-
         TheHMC.Resources.LoadNerscCheckpointer(CPparams);
-
+        // Getting the random numbers setup
         Grid::RNGModuleParameters RNGpar;
         RNGpar.serial_seeds = "1 2 3 4 5";
         RNGpar.parallel_seeds = "6 7 8 9 10";
         TheHMC.Resources.SetRNGSeeds(RNGpar);
 
         // Construct observables
-        // here there is too much indirection
         typedef Grid::PlaquetteMod<HMCWrapperSpLLR::ImplPolicy> PlaqObs;
         typedef Grid::TopologicalChargeMod<HMCWrapperSpLLR::ImplPolicy> QObs;
         TheHMC.Resources.AddObservable<PlaqObs>();
+        //////////////////////////////////////////////
         Grid::TopologyObsParameters TopParams;
         TopParams.interval = 1;
         TopParams.do_smearing = false;
@@ -126,31 +118,27 @@ int main(int argc, char **argv) {
         // standard
         Grid::RealD beta = 2.4;
 
-        //Grid::SpWilsonGaugeActionR Waction(beta);
-
-        //typedef Grid::LLRGaugeAction<Grid::SpWilsonGaugeActionR , Grid::PeriodicGimplR> LLRGaugeActionR;
-        typedef Grid::LLRGaugeAction<Grid::WilsonGaugeActionR , Grid::PeriodicGimplR> LLRGaugeActionR;
+        typedef Grid::LLRGaugeAction<Grid::SpWilsonGaugeActionR , Grid::PeriodicGimplR> LLRGaugeActionR;
 
         LLRGaugeActionR LLRaction(s_llrparams_in, beta);
 
         Grid::ActionLevel<HMCWrapperSpLLR::Field> Level1(1);
         Level1.push_back(&LLRaction);
-        //Level1.push_back(WGMod.getPtr());
         TheHMC.TheAction.push_back(Level1);
         /////////////////////////////////////////////////////////////
-
         // HMC parameters are serialisable
         TheHMC.Parameters.MD.MDsteps = 20;
         TheHMC.Parameters.MD.trajL   = 1.0;
 
         TheHMC.Run();  // no smearing
 
-
+        // End the if block
+        std::cout<<C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;
     } /* [end-if] with_llr */
 
-    // Finalizing the Grid library
+    // Finalising Grid environment.
     Grid::Grid_finalize();
     // End statement
-    std::cout<<"<---- End LLR-HMC-WilsonGauge.cc ---->" <<std::endl;
+    std::cout<<C_RED<<"<---- End LLR_HMC_Sp2n_WilsonGauge.cc ---->"<<C_RESET<<std::endl;
 
-} /* end of main LLR-HMC-WilsonGauge.cc */
+} /* end of main LLR_HMC_Sp2n_WilsonGauge.cc */

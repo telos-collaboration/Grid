@@ -29,6 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
+#include <Grid/qcd/llr_hmc/llr_hmc.h>
 			   /*  END LEGAL */
 #ifndef QCD_WILSON_GAUGE_ACTION_H
 #define QCD_WILSON_GAUGE_ACTION_H
@@ -65,6 +66,10 @@ public:
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
     RealD vol = U.Grid()->gSites();
     RealD action = beta * (1.0 - plaq) * (Nd * (Nd - 1.0)) * vol * 0.5;
+      std::cout << GridLogIntegrator << B_YELLOW << "plaq(beta) GaugeAction          ----->: "<< plaq   << C_RESET <<std::endl;
+      std::cout << GridLogIntegrator << B_YELLOW << "Vol(beta)  GaugeAction          ----->: "<< vol    << C_RESET <<std::endl;
+      std::cout << GridLogIntegrator << B_YELLOW << "S(beta)    GaugeAction          ----->: "<< action << C_RESET <<std::endl;
+
     return action;
   };
 
@@ -72,8 +77,14 @@ public:
     // not optimal implementation FIXME
     // extend Ta to include Lorentz indexes
 
+      std::cout << GridLogIntegrator << B_GREEN   << "(deriv)     GaugeAction"                 << C_RESET <<std::endl;
+      std::cout << GridLogIntegrator << B_MAGENTA << "beta(deriv) GaugeAction         ----->: "<< beta             << C_RESET <<std::endl;
+      std::cout << GridLogIntegrator << B_MAGENTA << "Nc(deriv)   GaugeAction         ----->: "<< RealD(Nc)        << C_RESET <<std::endl;
+
     RealD factor = 0.5 * beta / RealD(Nc);
     GridBase *grid = U.Grid();
+
+      std::cout <<GridLogIntegrator << B_YELLOW   << "factor(deriv) GaugeAction       ----->: "<< factor <<"\x1b[0m"<<std::endl;
 
     GaugeLinkField dSdU_mu(grid);
     std::vector<GaugeLinkField> Umu(Nd, grid);
