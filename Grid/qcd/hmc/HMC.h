@@ -267,17 +267,13 @@ private:
           std::cout << GridLogHMC << "\x1b[35m" << "S1_llr from S_llr(U)            ----->: " << S1_llr << "\x1b[0m" << std::endl;
           std::cout << GridLogHMC << "\x1b[35m" << "H1_llr from S_llr(U)            ----->: " << H1_llr << "\x1b[0m" << std::endl;
           std::cout << GridLogMessage << "--------------------------------------------------\n";
-
           H1 = H1_llr;
-
       } else if (set_llr_if == 0) {
           //////////////////////////////////////////////////////////////////////////////////////////////////////
           // final state action with no LLR
           //////////////////////////////////////////////////////////////////////////////////////////////////////
-
           H1 = TheIntegrator.S(U);
           std::cout << GridLogHMC << "\x1b[35m" << "H1 from S(U)                    ----->: " << H1 << "\x1b[0m" << std::endl;
-
       }
     ///////////////////////////////////////////////////////////
     if(0){
@@ -286,8 +282,11 @@ private:
       TheIntegrator.reverse_momenta();
       TheIntegrator.integrate(U);
 
-      H1 = TheIntegrator.S(U);  // updated state action
-
+        if (set_llr_if == 1234) {
+            H1 = TheIntegrator.S_llr(U);
+        } else if (set_llr_if == 0) {
+            H1 = TheIntegrator.S(U);  // updated state action
+        }
         std::cout << GridLogHMC << B_YELLOW  << "H1(llr) Reversibility test      ----->: "<< H1 << C_RESET <<std::endl;
       std::cout << "--------------------------------------------" << std::endl;
     }
@@ -303,6 +302,7 @@ private:
           dH_llr = H1_llr - H0_llr;
           std::cout << GridLogHMC << B_MAGENTA << "H1_llr HMC                      ----->: " << H1_llr << C_RESET << std::endl;
           std::cout << GridLogHMC << B_MAGENTA << "dH_llr = H1_llr - H0_llr        ----->: " << dH_llr << C_RESET << std::endl;
+          std::cout << GridLogHMC << B_MAGENTA << "dH = H1 - H0                    ----->: " << H1 - H0 << C_RESET << std::endl;
           std::cout << GridLogHMC << "--------------------------------------------------\n";
           std::cout << GridLogHMC << "Total H1_llr after trajectory  = " << H1_llr << "  the_deltaH = " << dH_llr << "\n";
           std::cout << GridLogHMC << "--------------------------------------------------\n";

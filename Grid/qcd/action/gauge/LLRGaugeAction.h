@@ -118,6 +118,7 @@ public:
         // hard coded value for now TODO: remove this value when properly setup
         RealD S0_ = p_llrparams_s->S0; //173088.00000;
 
+        std::cout << GridLogLLR        << B_RED     << "Vol(deriv)      LLRGaugeAction  ----->: "<< vol               << C_RESET <<std::endl;
         std::cout << GridLogIntegrator << B_RED     << "Vol(deriv)      LLRGaugeAction  ----->: "<< vol               << C_RESET <<std::endl;
         std::cout << GridLogIntegrator << B_CYAN    << "plaq(deriv)     LLRGaugeAction  ----->: "<< plaq              << C_RESET <<std::endl;
         std::cout << GridLogIntegrator << B_YELLOW  << "S0_plaq_(deriv) LLRGaugeAction  ----->: "<< S0_plaq_          << C_RESET <<std::endl;

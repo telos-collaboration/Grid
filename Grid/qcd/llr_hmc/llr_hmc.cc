@@ -189,23 +189,19 @@ namespace namespace_LLR {
         std::cout<<C_RESET;
         return HMCParams;
     }
-
     //////////////////////////////////////////////////////////////////////////
     /// [Drivers]
     //////////////////////////////////////////////////////////////////////////
     int llr_hmc::llr_robbins_monro() {
         int rc = RC_SUCCESS;
         // initialized all values to 0
-
         return rc;
     }
 
     int llr_hmc::llr_therm_robbins_monro() {
         int rc = RC_SUCCESS;
         // initialized all values to 0
-
         return rc;
-
     }
     //////////////////////////////////////////////////////////////////////////
     /// [Printers]
@@ -239,10 +235,6 @@ namespace namespace_LLR {
         std::cout<<B_BLUE<<"s_hmc_params_llr->MDsteps          ---> "<<B_YELLOW<<s_hmc_llr_parameters->MDsteps<<std::endl;
         std::cout<<B_BLUE<<"s_hmc_params_llr->Thermalizations  ---> "<<B_YELLOW<<s_hmc_llr_parameters->Thermalizations<<std::endl;
         std::cout<<B_BLUE<<"s_hmc_params_llr->Trajectories     ---> "<<B_YELLOW<<s_hmc_llr_parameters->MDsteps<<std::endl;
-        //TODO: fixe the string stuff later, but not really needed.
-        //std::cout<<B_BLUE<<"s_hmc_params_llr->serial_seeds     ---> "<<B_YELLOW<<s_hmc_llr_parameters->serial_seeds<<std::endl;
-        //std::cout<<B_BLUE<<"s_hmc_params_llr->parallel_seeds   ---> "<<B_YELLOW<<s_hmc_llr_parameters->parallel_seeds<<std::endl;
-        //std::cout<<B_BLUE<<"s_hmc_params_llr->cnfg_dir         ---> "<<B_YELLOW<<s_hmc_llr_parameters->cnfg_dir<<std::endl;
         std::cout<<B_BLUE<<"*--------------------------------------*"<<std::endl;
         std::cout<<C_RESET;
         return rc;

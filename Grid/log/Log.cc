@@ -73,6 +73,7 @@ GridLogger GridLogDslash     (1, "Dslash", GridLogColours, "BLUE");
 GridLogger GridLogIterative  (1, "Iterative", GridLogColours, "BLUE");
 GridLogger GridLogIntegrator (1, "Integrator", GridLogColours, "BLUE");
 GridLogger GridLogHMC (1, "HMC", GridLogColours, "BLUE");
+GridLogger GridLogLLR (1, "LLRMessage", GridLogColours, "CYAN");
 
 void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogError.Active(1);
@@ -87,6 +88,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogIntegrator.Active(1);
   GridLogColours.Active(1);
   GridLogHMC.Active(1);
+  GridLogLLR.Active(1);
 
   for (int i = 0; i < logstreams.size(); i++) {
     if (logstreams[i] == std::string("Tracing"))     GridLogTracing.Active(1);
@@ -99,6 +101,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
     if (logstreams[i] == std::string("Dslash"))      GridLogDslash.Active(1);
     if (logstreams[i] == std::string("NoIntegrator"))GridLogIntegrator.Active(0);
     if (logstreams[i] == std::string("NoHMC"))       GridLogHMC.Active(0);
+    if (logstreams[i] == std::string("NoLLR"))       GridLogLLR.Active(0);
     if (logstreams[i] == std::string("Colours"))     GridLogColours.Active(1);
   }
 }

@@ -78,30 +78,47 @@ class LLRActionLogger : public Grid::HmcObservable<typename Impl::Field> {
 public:
     // necessary for HmcObservable compatibility
     typedef typename Impl::Field Field;
-
+    Grid::RealD computed_action = 0.0;
+    Grid::RealD computed_plaquette = 0.0;
+    //////////////////////////////////////////////////////////////////////////
+    /// [Constructor]
+    //////////////////////////////////////////////////////////////////////////
     LLRActionLogger(Grid::RealD beta = 0.4, Grid::RealD a = 0.1): Pars(beta, a){}
     LLRActionLogger(ActionLoggerObsParameters Pars_): Pars(Pars_){}
-
-    virtual void TrajectoryComplete(int traj,
-                                    Grid::ConfigurationBase<Field> &SmartConfig,
-                                    Grid::GridSerialRNG &sRNG,
-                                    Grid::GridParallelRNG &pRNG)
-    {
-
-        std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
-        std::cout << Grid::GridLogMessage << "LLR Unsmeared plaquette"<<std::endl;
-        TrajectoryComplete(traj,SmartConfig.get_U(false),sRNG,pRNG); // Unsmeared observable
-        std::cout << Grid::GridLogMessage << "LLR Smeared plaquette"<<std::endl;
-        TrajectoryComplete(traj,SmartConfig.get_U(true),sRNG,pRNG); // Unsmeared observable
-        std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
-
-    };
-
+    //////////////////////////////////////////////////////////////////////////
+    /// [Printers]
+    //////////////////////////////////////////////////////////////////////////
     int print(ActionLoggerObsParameters Pars_in, int traj, Grid::RealD action_in, int vol_in){
         int rc = RC_SUCCESS;
         //TODO: may implement this later.
         return rc;
     }
+    //////////////////////////////////////////////////////////////////////////
+    /// [Setters]
+    //////////////////////////////////////////////////////////////////////////
+    void set_plaquette(Grid::RealD plaq_in){computed_plaquette = plaq_in;}
+    void set_action(Grid::RealD act_in){computed_action = act_in;}
+    //////////////////////////////////////////////////////////////////////////
+    /// [Getters]
+    //////////////////////////////////////////////////////////////////////////
+    Grid::RealD get_plaquette(){return computed_plaquette;}
+    Grid::RealD get_action(){return computed_action;}
+    //////////////////////////////////////////////////////////////////////////
+    /// [Helpers]
+    //////////////////////////////////////////////////////////////////////////
+    virtual void TrajectoryComplete(int traj,
+                                    Grid::ConfigurationBase<Field> &SmartConfig,
+                                    Grid::GridSerialRNG &sRNG,
+                                    Grid::GridParallelRNG &pRNG)
+    {
+        std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
+        std::cout << Grid::GridLogMessage << "LLR Unsmeared plaquette"<<std::endl;
+        TrajectoryComplete(traj,SmartConfig.get_U(false),sRNG,pRNG); // Un-smeared
+        std::cout << Grid::GridLogMessage << "LLR Smeared plaquette"<<std::endl;
+        TrajectoryComplete(traj,SmartConfig.get_U(true),sRNG,pRNG);  // Smeared
+        std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
+    };
+
     void TrajectoryComplete(int traj,
                             Field &U,
                             Grid::GridSerialRNG &sRNG,
@@ -112,7 +129,11 @@ public:
 
         Grid::RealD action = (1.0 - plaq) * (Grid::Nd * (Grid::Nd - 1.0)) * vol * 0.5;
 
-        // Writting to standard output
+        // putting the results in the setter
+        set_action(action);
+        set_plaquette(plaq);
+
+        // Printing to standard output
         int def_prec = std::cout.precision();
         std::cout
         << Grid::GridLogMessage
@@ -125,7 +146,7 @@ public:
             << "Volume: [ " << vol << " ] "
         << std::endl;
 
-        // Writing to log file after cheking the file being open.
+        // Writing to log file after checking the file being open.
         std::ostream &out_log = (Pars.logFile_ && Pars.logFile_->is_open()) ? *Pars.logFile_ : std::cout;
         out_log
         << Grid::GridLogMessage
@@ -201,30 +222,13 @@ public:
 /////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
     int rc = RC_SUCCESS;
-    std::ofstream run_LLR_HMC_logfile("test_llr_constrained_action.log");
-    std::ofstream run_LLR_HMC_csvfile("test_llr_constrained_action.csv");
-    // Writing to csv file the header.
-    run_LLR_HMC_csvfile
-    << "Grid::GridLogMessage"
-    << "," << "traj"
-    << "," << "beta"
-    << "," << "plaq"
-    << "," << "action"
-    << "," << "a"
-    << "," << "S0"
-    << "," << "vol"
-    << std::endl;
     // Now staring the output for the log file.
     std::cout<<C_RED<<"<---- Start Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
-    run_LLR_HMC_logfile<<"<---- Start Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
     // Creating the output file
     std::cout<<C_RED<<"<---- Creating/Opening output log file ... --->"<<C_RESET<<std::endl;
-
     // Initializing Grid library environment.
     Grid::Grid_init(&argc, &argv);
     Grid::GridLogLayout();
-
-    //Grid::RealD beta = 2.4;
 
     // Instantiating the inout parameter structure as a pointer.
     namespace_LLR::llrparams* s_llrparams_in =
@@ -238,7 +242,7 @@ int main(int argc, char **argv) {
     s_llrparams_in->umb_therm_freq = 1;
     s_llrparams_in->cfactor = 1;
     s_llrparams_in->starta = 5.6;
-    s_llrparams_in->a = 5.66;
+    s_llrparams_in->a = 5.66; // TODO: ?-- try the wrong value for interval --?
     s_llrparams_in->S0 = 13281.000;
     s_llrparams_in->dS = 3.0;
 
@@ -248,14 +252,18 @@ int main(int argc, char **argv) {
     // Initialising the hmc_params_llr structure
     s_hmc_params_llr_in->saveInterval = 1;
     s_hmc_params_llr_in->StartTrajectory = 1;
-    s_hmc_params_llr_in->beta = 1.4;
+    s_hmc_params_llr_in->beta = 2.4;
     s_hmc_params_llr_in->trajL = 1.0;
-    s_hmc_params_llr_in->MDsteps = 10;
-    s_hmc_params_llr_in->Thermalizations = 21;
-    s_hmc_params_llr_in->Trajectories = 101;
-    //s_hmc_params_llr_in->serial_seeds = "1 2 3 4 5";
-    //s_hmc_params_llr_in->parallel_seeds = "6 7 8 9 10";
-    //s_hmc_params_llr_in->cnfg_dir = ".";
+    s_hmc_params_llr_in->MDsteps = 44;
+    s_hmc_params_llr_in->Trajectories = 100;
+    s_hmc_params_llr_in->Thermalizations = 20;
+
+    // The epsilon for the assertion
+    Grid::RealD epsilon_plaquette = 0.001;
+    Grid::RealD expected_plaquette = 0.459;
+
+    Grid::RealD epsilon_S = 10.0;
+    Grid::RealD expected_action = s_llrparams_in->S0;
 
     // bringing the llr_hmc object class
     namespace_LLR::llr_hmc* p_llr_hmc_main_o = new namespace_LLR::llr_hmc(s_llrparams_in,
@@ -269,6 +277,23 @@ int main(int argc, char **argv) {
     // printing the structure to see how it is constructed.
     p_llr_hmc_main_o->print_s_llrparams(s_llrparams_in);
     p_llr_hmc_main_o->print_s_hmc_params_llr(s_hmc_params_llr_in);
+
+    // Constructing the output files using the command line input parameters
+    int md = s_hmc_params_llr_in->MDsteps;
+    std::ofstream run_LLR_HMC_logfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".log");
+    std::ofstream run_LLR_HMC_csvfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".csv");
+    // Writing to csv file the header.
+    run_LLR_HMC_csvfile
+            << "Grid::GridLogMessage"
+            << "," << "traj"
+            << "," << "beta"
+            << "," << "plaq"
+            << "," << "action"
+            << "," << "a"
+            << "," << "S0"
+            << "," << "vol"
+            << std::endl;
+    run_LLR_HMC_logfile<<"<---- Start Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
 
     // Start of the main commands.
     bool with_llr = false;
@@ -343,19 +368,18 @@ int main(int argc, char **argv) {
 
         LLRGaugeActionR LLRaction(s_llrparams_in, s_hmc_params_llr_in->beta);
 
-        //LLRGaugeActionR *p_LLRaction_o =
-        //        new Grid::LLRGaugeAction<Grid::SpWilsonGaugeActionR, Grid::PeriodicGimplR>(s_llrparams_in, beta);
-        //p_LLRaction_o->Sa(&Grid::ConfigurationBase<Field>.)
-
         Grid::ActionLevel<HMCWrapperSpLLR::Field> Level1(1);
         Level1.push_back(&LLRaction);
         TheHMC.TheAction.push_back(Level1);
         /////////////////////////////////////////////////////////////
         // HMC parameters are serialisable
-        TheHMC.Parameters.MD.MDsteps = s_hmc_params_llr_in->MDsteps;//40;
-        TheHMC.Parameters.MD.trajL   = float(s_hmc_params_llr_in->trajL); //1.0;
+        TheHMC.Parameters.MD.MDsteps = s_hmc_params_llr_in->MDsteps;      // 40;
+        TheHMC.Parameters.MD.trajL   = float(s_hmc_params_llr_in->trajL); // 1.0;
 
         TheHMC.Run();  // no smearing
+
+        // TODO: continue from here for the assertion.
+
 
         // End the if block
         std::cout<<C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;
@@ -363,7 +387,6 @@ int main(int argc, char **argv) {
 
     // Finalising Grid environment.
     Grid::Grid_finalize();
-
 
     // End statement
     std::cout<<C_RED<<"<---- End Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
