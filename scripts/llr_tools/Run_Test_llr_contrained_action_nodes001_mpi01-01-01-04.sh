@@ -37,7 +37,6 @@ which mpirun
 machine_name="tursa"
 sourcecode_dir=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes
 Bench_Grid_HiRep_dir=$sourcecode_dir/Bench_Grid_HiRep
-benchmark_input_dir=$Bench_Grid_HiRep_dir/benchmarks
 
 # Application paths
 grid_dwf_telos_dir=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/Grid-Telos-Devel/Grid
@@ -154,7 +153,7 @@ echo
 echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
 echo `date`
 echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-echo "- /home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/Grid-Telos-Devel/Run_Test_llr_contrained_action_nodes001_mpi01-01-01-04.sh Done. -"
+echo "- ${path_to_run}/${job_name}.sh Done. -"
 echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
 # srun --account={account_name} --partition={partition} --time=00:30:00 --nodes=1 --gres=gpu:4 --pty bash
 ##SBATCH --ntasks-per-socket=4

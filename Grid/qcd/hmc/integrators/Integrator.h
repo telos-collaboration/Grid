@@ -494,6 +494,7 @@ public:
     return H;
   }
 
+  // LLR- implementation
   RealD S_llr(Field& U) {
       assert(as.size()==LevelForces.size());
       std::cout << GridLogIntegrator << "Integrator action for LLR\n";
@@ -520,7 +521,6 @@ public:
               MemoryManager::Print();
               // get gauge field from the SmearingPolicy and
               // based on the boolean is_smeared in actionID
-              std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
               as[level].actions.at(actionID)->S_timer_start();
 
               S = as[level].actions.at(actionID)->S(Smearer);
@@ -531,13 +531,11 @@ public:
                   ( S - p_llrparams_s->S0 ) * ( S - p_llrparams_s->S0 ) /
                   ( 2.0 * (p_llrparams_s->dS * p_llrparams_s->dS) ) + Hp;
 
-              //std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] S = " << S << std::endl;
               std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] = " << S << " ] < -- > "
                         << "H_int [a: " << p_llrparams_s->a
                         << "][S0 "      << p_llrparams_s->S0
                         << "][dS: "     << p_llrparams_s->dS << "] = " << H
                         << C_RESET      << std::endl;
-              //H += Hterm;
 
               MemoryManager::Print();
 
@@ -563,7 +561,7 @@ public:
     }
   } Sinitial_hireps{};
 
-  // LLR- implementation
+    // LLR- implementation
   RealD Sinitial_llr(Field& U) {
       std::cout << GridLogIntegrator << "Integrator initial action for LLR\n";
       RealD S_init = 0.0;
@@ -584,9 +582,9 @@ public:
                         << "p_llrparams_s->S0: [" << p_llrparams_s->S0 <<"]"
                         << std::endl;
 
+              MemoryManager::Print();
               // get gauge field from the SmearingPolicy and
               // based on the boolean is_smeared in actionID
-              std::cout << GridLogMessage << "S_llr [" << level << "][" << actionID << "] action eval " << std::endl;
               as[level].actions.at(actionID)->S_timer_start();
 
               S_init = as[level].actions.at(actionID)->S(Smearer);
@@ -597,12 +595,14 @@ public:
                   ( S_init - p_llrparams_s->S0 ) * ( S_init - p_llrparams_s->S0 ) /
                   ( 2.0 * (p_llrparams_s->dS * p_llrparams_s->dS) ) + Hp;
 
-              //std::cout << GridLogMessage << "S_init [" << level << "][" << actionID << "] = " << S_init << std::endl;
               std::cout << GridLogMessage << "S_init [" << level << "][" << actionID << "] = " << S_init << " ] < -- > "
                         << "H_int [a: " << p_llrparams_s->a
                         << "][S0 "      << p_llrparams_s->S0
                         << "][dS: "     << p_llrparams_s->dS << "] = " << H_init
                         << C_RESET      << std::endl;
+
+              MemoryManager::Print();
+
           }
           as[level].apply(Sinitial_hireps, Representations, level, H_init);
       }

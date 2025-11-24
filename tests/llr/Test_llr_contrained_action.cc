@@ -136,20 +136,20 @@ public:
         // Printing to standard output
         int def_prec = std::cout.precision();
         std::cout
-        << Grid::GridLogMessage
+        << Grid::GridLogLLR
         << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
-            << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
-            << "LLR Plaquette: [ " << traj << " ] "<< plaq << " ] < -- > "
-            << "LLR Action: [ " << action << " ] < -- > "
-            << "LLR a: [ " << Pars.a_ << " ] < -- > "
-            << "LLR S0: [ " << Pars.s_llrparams_in_->S0 << " ] < -- > "
-            << "Volume: [ " << vol << " ] "
+        << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
+        << "LLR Plaquette: [ " << traj << " ] "<< plaq << " ] < -- > "
+        << "LLR Action: [ " << action << " ] < -- > "
+        << "LLR a: [ " << Pars.a_ << " ] < -- > "
+        << "LLR S0: [ " << Pars.s_llrparams_in_->S0 << " ] < -- > "
+        << "Volume: [ " << vol << " ] "
         << std::endl;
 
         // Writing to log file after checking the file being open.
         std::ostream &out_log = (Pars.logFile_ && Pars.logFile_->is_open()) ? *Pars.logFile_ : std::cout;
         out_log
-        << Grid::GridLogMessage
+        << Grid::GridLogLLR
         << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
         << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
         << "LLR Plaquette: [ " << traj << " ] " << plaq << " ] < -- > "
@@ -162,7 +162,7 @@ public:
         // Writing to csv file.
         std::ostream &out_csv = (Pars.csvFile_ && Pars.csvFile_->is_open()) ? *Pars.csvFile_ : std::cout;
         out_csv
-        << Grid::GridLogMessage
+        << Grid::GridLogLLR
         << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
         << "," << traj
         << "," << Pars.beta_
@@ -212,7 +212,14 @@ class LLRActionMod: public Grid::ObservableModule<LLRActionLogger<Impl>, ActionL
 public:
     LLRActionMod(ActionLoggerObsParameters Par): ObsBase(Par){}
     LLRActionMod(): ObsBase(){}
-    //LLRActionMod(): ObsBase(Grid::NoParameters()){}
+    Grid::RealD log_action = LLRActionLogger<Impl>(this->Par_).get_action();
+    Grid::RealD log_plaquette = LLRActionLogger<Impl>(this->Par_).get_plaquette();
+    /*
+    //setters
+    void set_log_action(Grid::RealD action_in){log_action = action_in;}
+    // Getters
+    Grid::RealD get_log_action(){return log_action;}
+    */
 };
 /////////////////////////////////////////////////////////////
 /// Helpers
@@ -224,8 +231,6 @@ int main(int argc, char **argv) {
     int rc = RC_SUCCESS;
     // Now staring the output for the log file.
     std::cout<<C_RED<<"<---- Start Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
-    // Creating the output file
-    std::cout<<C_RED<<"<---- Creating/Opening output log file ... --->"<<C_RESET<<std::endl;
     // Initializing Grid library environment.
     Grid::Grid_init(&argc, &argv);
     Grid::GridLogLayout();
@@ -241,7 +246,7 @@ int main(int argc, char **argv) {
     s_llrparams_in->umb_meas_freq = 1;
     s_llrparams_in->umb_therm_freq = 1;
     s_llrparams_in->cfactor = 1;
-    s_llrparams_in->starta = 5.6;
+    s_llrparams_in->starta = 5.66;
     s_llrparams_in->a = 5.66; // TODO: ?-- try the wrong value for interval --?
     s_llrparams_in->S0 = 13281.000;
     s_llrparams_in->dS = 3.0;
@@ -279,6 +284,8 @@ int main(int argc, char **argv) {
     p_llr_hmc_main_o->print_s_hmc_params_llr(s_hmc_params_llr_in);
 
     // Constructing the output files using the command line input parameters
+    // Creating the output file
+    std::cout<<C_RED<<"<---- Creating/Opening output log file ... --->"<<C_RESET<<std::endl;
     int md = s_hmc_params_llr_in->MDsteps;
     std::ofstream run_LLR_HMC_logfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".log");
     std::ofstream run_LLR_HMC_csvfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".csv");
@@ -360,9 +367,7 @@ int main(int argc, char **argv) {
 
         /////////////////////////////////////////////////////////////
         // Collect actions, here use more encapsulation
-        // need wrappers of the fermionic classes
-        // that have a complex construction
-        // standard
+        // standard LLRGaugeAction with Sp(2n) gauge action
 
         typedef Grid::LLRGaugeAction<Grid::SpWilsonGaugeActionR, Grid::PeriodicGimplR> LLRGaugeActionR;
 
@@ -372,14 +377,13 @@ int main(int argc, char **argv) {
         Level1.push_back(&LLRaction);
         TheHMC.TheAction.push_back(Level1);
         /////////////////////////////////////////////////////////////
-        // HMC parameters are serialisable
+        // HMC parameters
         TheHMC.Parameters.MD.MDsteps = s_hmc_params_llr_in->MDsteps;      // 40;
         TheHMC.Parameters.MD.trajL   = float(s_hmc_params_llr_in->trajL); // 1.0;
 
         TheHMC.Run();  // no smearing
 
         // TODO: continue from here for the assertion.
-
 
         // End the if block
         std::cout<<C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;

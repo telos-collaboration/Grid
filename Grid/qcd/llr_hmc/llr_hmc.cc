@@ -245,9 +245,9 @@ namespace namespace_LLR {
     //////////////////////////////////////////////////////////////////////////
     /// [Getters]
     //////////////////////////////////////////////////////////////////////////
-    double llr_hmc::get_llr_a(void) { return s_llrparams->a;  }
-    double llr_hmc::getS0(void)     { return s_llrparams->S0; }
-    double llr_hmc::getdS(void)     { return s_llrparams->dS; }
+    double llr_hmc::get_llr_a(void)  { return s_llrparams->a;  }
+    double llr_hmc::get_llr_S0(void) { return s_llrparams->S0; }
+    double llr_hmc::get_llr_dS(void) { return s_llrparams->dS; }
     //////////////////////////////////////////////////////////////////////////
     /// [Comments]
     //////////////////////////////////////////////////////////////////////////

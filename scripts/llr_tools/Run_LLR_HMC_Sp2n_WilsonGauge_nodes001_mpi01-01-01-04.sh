@@ -37,12 +37,11 @@ which mpirun
 machine_name="tursa"
 sourcecode_dir=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes
 Bench_Grid_HiRep_dir=$sourcecode_dir/Bench_Grid_HiRep
-benchmark_input_dir=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/Bench_Grid_HiRep/benchmarks
 
 # Application paths
 grid_dwf_telos_dir=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/Grid-Telos-Devel/Grid
 grid_dwf_telos_build_dir=$grid_dwf_telos_dir/build-Sp2n-withLLR
-path_to_test_llr=$grid_dwf_telos_build_dir/tests/llr/
+
 #Extending the library path
 prefix=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/external_lib/prefix_grid_202410
 #-------------------------------------------------------------------------------
@@ -96,19 +95,14 @@ MPI=1.1.1.4
 
 VOL=8.8.8.8
 BETA=2.4         # 6.9   beta
-MASS=0.08         # 0.08  mass
-Ls=8             # 8     Domain wall Ls
 
 # Hardcoded variables
 
-TRAJECTORIES=1000 #20         #100000
-THERMALIZATIONS=500 #10
-NSTEPS=27
+TRAJECTORIES=500 #20         #100000
+THERMALIZATIONS=20 #10
+MDsteps=27
+trajL=1
 SAVEFREQ=100 #10
-TLEN=1
-DWF_MASS=1.8
-MOBIUS_B=1.5
-MOBIUS_C=0.5
 
 # Extracting the checkpoint from the lattice data
 STARTTRAJ=0
@@ -129,12 +123,18 @@ chmod a+x ${wrapper_script}
 device_mem=23000
 shm=8192
 
+#  --enable-llr \
+
 mpirun -np ${SLURM_NTASKS} \
 "${grid_dwf_telos_build_dir}"/HMC/LLR_HMC_Sp2n_WilsonGauge \
-  --enable-llr \
+  --beta ${BETA} \
+  --starttraj ${STARTTRAJ} \
   --grid ${VOL} \
+  --enable-llr \
   --Trajectories ${TRAJECTORIES} \
   --Thermalizations ${THERMALIZATIONS} \
+  --nsteps ${MDsteps} \
+  --tlen ${trajL} \
   --savefreq ${SAVEFREQ}
 
 ################################################################################
@@ -148,7 +148,7 @@ echo
 echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
 echo `date`
 echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
-echo "- /home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/Grid-Telos-Devel/Run_LLR_HMC_Sp2n_WilsonGauge_nodes001_mpi01-01-01-04.sh Done. -"
+echo "- ${path_to_run}/${job_name}.sh Done. -"
 echo "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
 # srun --account={account_name} --partition={partition} --time=00:30:00 --nodes=1 --gres=gpu:4 --pty bash
 ##SBATCH --ntasks-per-socket=4
