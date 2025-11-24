@@ -149,9 +149,9 @@ public:
       MemoryManager::Print();
 
       auto name = as[level].actions.at(a)->action_name();
-        std::cout << GridLogIntegrator << "\x1b[31m"<<"Action name action_name() ----->: "<< name <<"\x1b[0m"<<std::endl;
-        std::cout << GridLogIntegrator << "\x1b[32m"<<"Fdt_max_average()         ----->: "<< as[level].actions.at(a)->Fdt_max_average() <<"\x1b[0m"<<std::endl;
-        std::cout << GridLogIntegrator << "\x1b[36m"<<"Fdt_norm_average()        ----->: "<< as[level].actions.at(a)->Fdt_norm_average() <<"\x1b[0m"<<std::endl;
+        std::cout << GridLogIntegrator << C_RED   <<"Action name action_name() ----->: "<< name << C_RESET <<std::endl;
+        std::cout << GridLogIntegrator << C_GREEN <<"Fdt_max_average()         ----->: "<< as[level].actions.at(a)->Fdt_max_average() << C_RESET <<std::endl;
+        std::cout << GridLogIntegrator << C_CYAN  <<"Fdt_norm_average()        ----->: "<< as[level].actions.at(a)->Fdt_norm_average() << C_RESET <<std::endl;
 
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();

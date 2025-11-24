@@ -33,6 +33,195 @@ directory
 
 #include <Grid/qcd/llr_hmc/llr_hmc.h>
 
+/////////////////////////////////////////////////////////////
+//// [LLR-Structure]
+/////////////////////////////////////////////////////////////
+////////////////////////
+/// [ActionLoggerObsParameters]
+////////////////////////
+struct ActionLoggerObsParameters: Grid::Serializable {
+    /*
+        Grid::GRID_SERIALIZABLE_CLASS_MEMBERS(ActionLoggerObsParameters,
+                Grid::RealD, beta,
+                Grid::RealD, a,
+                namespace_LLR::llrparams*, s_llrparams_in );
+    */
+    Grid::RealD beta_ = 0.0;
+    Grid::RealD a_ = 0.0;
+    std::ofstream* logFile_ = nullptr;
+    std::ofstream* csvFile_ = nullptr;
+    namespace_LLR::llrparams* s_llrparams_in_ = nullptr;
+    ActionLoggerObsParameters(Grid::RealD beta = 2.4,
+                              Grid::RealD a = 1.0,
+                              namespace_LLR::llrparams* s_llrparams_in = nullptr,
+                              std::ofstream* logFile = nullptr,
+                              std::ofstream* csvFile = nullptr)
+            : beta_(beta), a_(a), s_llrparams_in_(s_llrparams_in),
+              logFile_(logFile), csvFile_(csvFile){}
+
+    template <class ReaderClass >
+    ActionLoggerObsParameters(Grid::Reader<ReaderClass>& Reader){
+        read(Reader, "ActionLoggerMeasurement", *this);
+    }
+};
+/////////////////////////////////////////////////////////////
+/// Template classes helpers
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+//// [LLR-Logger]
+/////////////////////////////////////////////////////////////
+template <class Impl>
+class LLRActionLogger : public Grid::HmcObservable<typename Impl::Field> {
+    ActionLoggerObsParameters Pars;
+public:
+    // necessary for HmcObservable compatibility
+    typedef typename Impl::Field Field;
+    Grid::RealD computed_action = 0.0;
+    Grid::RealD computed_plaquette = 0.0;
+    //////////////////////////////////////////////////////////////////////////
+    /// [Constructor]
+    //////////////////////////////////////////////////////////////////////////
+    LLRActionLogger(Grid::RealD beta = 0.4, Grid::RealD a = 0.1): Pars(beta, a){}
+    LLRActionLogger(ActionLoggerObsParameters Pars_): Pars(Pars_){}
+    //////////////////////////////////////////////////////////////////////////
+    /// [Printers]
+    //////////////////////////////////////////////////////////////////////////
+    int print(ActionLoggerObsParameters Pars_in, int traj, Grid::RealD action_in, int vol_in){
+        int rc = RC_SUCCESS;
+        //TODO: may implement this later.
+        return rc;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    /// [Setters]
+    //////////////////////////////////////////////////////////////////////////
+    void set_plaquette(Grid::RealD plaq_in){computed_plaquette = plaq_in;}
+    void set_action(Grid::RealD act_in){computed_action = act_in;}
+    //////////////////////////////////////////////////////////////////////////
+    /// [Getters]
+    //////////////////////////////////////////////////////////////////////////
+    Grid::RealD get_plaquette(){return computed_plaquette;}
+    Grid::RealD get_action(){return computed_action;}
+    //////////////////////////////////////////////////////////////////////////
+    /// [Helpers]
+    //////////////////////////////////////////////////////////////////////////
+    virtual void TrajectoryComplete(int traj,
+                                    Grid::ConfigurationBase<Field> &SmartConfig,
+                                    Grid::GridSerialRNG &sRNG,
+                                    Grid::GridParallelRNG &pRNG)
+    {
+        std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
+        std::cout << Grid::GridLogMessage << "LLR Unsmeared plaquette"<<std::endl;
+        TrajectoryComplete(traj,SmartConfig.get_U(false),sRNG,pRNG); // Un-smeared
+        std::cout << Grid::GridLogMessage << "LLR Smeared plaquette"<<std::endl;
+        TrajectoryComplete(traj,SmartConfig.get_U(true),sRNG,pRNG);  // Smeared
+        std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
+    };
+
+    void TrajectoryComplete(int traj,
+                            Field &U,
+                            Grid::GridSerialRNG &sRNG,
+                            Grid::GridParallelRNG &pRNG) {
+
+        Grid::RealD plaq = Grid::WilsonLoops<Impl>::avgPlaquette(U);
+        Grid::RealD vol = U.Grid()->gSites();
+
+        Grid::RealD action = (1.0 - plaq) * (Grid::Nd * (Grid::Nd - 1.0)) * vol * 0.5;
+
+        // putting the results in the setter
+        set_action(action);
+        set_plaquette(plaq);
+        // Try this way see if this works.
+        Pars.s_llrparams_in_->S = action;
+        Pars.s_llrparams_in_->plaq = plaq;
+
+        // Printing to standard output
+        int def_prec = std::cout.precision();
+        std::cout
+                << Grid::GridLogLLR
+                << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
+                << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
+                << "LLR Plaquette: [ " << traj << " ] "<< plaq << " ] < -- > "
+                << "LLR Action: [ " << action << " ] < -- > "
+                << "LLR a: [ " << Pars.a_ << " ] < -- > "
+                << "LLR S0: [ " << Pars.s_llrparams_in_->S0 << " ] < -- > "
+                << "Volume: [ " << vol << " ] "
+                << std::endl;
+
+        // Writing to log file after checking the file being open.
+        std::ostream &out_log = (Pars.logFile_ && Pars.logFile_->is_open()) ? *Pars.logFile_ : std::cout;
+        out_log
+                << Grid::GridLogLLR
+                << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
+                << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
+                << "LLR Plaquette: [ " << traj << " ] " << plaq << " ] < -- > "
+                << "LLR Action: [ " << action << " ] < -- > "
+                << "LLR a: [ " << Pars.a_ << " ] < -- > "
+                << "LLR S0: [ " << Pars.s_llrparams_in_->S0 << " ] < -- > "
+                << "Volume: [ " << vol << " ] "
+                << std::endl;
+
+        // Writing to csv file.
+        std::ostream &out_csv = (Pars.csvFile_ && Pars.csvFile_->is_open()) ? *Pars.csvFile_ : std::cout;
+        out_csv
+                << Grid::GridLogLLR
+                << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
+                << "," << traj
+                << "," << Pars.beta_
+                << "," << plaq
+                << "," << action
+                << "," << Pars.a_
+                << "," << Pars.s_llrparams_in_->S0
+                << "," << vol
+                << std::endl;
+
+        std::cout.precision(def_prec);
+
+    }
+};
+/////////////////////////////////////////////////////////////
+//// [LLR-Module] TODO: migrate all of this into the namespace_LLR::llr_hmc object
+/////////////////////////////////////////////////////////////
+////////////////////////
+/// [Plaquette]
+////////////////////////
+template < class Impl >
+class LLRPlaquetteMod: public Grid::ObservableModule<Grid::PlaquetteLogger<Impl>, Grid::NoParameters>{
+typedef Grid::ObservableModule<Grid::PlaquetteLogger<Impl>, Grid::NoParameters> ObsBase;
+using ObsBase::ObsBase; // for constructors
+
+// acquire resource
+virtual void initialize(){
+    this->ObservablePtr.reset(new Grid::PlaquetteLogger<Impl>());
+}
+public:
+LLRPlaquetteMod(): ObsBase(Grid::NoParameters()){}
+};
+////////////////////////
+/// [Action]
+////////////////////////
+template < class Impl >
+class LLRActionMod: public Grid::ObservableModule<LLRActionLogger<Impl>, ActionLoggerObsParameters>{
+
+    typedef Grid::ObservableModule< LLRActionLogger<Impl>, ActionLoggerObsParameters > ObsBase;
+    using ObsBase::ObsBase; // for constructors
+
+// acquire resource
+    virtual void initialize(){
+        //this->ObservablePtr.reset(new LLRActionLogger<Impl>(this->Par_.beta_, this->Par_.a_)); //this->Par_
+        this->ObservablePtr.reset(new LLRActionLogger<Impl>(this->Par_)); //this->Par_
+    }
+public:
+    LLRActionMod(ActionLoggerObsParameters Par): ObsBase(Par){}
+    LLRActionMod(): ObsBase(){}
+    Grid::RealD log_action = LLRActionLogger<Impl>(this->Par_).get_action();
+    Grid::RealD log_plaquette = LLRActionLogger<Impl>(this->Par_).get_plaquette();
+};
+/////////////////////////////////////////////////////////////
+/// Helpers
+/////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
+/// Main
+/////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
     std::cout<<"Start LLR_HMC_SUn_WilsonGauge.cc" <<std::endl;
     // Initializing Grid library
@@ -53,6 +242,19 @@ int main(int argc, char **argv) {
     s_llrparams_in->a = 5.66;
     s_llrparams_in->S0 = 13281.000;
     s_llrparams_in->dS = 3.0;
+    // initialising the action and plaquette in the struc.
+    s_llrparams_in->S = 1234.5678;
+    s_llrparams_in->plaq = 4321.9876;
+
+
+    //TODO: continue from here ........
+    //TODO: continue from here ........
+    //TODO: continue from here ........
+    //TODO: continue from here ........
+    //TODO: continue from here ........
+    //TODO: continue from here ........
+    //TODO: continue from here ........
+
 
     namespace_LLR::llr_hmc* p_llr_hmc_main_o = new namespace_LLR::llr_hmc(s_llrparams_in);
 
@@ -139,6 +341,23 @@ int main(int argc, char **argv) {
 
         TheHMC.Run();  // no smearing
 
+        // Creating the test PASS/FAIL
+        std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
+        std::cout
+                << Grid::GridLogLLR
+                << "Final action and Plaquette:"
+                << std::endl;
+
+        std::cout
+                << Grid::GridLogLLR
+                <<"Action    --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->:"
+                << C_MAGENTA << s_llrparams_in->S << C_RESET << std::endl;
+        std::cout
+                << Grid::GridLogLLR
+                <<"Plaquette --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->:"
+                << C_MAGENTA << s_llrparams_in->plaq << C_RESET << std::endl;
+
+        std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
 
     } /* [end-if] with_llr */
 

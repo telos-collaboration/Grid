@@ -36,6 +36,21 @@ directory
 #include <Grid/qcd/llr_hmc/llr_hmc.h>
 
 /////////////////////////////////////////////////////////////
+//// [Macros]
+/////////////////////////////////////////////////////////////
+#define SOFT_ASSERT(cond, msg)                                        \
+    do {                                                              \
+        if (!(cond)) {                                                \
+            std::cerr << Grid::GridLogLLR                             \
+                      << C_RED << "[ASSERT FAIL] " << C_RESET         \
+                      << msg << std::endl;                            \
+        } else {                                                      \
+            std::cout << Grid::GridLogLLR                             \
+                      << C_GREEN << "[ASSERT PASS] " << C_RESET       \
+                      << msg << std::endl;                            \
+        }                                                             \
+    } while (0)
+/////////////////////////////////////////////////////////////
 //// [LLR-Structure]
 /////////////////////////////////////////////////////////////
 ////////////////////////
@@ -132,6 +147,9 @@ public:
         // putting the results in the setter
         set_action(action);
         set_plaquette(plaq);
+        // Try this way see if this works.
+        Pars.s_llrparams_in_->S = action;
+        Pars.s_llrparams_in_->plaq = plaq;
 
         // Printing to standard output
         int def_prec = std::cout.precision();
@@ -214,12 +232,6 @@ public:
     LLRActionMod(): ObsBase(){}
     Grid::RealD log_action = LLRActionLogger<Impl>(this->Par_).get_action();
     Grid::RealD log_plaquette = LLRActionLogger<Impl>(this->Par_).get_plaquette();
-    /*
-    //setters
-    void set_log_action(Grid::RealD action_in){log_action = action_in;}
-    // Getters
-    Grid::RealD get_log_action(){return log_action;}
-    */
 };
 /////////////////////////////////////////////////////////////
 /// Helpers
@@ -250,6 +262,10 @@ int main(int argc, char **argv) {
     s_llrparams_in->a = 5.66; // TODO: ?-- try the wrong value for interval --?
     s_llrparams_in->S0 = 13281.000;
     s_llrparams_in->dS = 3.0;
+    // initialising the action and plaquette in the struc.
+    s_llrparams_in->S = 1234.5678;
+    s_llrparams_in->plaq = 4321.9876;
+
 
     // Create and initialise to some arbitrary values the hmc_parameters structure
     namespace_LLR::hmc_params_llr* s_hmc_params_llr_in =
@@ -265,9 +281,10 @@ int main(int argc, char **argv) {
 
     // The epsilon for the assertion
     Grid::RealD epsilon_plaquette = 0.001;
-    Grid::RealD expected_plaquette = 0.459;
+    Grid::RealD epsilon_S = 20.0;
 
-    Grid::RealD epsilon_S = 10.0;
+    // The expected values
+    Grid::RealD expected_plaquette = 0.459;
     Grid::RealD expected_action = s_llrparams_in->S0;
 
     // bringing the llr_hmc object class
@@ -383,8 +400,80 @@ int main(int argc, char **argv) {
 
         TheHMC.Run();  // no smearing
 
-        // TODO: continue from here for the assertion.
+        // Creating the test PASS/FAIL
+        std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
+        std::cout
+                << Grid::GridLogLLR
+                << "Final action and Plaquette:"
+                << std::endl;
 
+        // Compute diffs
+        Grid::RealD diff_plaquette = std::abs(s_llrparams_in->plaq - expected_plaquette);
+        Grid::RealD diff_action    = std::abs(s_llrparams_in->S    - expected_action);
+
+        // Determine pass/fail
+        bool pass_plaquette = (diff_plaquette < epsilon_plaquette);
+        bool pass_action    = (diff_action    < epsilon_S);
+
+        // Print results
+        std::cout << Grid::GridLogLLR
+            << "Epsilon S --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
+            << C_CYAN << epsilon_S << C_RESET
+            << std::endl;
+        std::cout << Grid::GridLogLLR
+            << "Epsilon P --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
+            << C_CYAN << epsilon_plaquette << C_RESET
+            << std::endl;
+
+        std::cout << Grid::GridLogLLR
+            << "Action    --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
+                << C_MAGENTA << s_llrparams_in->S << C_RESET
+            << "   (expected " << expected_action
+            << ", diff = " << diff_action
+            << ")  ==> " << (pass_action ? C_GREEN "PASS" : C_RED "FAIL") << C_RESET
+                << std::endl;
+
+        std::cout << Grid::GridLogLLR
+            << "Plaquette --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
+            << C_MAGENTA << s_llrparams_in->plaq << C_RESET
+            << "   (expected " << expected_plaquette
+            << ", diff = " << diff_plaquette
+            << ")  ==> " << (pass_plaquette ? C_GREEN "PASS" : C_RED "FAIL") << C_RESET
+            << std::endl;
+
+        SOFT_ASSERT(diff_plaquette < epsilon_plaquette,
+                    "Plaquette within tolerance: value=" +
+                    std::to_string(s_llrparams_in->plaq) +
+                    " expected=" + std::to_string(expected_plaquette) +
+                    " diff=" + std::to_string(diff_plaquette));
+
+        SOFT_ASSERT(diff_action < epsilon_S,
+                    "Action within tolerance: value=" +
+                    std::to_string(s_llrparams_in->S) +
+                    " expected=" + std::to_string(expected_action) +
+                    " diff=" + std::to_string(diff_action));
+
+        // Assert plaquette
+        assert( diff_plaquette < epsilon_plaquette &&
+                "Plaquette assertion FAILED: |plaq - expected_plaq| >= epsilon" );
+
+        // Assert action
+        assert( diff_action < epsilon_S &&
+                "Action assertion FAILED: |S - expected_S| >= epsilon" );
+
+        assert((diff_plaquette < epsilon_plaquette) &&
+               ("Plaquette FAIL: value=" +
+                std::to_string(s_llrparams_in->plaq) +
+                " expected=" + std::to_string(expected_plaquette) +
+                " diff=" + std::to_string(diff_plaquette)).c_str());
+
+        assert((diff_action < epsilon_S) &&
+               ("Action FAIL: value=" +
+                std::to_string(s_llrparams_in->S) +
+                " expected=" + std::to_string(expected_action) +
+                " diff=" + std::to_string(diff_action)).c_str());
+
+        std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
         // End the if block
         std::cout<<C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;
     } /* [end-if] with_llr */

@@ -135,6 +135,9 @@ public:
         // putting the results in the setter
         set_action(action);
         set_plaquette(plaq);
+        // Try this way see if this works.
+        Pars.s_llrparams_in_->S = action;
+        Pars.s_llrparams_in_->plaq = plaq;
 
         // Printing to standard output
         int def_prec = std::cout.precision();
@@ -215,6 +218,8 @@ class LLRActionMod: public Grid::ObservableModule<LLRActionLogger<Impl>, ActionL
 public:
     LLRActionMod(ActionLoggerObsParameters Par): ObsBase(Par){}
     LLRActionMod(): ObsBase(){}
+    Grid::RealD log_action = LLRActionLogger<Impl>(this->Par_).get_action();
+    Grid::RealD log_plaquette = LLRActionLogger<Impl>(this->Par_).get_plaquette();
 };
 } /* end of namespace namespace_LLR */
 /////////////////////////////////////////////////////////////
@@ -243,6 +248,9 @@ int main(int argc, char **argv) {
     s_llrparams_in->a = 5.66;
     s_llrparams_in->S0 = 13281.000;
     s_llrparams_in->dS = 3.0;
+    // initialising the action and plaquette in the struc.
+    s_llrparams_in->S = 1234.5678;
+    s_llrparams_in->plaq = 4321.9876;
 
     // Create and initialise to some arbitrary values the hmc_parameters structure
     namespace_LLR::hmc_params_llr* s_hmc_params_llr_in =
@@ -368,6 +376,24 @@ int main(int argc, char **argv) {
         TheHMC.Parameters.MD.trajL   = float(s_hmc_params_llr_in->trajL); // 1.0;
 
         TheHMC.Run();  // no smearing
+
+        // Creating the test PASS/FAIL
+        std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
+        std::cout
+                << Grid::GridLogLLR
+                << "Final action and Plaquette:"
+                << std::endl;
+
+        std::cout
+                << Grid::GridLogLLR
+                <<"Action    --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->:"
+                << C_MAGENTA << s_llrparams_in->S << C_RESET << std::endl;
+        std::cout
+                << Grid::GridLogLLR
+                <<"Plaquette --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->:"
+                << C_MAGENTA << s_llrparams_in->plaq << C_RESET << std::endl;
+
+        std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
 
         // End the if block
         std::cout<<C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;

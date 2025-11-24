@@ -73,6 +73,8 @@ namespace namespace_LLR {
         double a;
         double S0;
         double dS;
+        double S;
+        double plaq;
     } llrparams_t;
 
     //static llrparams llrp;

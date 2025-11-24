@@ -87,6 +87,8 @@ namespace namespace_LLR {
         s_llrparams->a              = llrp_in->starta;
         s_llrparams->dS             = llrp_in->dS;
         s_llrparams->S0             = llrp_in->S0;
+        s_llrparams->S              = llrp_in->S;
+        s_llrparams->plaq           = llrp_in->plaq;
     } /* end of init_robbins_monro method */
 
     void llr_hmc::init_llr_params() {
@@ -101,6 +103,8 @@ namespace namespace_LLR {
         s_llrparams->a              = 0.0;
         s_llrparams->dS             = 0.0;
         s_llrparams->S0             = 0.0;
+        s_llrparams->S              = 0.0;
+        s_llrparams->plaq           = 0.0;
     } /* end of init_llr_params method */
 
     void namespace_LLR::llr_hmc::init_hmc_params_llr(namespace_LLR::hmc_params_llr *hmcParLLR_in) {
@@ -220,6 +224,8 @@ namespace namespace_LLR {
         std::cout<<B_BLUE<<"s_llr_parameters->a                ---> "<<B_YELLOW<<s_llr_parameters->a<<std::endl;
         std::cout<<B_BLUE<<"s_llr_parameters->S0               ---> "<<B_YELLOW<<s_llr_parameters->S0<<std::endl;
         std::cout<<B_BLUE<<"s_llr_parameters->dS               ---> "<<B_YELLOW<<s_llr_parameters->dS<<std::endl;
+        std::cout<<B_BLUE<<"s_llr_parameters->S                ---> "<<B_YELLOW<<s_llr_parameters->S<<std::endl;
+        std::cout<<B_BLUE<<"s_llr_parameters->plaq             ---> "<<B_YELLOW<<s_llr_parameters->plaq<<std::endl;
         std::cout<<B_BLUE<<"*--------------------------------------*"<<std::endl;
         std::cout<<C_RESET;
         return rc;
