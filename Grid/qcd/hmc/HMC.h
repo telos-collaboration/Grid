@@ -183,9 +183,10 @@ private:
 
     TheIntegrator.reset_timer();
 
-      std::cout << GridLogHMC << C_RED << "with_llr b4 Integrator.refresh ---->: "<< with_llr <<C_RESET <<std::endl;
+      std::cout << GridLogHMC << C_RED << "with_llr at Integrator.refresh ---->: "<< with_llr <<C_RESET <<std::endl;
       int set_llr_if = 0;
       if (with_llr == true) { set_llr_if = 1234; }
+      std::cout << GridLogHMC << B_RED << "set_llr_if at Int.refresh      ---->: "<< set_llr_if <<C_RESET <<std::endl;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // set U and initialize P and phi's
@@ -200,34 +201,23 @@ private:
     std::cout << GridLogMessage << "--------------------------------------------------\n";
     std::cout << GridLogMessage << "Compute initial action"<< std::endl;
 
-      std::cout << GridLogHMC << B_RED << "with_llr af Int.refresh  b4 S0 ---->: "<< with_llr <<C_RESET <<std::endl;
-      std::cout << GridLogHMC << B_RED << "set_llr_if Int.refresh b4 S0   ---->: "<< set_llr_if <<C_RESET <<std::endl;
-
       RealD S0 = 0.0;
       RealD H0 = 0.0;
       RealD S0_llr = 0.0;
-      RealD H0_llr = 0.0;
+      //RealD H0_llr = 0.0;
       if (set_llr_if == 1234) {
           //////////////////////////////////////////////////////////////////////////////////////////////////////
           // Initial state action with LLR
           //////////////////////////////////////////////////////////////////////////////////////////////////////
-
           S0_llr = TheIntegrator.Sinitial_llr(U);
 
-          H0_llr = S0_llr;
-          std::cout << GridLogHMC << C_MAGENTA << "S0_llr from Sinitial_llr(U)     ----->: " << S0_llr << C_RESET << std::endl;
-          std::cout << GridLogHMC << C_MAGENTA << "H0_llr from Sinitial_llr(U)     ----->: " << H0_llr << C_RESET << std::endl;
-          std::cout << GridLogHMC << B_MAGENTA << "H0_llr HMC                      ----->: " << H0_llr << C_RESET << std::endl;
-
-          H0 = H0_llr;  // Mapping back to the original variable name to minimize the footprint
+          H0 = S0_llr;  // Mapping back to the original variable name to minimize the footprint
+          std::cout << GridLogHMC << C_MAGENTA << "H0_llr from Sinitial_llr(U)     ----->: " << H0 << C_RESET << std::endl;
 
       } else if (set_llr_if == 0) {
           //////////////////////////////////////////////////////////////////////////////////////////////////////
           // Initial state action with no LLR
           //////////////////////////////////////////////////////////////////////////////////////////////////////
-          S0 = TheIntegrator.Sinitial(U);
-          std::cout << GridLogHMC << C_MAGENTA << "S0 from Sinitial(U)             ----->: " << S0 << C_RESET << std::endl;
-
           H0 = TheIntegrator.Sinitial(U);
           std::cout << GridLogHMC << C_MAGENTA << "H0 from Sinitial(U)             ----->: " << H0 << C_RESET<< std::endl;
       }
@@ -238,7 +228,6 @@ private:
 
     std::streamsize current_precision = std::cout.precision();
     std::cout.precision(15);
-      std::cout << GridLogHMC << B_YELLOW  << "H0 HMC                          ----->: "<< H0 << C_RESET <<std::endl;
     std::cout << GridLogHMC << "Total H before trajectory = " << H0 << "\n";
     std::cout.precision(current_precision);
 
@@ -253,27 +242,24 @@ private:
     std::cout << GridLogMessage << "--------------------------------------------------\n";
     std::cout << GridLogMessage << "Compute final action"<< std::endl;
 
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
-      // final state action with LLR
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
-      std::cout << GridLogHMC << B_RED << "with_llr af Int.refresh  b4 S1 ---->: "<< with_llr <<C_RESET <<std::endl;
-      //TODO: insert the equivalent of the deriv term
       RealD H1 = 0.0;
       RealD S1_llr = 0.0;
-      RealD H1_llr = 0.0;
+      //RealD H1_llr = 0.0;
       if (set_llr_if == 1234) {
+          ////////////////////////////////////////////////////////////////////////////////////////////////
+          // final state action with LLR
+          ////////////////////////////////////////////////////////////////////////////////////////////////
           S1_llr = TheIntegrator.S_llr(U);
-          H1_llr = S1_llr;
-          std::cout << GridLogHMC << "\x1b[35m" << "S1_llr from S_llr(U)            ----->: " << S1_llr << C_RESET << std::endl;
-          std::cout << GridLogHMC << "\x1b[35m" << "H1_llr from S_llr(U)            ----->: " << H1_llr << C_RESET << std::endl;
+          H1 = S1_llr;
+          std::cout << GridLogHMC << C_MAGENTA << "H1_llr from S_llr(U)            ----->: " << H1 << C_RESET << std::endl;
           std::cout << GridLogMessage << "--------------------------------------------------\n";
-          H1 = H1_llr;
       } else if (set_llr_if == 0) {
-          //////////////////////////////////////////////////////////////////////////////////////////////////////
+          ////////////////////////////////////////////////////////////////////////////////////////////////
           // final state action with no LLR
-          //////////////////////////////////////////////////////////////////////////////////////////////////////
+          ////////////////////////////////////////////////////////////////////////////////////////////////
           H1 = TheIntegrator.S(U);
-          std::cout << GridLogHMC << "\x1b[35m" << "H1 from S(U)                    ----->: " << H1 << C_RESET << std::endl;
+          std::cout << GridLogHMC << C_MAGENTA << "H1 from S(U)                    ----->: " << H1 << C_RESET << std::endl;
+          std::cout << GridLogMessage << "--------------------------------------------------\n";
       }
     ///////////////////////////////////////////////////////////
     if(0){
@@ -284,37 +270,36 @@ private:
 
         if (set_llr_if == 1234) {
             H1 = TheIntegrator.S_llr(U);
+            std::cout << GridLogHMC << B_YELLOW  << "H1(llr) Reversibility test      ----->: "<< H1 << C_RESET <<std::endl;
         } else if (set_llr_if == 0) {
             H1 = TheIntegrator.S(U);  // updated state action
+            std::cout << GridLogHMC << B_YELLOW  << "H1 Reversibility test           ----->: "<< H1 << C_RESET <<std::endl;
         }
-        std::cout << GridLogHMC << B_YELLOW  << "H1(llr) Reversibility test      ----->: "<< H1 << C_RESET <<std::endl;
       std::cout << "--------------------------------------------" << std::endl;
     }
     ///////////////////////////////////////////////////////////
-
     std::cout.precision(15);
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////////////////////////////////////////////
       // Delta in the final and initial state action with LLR
-      //////////////////////////////////////////////////////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////////////////////////////////////////////
       RealD dH = 0.0;
-      RealD dH_llr = 0.0;
+      //RealD dH_llr = 0.0;
       if (set_llr_if == 1234) {
-          dH_llr = H1_llr - H0_llr;
-          std::cout << GridLogHMC << B_MAGENTA << "H1_llr HMC                      ----->: " << H1_llr << C_RESET << std::endl;
-          std::cout << GridLogHMC << B_MAGENTA << "dH_llr = H1_llr - H0_llr        ----->: " << dH_llr << C_RESET << std::endl;
-          std::cout << GridLogHMC << B_MAGENTA << "dH = H1 - H0                    ----->: " << H1 - H0 << C_RESET << std::endl;
+          //dH_llr = H1_llr - H0_llr;
+          dH = H1 - H0;
+          std::cout << GridLogHMC << B_MAGENTA << "H1_llr HMC                      ----->: " << H1 << C_RESET << std::endl;
+          std::cout << GridLogHMC << B_MAGENTA << "dH = H1 - H0                    ----->: " << dH << C_RESET << std::endl;
           std::cout << GridLogHMC << "--------------------------------------------------\n";
-          std::cout << GridLogHMC << "Total H1_llr after trajectory  = " << H1_llr << "  the_deltaH = " << dH_llr << "\n";
+          std::cout << GridLogHMC << "Total H1_llr after trajectory  = " << H1 << "  the_deltaH = " << dH << "\n";
           std::cout << GridLogHMC << "--------------------------------------------------\n";
       } else if (set_llr_if == 0) {
+          dH = H1 - H0;
           std::cout << GridLogHMC << B_YELLOW  << "H1 HMC                          ----->: "<< H1 << C_RESET <<std::endl;
-          std::cout << GridLogHMC << B_YELLOW  << "dH = H1 - H0                    ----->: "<< H1 - H0 << C_RESET <<std::endl;
-
+          std::cout << GridLogHMC << B_YELLOW  << "dH = H1 - H0                    ----->: "<< dH << C_RESET <<std::endl;
           std::cout << GridLogHMC << "--------------------------------------------------\n";
-          std::cout << GridLogHMC << "Total H after trajectory  = " << H1 << "  dH = " << H1 - H0 << "\n";
+          std::cout << GridLogHMC << "Total H after trajectory  = " << H1 << "  dH = " << dH << "\n";
           std::cout << GridLogHMC << "--------------------------------------------------\n";
       }
-
     std::cout.precision(current_precision);
 
     return (H1 - H0);
