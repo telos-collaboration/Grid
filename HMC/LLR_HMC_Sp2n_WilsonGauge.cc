@@ -34,13 +34,13 @@ directory
 #include <Grid/Grid.h>
 
 #include <Grid/qcd/llr_hmc/llr_hmc.h>
-///////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // Namespace declaration
-///////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 namespace namespace_LLR {
-/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //// [LLR-Structure]
-/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 ////////////////////////
 /// [ActionLoggerObsParameters]
 ////////////////////////
@@ -52,16 +52,18 @@ struct ActionLoggerObsParameters: Grid::Serializable {
                 namespace_LLR::llrparams*, s_llrparams_in );
     */
     Grid::RealD beta_ = 0.0;
+	int MDsteps_ = 1;
     Grid::RealD a_ = 0.0;
     std::ofstream* logFile_ = nullptr;
     std::ofstream* csvFile_ = nullptr;
     namespace_LLR::llrparams* s_llrparams_in_ = nullptr;
     ActionLoggerObsParameters(Grid::RealD beta = 2.4,
+							  int MDsteps = 1,
                               Grid::RealD a = 1.0,
                               namespace_LLR::llrparams* s_llrparams_in = nullptr,
                               std::ofstream* logFile = nullptr,
                               std::ofstream* csvFile = nullptr)
-            : beta_(beta), a_(a), s_llrparams_in_(s_llrparams_in),
+            : beta_(beta), MDsteps_(MDsteps), a_(a), s_llrparams_in_(s_llrparams_in),
               logFile_(logFile), csvFile_(csvFile){}
 
     template <class ReaderClass >
@@ -69,12 +71,12 @@ struct ActionLoggerObsParameters: Grid::Serializable {
         read(Reader, "ActionLoggerMeasurement", *this);
     }
 };
-/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 /// Template classes helpers
-/////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //// [LLR-Logger]
-/////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 template <class Impl>
 class LLRActionLogger : public Grid::HmcObservable<typename Impl::Field> {
     ActionLoggerObsParameters Pars;
@@ -91,7 +93,8 @@ public:
     //////////////////////////////////////////////////////////////////////////
     /// [Printers]
     //////////////////////////////////////////////////////////////////////////
-    int print(ActionLoggerObsParameters Pars_in, int traj, Grid::RealD action_in, int vol_in){
+    int print(ActionLoggerObsParameters Pars_in, int traj, Grid::RealD action_in,
+              int vol_in){
         int rc = RC_SUCCESS;
         //TODO: may implement this later.
         return rc;
@@ -116,9 +119,11 @@ public:
     {
         std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
         std::cout << Grid::GridLogMessage << "LLR Unsmeared plaquette"<<std::endl;
-        TrajectoryComplete(traj,SmartConfig.get_U(false),sRNG,pRNG); // Un-smeared
+        // Un-smeared
+        TrajectoryComplete(traj,SmartConfig.get_U(false),sRNG,pRNG);
         std::cout << Grid::GridLogMessage << "LLR Smeared plaquette"<<std::endl;
-        TrajectoryComplete(traj,SmartConfig.get_U(true),sRNG,pRNG);  // Smeared
+        // Smeared
+        TrajectoryComplete(traj,SmartConfig.get_U(true),sRNG,pRNG);
         std::cout << Grid::GridLogMessage << "+++++++++++++++++++"<<std::endl;
     };
 
@@ -145,6 +150,7 @@ public:
                 << Grid::GridLogLLR
                 << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
                 << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
+                << "MDsteps: [ " << Pars.MDsteps_<< " ] < -- > "
                 << "LLR Plaquette: [ " << traj << " ] "<< plaq << " ] < -- > "
                 << "LLR Action: [ " << action << " ] < -- > "
                 << "LLR a: [ " << Pars.a_ << " ] < -- > "
@@ -158,6 +164,7 @@ public:
                 << Grid::GridLogLLR
                 << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
                 << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
+				<< "MDsteps: [ " << Pars.MDsteps_<< " ] < -- > "
                 << "LLR Plaquette: [ " << traj << " ] " << plaq << " ] < -- > "
                 << "LLR Action: [ " << action << " ] < -- > "
                 << "LLR a: [ " << Pars.a_ << " ] < -- > "
@@ -172,6 +179,7 @@ public:
                 << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
                 << "," << traj
                 << "," << Pars.beta_
+				<< "," << Pars.MDsteps_
                 << "," << plaq
                 << "," << action
                 << "," << Pars.a_
@@ -184,7 +192,7 @@ public:
     }
 };
 /////////////////////////////////////////////////////////////
-//// [LLR-Module] TODO: migrate all of this into the namespace_LLR::llr_hmc object
+//// [LLR-Module]
 /////////////////////////////////////////////////////////////
 ////////////////////////
 /// [Plaquette]
@@ -206,10 +214,8 @@ LLRPlaquetteMod(): ObsBase(Grid::NoParameters()){}
 ////////////////////////
 template < class Impl >
 class LLRActionMod: public Grid::ObservableModule<LLRActionLogger<Impl>, ActionLoggerObsParameters>{
-
     typedef Grid::ObservableModule< LLRActionLogger<Impl>, ActionLoggerObsParameters > ObsBase;
     using ObsBase::ObsBase; // for constructors
-
 // acquire resource
     virtual void initialize(){
         //this->ObservablePtr.reset(new LLRActionLogger<Impl>(this->Par_.beta_, this->Par_.a_)); //this->Par_
@@ -279,7 +285,7 @@ int main(int argc, char **argv) {
 
     // Constructing the output files using the command line input parameters
     // Creating the output file
-    std::cout<<C_RED<<"<---- Creating/Opening output log file ... --->"<<C_RESET<<std::endl;
+    std::cout<<C_RED<<"<---- Creating/Opening output csv/log file ... --->"<<C_RESET<<std::endl;
     int md = s_hmc_params_llr_in->MDsteps;
     std::ofstream run_LLR_HMC_logfile("LLR_HMC_Sp2n_WilsonGauge_MDsteps-"+std::to_string(md)+".log");
     std::ofstream run_LLR_HMC_csvfile("LLR_HMC_Sp2n_WilsonGauge_MDsteps-"+std::to_string(md)+".csv");
@@ -288,6 +294,7 @@ int main(int argc, char **argv) {
             << "Grid::GridLogMessage"
             << "," << "traj"
             << "," << "beta"
+			<< "," << "MDsteps"
             << "," << "plaq"
             << "," << "action"
             << "," << "a"
@@ -349,15 +356,16 @@ int main(int argc, char **argv) {
         typedef namespace_LLR::LLRPlaquetteMod<HMCWrapperSpLLR::ImplPolicy> LLRSpPlaqObs;
         TheHMC.Resources.AddObservable<LLRSpPlaqObs>();
 
-        namespace_LLR::ActionLoggerObsParameters ActParams;
-        ActParams.a_ = s_llrparams_in->a;
-        ActParams.beta_ = s_hmc_params_llr_in->beta;
-        ActParams.s_llrparams_in_ = s_llrparams_in;
-        ActParams.logFile_ = &run_LLR_HMC_logfile;
-        ActParams.csvFile_ = &run_LLR_HMC_csvfile;
+        namespace_LLR::ActionLoggerObsParameters LLRActParams;
+        LLRActParams.a_ = s_llrparams_in->a;
+        LLRActParams.beta_ = s_hmc_params_llr_in->beta;
+        LLRActParams.MDsteps_ = s_hmc_params_llr_in->MDsteps;
+        LLRActParams.s_llrparams_in_ = s_llrparams_in;
+        LLRActParams.logFile_ = &run_LLR_HMC_logfile;
+        LLRActParams.csvFile_ = &run_LLR_HMC_csvfile;
 
         typedef namespace_LLR::LLRActionMod<HMCWrapperSpLLR::ImplPolicy> LLRSpActObs;
-        TheHMC.Resources.AddObservable<LLRSpActObs>(ActParams);
+        TheHMC.Resources.AddObservable<LLRSpActObs>(LLRActParams);
 
         /////////////////////////////////////////////////////////////
         // Collect actions, here use more encapsulation
@@ -386,11 +394,11 @@ int main(int argc, char **argv) {
 
         std::cout
                 << Grid::GridLogLLR
-                <<"Action    --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->:"
+                <<"Action    --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->: "
                 << C_MAGENTA << s_llrparams_in->S << C_RESET << std::endl;
         std::cout
                 << Grid::GridLogLLR
-                <<"Plaquette --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->:"
+                <<"Plaquette --->: MDsteps[" << s_hmc_params_llr_in->MDsteps <<"] --->: "
                 << C_MAGENTA << s_llrparams_in->plaq << C_RESET << std::endl;
 
         std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;

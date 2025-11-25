@@ -64,16 +64,18 @@ struct ActionLoggerObsParameters: Grid::Serializable {
                 namespace_LLR::llrparams*, s_llrparams_in );
     */
     Grid::RealD beta_ = 0.0;
+	int MDsteps_ = 1;
     Grid::RealD a_ = 0.0;
     std::ofstream* logFile_ = nullptr;
     std::ofstream* csvFile_ = nullptr;
     namespace_LLR::llrparams* s_llrparams_in_ = nullptr;
     ActionLoggerObsParameters(Grid::RealD beta = 2.4,
+							  int MDsteps = 1,
                               Grid::RealD a = 1.0,
                               namespace_LLR::llrparams* s_llrparams_in = nullptr,
                               std::ofstream* logFile = nullptr,
                               std::ofstream* csvFile = nullptr)
-                              : beta_(beta), a_(a), s_llrparams_in_(s_llrparams_in),
+                              : beta_(beta), MDsteps_(MDsteps), a_(a), s_llrparams_in_(s_llrparams_in),
                               logFile_(logFile), csvFile_(csvFile){}
 
     template <class ReaderClass >
@@ -157,7 +159,8 @@ public:
         << Grid::GridLogLLR
         << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
         << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
-        << "LLR Plaquette: [ " << traj << " ] "<< plaq << " ] < -- > "
+		<< "MDsteps: [ " << Pars.MDsteps_<< " ] < -- > "
+        << "LLR Plaquette: [ " << traj << " ] ["<< plaq << " ] < -- > "
         << "LLR Action: [ " << action << " ] < -- > "
         << "LLR a: [ " << Pars.a_ << " ] < -- > "
         << "LLR S0: [ " << Pars.s_llrparams_in_->S0 << " ] < -- > "
@@ -170,7 +173,8 @@ public:
         << Grid::GridLogLLR
         << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
         << "LLR beta: [ " << Pars.beta_<< " ] < -- > "
-        << "LLR Plaquette: [ " << traj << " ] " << plaq << " ] < -- > "
+		<< "MDsteps: [ " << Pars.MDsteps_<< " ] < -- > "
+        << "LLR Plaquette: [ " << traj << " ] [" << plaq << " ] < -- > "
         << "LLR Action: [ " << action << " ] < -- > "
         << "LLR a: [ " << Pars.a_ << " ] < -- > "
         << "LLR S0: [ " << Pars.s_llrparams_in_->S0 << " ] < -- > "
@@ -184,6 +188,7 @@ public:
         << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
         << "," << traj
         << "," << Pars.beta_
+		<< "," << Pars.MDsteps_
         << "," << plaq
         << "," << action
         << "," << Pars.a_
@@ -276,7 +281,7 @@ int main(int argc, char **argv) {
     s_hmc_params_llr_in->beta = 2.4;
     s_hmc_params_llr_in->trajL = 1.0;
     s_hmc_params_llr_in->MDsteps = 44;
-    s_hmc_params_llr_in->Trajectories = 100;
+    s_hmc_params_llr_in->Trajectories = 40;
     s_hmc_params_llr_in->Thermalizations = 20;
 
     // The epsilon for the assertion
@@ -311,6 +316,7 @@ int main(int argc, char **argv) {
             << "Grid::GridLogMessage"
             << "," << "traj"
             << "," << "beta"
+			<< "," << "MDsteps"
             << "," << "plaq"
             << "," << "action"
             << "," << "a"
@@ -375,6 +381,7 @@ int main(int argc, char **argv) {
         ActionLoggerObsParameters ActParams;
         ActParams.a_ = s_llrparams_in->a;
         ActParams.beta_ = s_hmc_params_llr_in->beta;
+        ActParams.MDsteps_ = s_hmc_params_llr_in->MDsteps;
         ActParams.s_llrparams_in_ = s_llrparams_in;
         ActParams.logFile_ = &run_LLR_HMC_logfile;
         ActParams.csvFile_ = &run_LLR_HMC_csvfile;
@@ -427,31 +434,31 @@ int main(int argc, char **argv) {
 
         std::cout << Grid::GridLogLLR
             << "Action    --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
-                << C_MAGENTA << s_llrparams_in->S << C_RESET
+			<< C_MAGENTA << std::setw(12) << s_llrparams_in->S << C_RESET
             << "   (expected " << expected_action
-            << ", diff = " << diff_action
+            << ", diff = " << std::setw(14) << diff_action
             << ")  ==> " << (pass_action ? C_GREEN "PASS" : C_RED "FAIL") << C_RESET
                 << std::endl;
 
         std::cout << Grid::GridLogLLR
             << "Plaquette --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
-            << C_MAGENTA << s_llrparams_in->plaq << C_RESET
+            << C_MAGENTA << std::setw(12) <<s_llrparams_in->plaq << C_RESET
             << "   (expected " << expected_plaquette
-            << ", diff = " << diff_plaquette
+            << ", diff = " << std::setw(14) << diff_plaquette
             << ")  ==> " << (pass_plaquette ? C_GREEN "PASS" : C_RED "FAIL") << C_RESET
             << std::endl;
 
         SOFT_ASSERT(diff_plaquette < epsilon_plaquette,
-                    "Plaquette within tolerance: value=" +
+                    "Plaquette within tolerance: value = " +
                     std::to_string(s_llrparams_in->plaq) +
-                    " expected=" + std::to_string(expected_plaquette) +
-                    " diff=" + std::to_string(diff_plaquette));
+                    "     expected = " + std::to_string(expected_plaquette) +
+                    "     diff = " + std::to_string(diff_plaquette));
 
         SOFT_ASSERT(diff_action < epsilon_S,
-                    "Action within tolerance: value=" +
+                    "Action within tolerance   : value = " +
                     std::to_string(s_llrparams_in->S) +
-                    " expected=" + std::to_string(expected_action) +
-                    " diff=" + std::to_string(diff_action));
+                    " expected = " + std::to_string(expected_action) +
+                    " diff = " + std::to_string(diff_action));
 
         // Assert plaquette
         assert( diff_plaquette < epsilon_plaquette &&

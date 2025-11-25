@@ -82,8 +82,8 @@ export GRID_ALLOC_NCACHE_HUGE=0
 #-------------------------------------------------------------------------------
 # Output variable.
 #-------------------------------------------------------------------------------
-LatticeRuns_dir=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/LatticeRuns
-path_to_run=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/Grid-Telos-Devel
+LatticeRuns_dir=${sourcecode_dir}/LatticeRuns
+path_to_run=${sourcecode_dir}/Grid-Telos-Devel
 job_name=Run_LLR_HMC_Sp2n_WilsonGauge_nodes001_mpi01-01-01-04
 #-------------------------------------------------------------------------------
 # Variable list for grid command line argument list

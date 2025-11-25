@@ -82,8 +82,8 @@ export GRID_ALLOC_NCACHE_HUGE=0
 #-------------------------------------------------------------------------------
 # Output variable.
 #-------------------------------------------------------------------------------
-LatticeRuns_dir=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/LatticeRuns
-path_to_run=/home/dp208/dp208/dc-bonn2/SwanSea/SourceCodes/Grid-Telos-Devel
+LatticeRuns_dir=${sourcecode_dir}/LatticeRuns
+path_to_run=${sourcecode_dir}/Grid-Telos-Devel
 job_name=Run_LLR_HMC_SUn_WilsonGauge_nodes001_mpi01-01-01-04
 #-------------------------------------------------------------------------------
 # Variable list for grid command line argument list
@@ -94,13 +94,13 @@ MPI=1.1.1.4
 # Extracted from the configuration
 
 VOL=8.8.8.8
-BETA=2.4         # 6.9   beta
+BETA=6.0         # 6.9   beta
 
 # Hardcoded variables
 
-TRAJECTORIES=500 #20         #100000
+TRAJECTORIES=40 #20         #100000
 THERMALIZATIONS=20 #10
-MDsteps=27
+MDsteps=40
 trajL=1
 SAVEFREQ=100 #10
 
@@ -127,10 +127,14 @@ shm=8192
 
 mpirun -np ${SLURM_NTASKS} \
 "${grid_dwf_telos_build_dir}"/HMC/LLR_HMC_SUn_WilsonGauge \
-  --enable-llr \
+  --beta ${BETA} \
+  --starttraj ${STARTTRAJ} \
   --grid ${VOL} \
+  --enable-llr \
   --Trajectories ${TRAJECTORIES} \
   --Thermalizations ${THERMALIZATIONS} \
+  --nsteps ${MDsteps} \
+  --tlen ${trajL} \
   --savefreq ${SAVEFREQ}
 
 ################################################################################

@@ -33,7 +33,17 @@ namespace namespace_LLR {
                  "Class namespace_LLR::llr_hmc() has been instantiated, return code: "
                  <<B_GREEN<<rc<<C_RESET<<std::endl;
         // initialize the struct data structure
-        init_robbins_monro(llpr_in);
+        //init_robbins_monro(llpr_in);
+    };
+
+    llr_hmc::llr_hmc(namespace_LLR::hmc_params_llr *hmcParamsLlr_in) {
+        int rc = RC_SUCCESS;
+        std::cout<<B_BLUE<<
+                 "Class namespace_LLR::llr_hmc() has been instantiated, return code: "
+                 <<B_GREEN<<rc<<C_RESET<<std::endl;
+        // initialize the struct data structure
+        //init_hmc_params_llr(hmcParamsLlr_in);
+        //print_s_hmc_params_llr(hmcParamsLlr_in);
     };
 
     llr_hmc::llr_hmc(namespace_LLR::llrparams *llpr_in,
@@ -43,7 +53,7 @@ namespace namespace_LLR {
                  "Class namespace_LLR::llr_hmc() has been instantiated, return code: "
                  <<B_GREEN<<rc<<C_RESET<<std::endl;
         // initialize the struct data structure
-        init_robbins_monro(llpr_in);
+        //init_robbins_monro(llpr_in);
         //init_hmc_params_llr(hmcParamsLlr_in);
         //print_s_hmc_params_llr(hmcParamsLlr_in);
     };
