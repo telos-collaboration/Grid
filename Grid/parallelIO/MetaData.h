@@ -209,7 +209,7 @@ inline void reconstruct3(LorentzColourMatrix & cm)
       cm(mu)()(1,0) = -adj(cm(mu)()(0,y)) ;
       cm(mu)()(1,1) =  adj(cm(mu)()(0,x)) ;
     #else
-      const int x=0 , y=1 , z=2 ; // a little disinenuous labelling
+      const int x=0 , y=1 , z=2 ; // a little disingenuous labelling
       cm(mu)()(2,x) = adj(cm(mu)()(0,y)*cm(mu)()(1,z)-cm(mu)()(0,z)*cm(mu)()(1,y)); //x= yz-zy
       cm(mu)()(2,y) = adj(cm(mu)()(0,z)*cm(mu)()(1,x)-cm(mu)()(0,x)*cm(mu)()(1,z)); //y= zx-xz
       cm(mu)()(2,z) = adj(cm(mu)()(0,x)*cm(mu)()(1,y)-cm(mu)()(0,y)*cm(mu)()(1,x)); //z= xy-yx
@@ -217,14 +217,31 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
+inline void reconstructSp(LorentzColourMatrix & cm) {
+	assert( Nc%2==0 ); 
+	int N = Nc/2;
+	for(int mu=0;mu<Nd;mu++){
+		for(int i=0;i<N;i++){
+			for(int j=0;j<N;j++){
+				cm(mu)()(i+N,j) = -adj( cm(mu)()(i,j+N) ); //B to -B*
+				cm(mu)()(i+N,j+N) = adj( cm(mu)()(i,j) );	//A to A*
+			}
+		}
+	}
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Some data types for intermediate storage
 ////////////////////////////////////////////////////////////////////////////////
 template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, Nc-1>, Nd >;
+template<typename vtype> using iLorentzColourNx2N = iVector<iVector<iVector<vtype, Nc>, Nc/2>, Nd >;
 
 typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
 typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
+
+typedef iLorentzColourNx2N<Complex>   LorentzColourNx2N;
+typedef iLorentzColourNx2N<ComplexF>  LorentzColourNx2NF;
+typedef iLorentzColourNx2N<ComplexD>  LorentzColourNx2ND;
 
 /////////////////////////////////////////////////////////////////////////////////
 // Simple classes for precision conversion
@@ -235,7 +252,7 @@ struct BinarySimpleUnmunger {
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
   
   void operator()(sobj &in, fobj &out) {
-    // take word by word and transform accoding to the status
+    // take word by word and transform according to the status
     fobj_stype *out_buffer = (fobj_stype *)&out;
     sobj_stype *in_buffer = (sobj_stype *)&in;
     size_t fobj_words = sizeof(out) / sizeof(fobj_stype);
@@ -273,7 +290,7 @@ struct GaugeSimpleMunger{
   void operator()(fobj &in, sobj &out) {
     for (int mu = 0; mu < Nd; mu++) {
       for (int i = 0; i < Nc; i++) {
-	for (int j = 0; j < Nc; j++) {
+for (int j = 0; j < Nc; j++) {
 	  out(mu)()(i, j) = in(mu)()(i, j);
 	}}
     }
@@ -339,6 +356,93 @@ struct Gauge3x2unmunger{
 	}}
     }
   }
+};
+
+template<class fobj,class sobj>
+struct GaugeSpmunger{
+  void operator() (fobj &in,sobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc/2;i++){
+		for(int j=0;j<Nc;j++){
+	  	  out(mu)()(i,j) = in(mu)(i)(j);
+		}
+	  }
+    }
+  	reconstructSp(out);
+  }
+};
+
+template<class fobj,class sobj>
+struct GaugeSpunmunger{
+  void operator() (sobj &in,fobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc/2;i++){
+	    for(int j=0;j<Nc;j++){
+	      out(mu)(i)(j) = in(mu)()(i,j);
+		}
+	  }
+    }
+  }
+};
+
+// this struct is used to choose the appropriate
+// unmunger (for writing) at compile time.
+// the munger (for reading) can only be chosen
+// at runtime since you don't know beforehand
+// which format the fields were written in.
+template<class vobj, class group_name, bool reduce_group, bool store_as_dbl>
+struct GaugeUnMunger;
+
+// no group reduction
+template<class vobj, class group_name, bool store_as_dbl>
+struct GaugeUnMunger<vobj,group_name,false,store_as_dbl>
+{	
+  using in_type  = typename vobj::scalar_object; // LorentzColourMatrixF/D
+  using out_type = typename std::conditional<store_as_dbl,LorentzColourMatrixD,LorentzColourMatrixF>::type;
+  BinarySimpleUnmunger<out_type,in_type> unmunger;
+
+  void operator() (in_type &in, out_type &out){
+  unmunger(in,out);
+  }
+
+};
+
+//group reduction for SU
+template<class vobj, bool store_as_dbl>
+struct GaugeUnMunger<vobj,GroupName::SU,true,store_as_dbl>
+{
+	using in_type  = typename vobj::scalar_object; // LorentzColourMatrixF/D
+    using tmp_type = typename std::conditional<store_as_dbl,LorentzColourMatrixD,LorentzColourMatrixF>::type;
+	using out_type = typename std::conditional<store_as_dbl,LorentzColour2x3D,LorentzColour2x3F>::type;
+
+	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
+	Gauge3x2unmunger<out_type,tmp_type> gauge_unmunger;
+
+	void operator() (in_type &in, out_type &out){
+	tmp_type tmp;
+  	binary_unmunger(in, tmp);
+	gauge_unmunger(tmp,out);
+  }
+
+};
+
+//group reduction for Sp
+template<class vobj, bool store_as_dbl>
+struct GaugeUnMunger<vobj,GroupName::Sp,true,store_as_dbl>
+{
+    using in_type  = typename vobj::scalar_object; // LorentzColourMatrixF/D
+    using tmp_type = typename std::conditional<store_as_dbl,LorentzColourMatrixD,LorentzColourMatrixF>::type;
+	using out_type = typename std::conditional<store_as_dbl,LorentzColourNx2ND,LorentzColourNx2NF>::type;
+
+	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
+	GaugeSpunmunger<out_type,tmp_type> gauge_unmunger;
+
+	void operator() (in_type &in, out_type &out){
+	tmp_type tmp;
+  	binary_unmunger(in, tmp);
+	gauge_unmunger(tmp, out);
+	}
+
 };
 
 NAMESPACE_END(Grid);
