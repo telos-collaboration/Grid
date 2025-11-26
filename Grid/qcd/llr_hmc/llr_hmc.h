@@ -118,6 +118,7 @@ namespace namespace_LLR {
         //////////////////////////////////////////////////////////////////////////
         llr_hmc();
         llr_hmc(namespace_LLR::llrparams *llpr_in);
+		llr_hmc(namespace_LLR::hmc_params_llr *hmcParamsLlr_in);
         llr_hmc(namespace_LLR::llrparams *llpr_in,
                 namespace_LLR::hmc_params_llr *hmcParamsLlr_in);
         //////////////////////////////////////////////////////////////////////////
