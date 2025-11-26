@@ -163,7 +163,7 @@ public:
 		//////////////////////////////////////////////////////////////////////////
         // Printing to standard output
         std::cout
-                << Grid::GridLogLLR
+				<< Grid::GridLogMessage
                 << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
                 << "HMC beta: [ " << Pars.beta_<< " ] < -- > "
                 << "MDsteps: [ " << Pars.MDsteps_<< " ] < -- > "
@@ -177,7 +177,7 @@ public:
         // Writing to log file after checking the file being open.
         std::ostream &out_log = (Pars.logFile_ && Pars.logFile_->is_open()) ? *Pars.logFile_ : std::cout;
         out_log
-                << Grid::GridLogLLR
+				<< Grid::GridLogMessage
                 << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
                 << "HMC beta: [ " << Pars.beta_<< " ] < -- > "
                 << "MDsteps: [ " << Pars.MDsteps_<< " ] < -- > "
@@ -191,7 +191,7 @@ public:
         // Writing to csv file.
         std::ostream &out_csv = (Pars.csvFile_ && Pars.csvFile_->is_open()) ? *Pars.csvFile_ : std::cout;
         out_csv
-                << Grid::GridLogLLR
+				<< Grid::GridLogMessage
                 << std::setprecision(std::numeric_limits<Grid::Real>::digits10 + 1)
                 << "," << traj
                 << "," << Pars.beta_
@@ -249,7 +249,7 @@ Grid::RealD log_plaquette = HMCActionLogger<Impl>(this->Par_).get_plaquette();
 /// Main
 /////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
-    std::cout<<"Start HMC_SUn_WilsonGauge.cc" <<std::endl;
+    std::cout << Grid::GridLogMessage <<"Start HMC_SUn_WilsonGauge.cc" <<std::endl;
     // Initializing Grid library
 
     Grid::Grid_init(&argc, &argv);
@@ -278,7 +278,7 @@ int main(int argc, char **argv) {
 
     // Constructing the output files using the command line input parameters
     // Creating the output file
-    std::cout<<C_RED<<"<---- Creating/Opening output csv/log file ... --->"<<C_RESET<<std::endl;
+    std::cout << Grid::GridLogMessage <<C_RED<<"<---- Creating/Opening output csv/log file ... --->"<<C_RESET<<std::endl;
     int md = s_hmc_params_in->MDsteps;
     std::ofstream run_HMC_logfile("HMC_SUn_WilsonGauge_MDsteps-"+std::to_string(md)+".log");
     std::ofstream run_HMC_csvfile("HMC_SUn_WilsonGauge_MDsteps-"+std::to_string(md)+".csv");
@@ -374,7 +374,7 @@ int main(int argc, char **argv) {
     // Finalizing the Grid library
     Grid::Grid_finalize();
     // End statement
-    std::cout<<"<---- End HMC_SUn_WilsonGauge.cc ---->" <<std::endl;
+    std::cout << Grid::GridLogMessage << "<---- End HMC_SUn_WilsonGauge.cc ---->" <<std::endl;
     run_HMC_logfile <<"<---- End HMC_SUn_WilsonGauge.cc ---->"<<C_RESET<<std::endl;
     // Closing log file
     run_HMC_logfile.close();

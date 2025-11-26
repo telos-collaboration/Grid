@@ -247,7 +247,7 @@ public:
 int main(int argc, char **argv) {
     int rc = RC_SUCCESS;
     // Now staring the output for the log file.
-    std::cout<<C_RED<<"<---- Start Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
+    std::cout << Grid::GridLogLLR <<C_RED<<"<---- Start Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
     // Initializing Grid library environment.
     Grid::Grid_init(&argc, &argv);
     Grid::GridLogLayout();
@@ -307,7 +307,7 @@ int main(int argc, char **argv) {
 
     // Constructing the output files using the command line input parameters
     // Creating the output file
-    std::cout<<C_RED<<"<---- Creating/Opening output log file ... --->"<<C_RESET<<std::endl;
+    std::cout << Grid::GridLogLLR << C_RED<<"<---- Creating/Opening output log file ... --->"<<C_RESET<<std::endl;
     int md = s_hmc_params_llr_in->MDsteps;
     std::ofstream run_LLR_HMC_logfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".log");
     std::ofstream run_LLR_HMC_csvfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".csv");
@@ -327,13 +327,13 @@ int main(int argc, char **argv) {
 
     // Start of the main commands.
     bool with_llr = false;
-    std::cout<<"<---- with_llr (initialized)     ---->: " << with_llr << std::endl;
-    std::cout<<"<---- llr_config                 ---->: " << llr_config << std::endl;
+    std::cout << Grid::GridLogLLR <<"<---- with_llr (initialized)     ---->: " << with_llr << std::endl;
+    std::cout << Grid::GridLogLLR <<"<---- llr_config                 ---->: " << llr_config << std::endl;
 #if defined(llr_config)
     with_llr = true;
 #endif
-    std::cout<<"<---- with_llr (llr_config)      ---->: " << with_llr << std::endl;
-    std::cout<<"<---- Sp2n_config                ---->: " << Sp2n_config << std::endl;
+    std::cout << Grid::GridLogLLR << "<---- with_llr (llr_config)      ---->: " << with_llr << std::endl;
+    std::cout << Grid::GridLogLLR <<"<---- Sp2n_config                ---->: " << Sp2n_config << std::endl;
 
     // if --enable--LLR switch is activated
     if (with_llr) {
@@ -482,14 +482,14 @@ int main(int argc, char **argv) {
 
         std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
         // End the if block
-        std::cout<<C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;
+        std::cout << Grid::GridLogLLR << C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;
     } /* [end-if] with_llr */
 
     // Finalising Grid environment.
     Grid::Grid_finalize();
 
     // End statement
-    std::cout<<C_RED<<"<---- End Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
+    std::cout << Grid::GridLogLLR << C_RED<<"<---- End Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
     run_LLR_HMC_logfile <<"<---- End Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
     // Closing log file
     run_LLR_HMC_logfile.close();
