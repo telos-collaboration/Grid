@@ -39,6 +39,12 @@ NAMESPACE_BEGIN(Grid);
 template <class ImplementationPolicy>
 class CheckPointerModule: public Parametrized<CheckpointerParameters>, public HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> >  {
 public:
+  /* In addition to the virtual method initialize() below,
+     subclasses of CheckPointerModule must define a public attribute
+     constexpr static const char* const Name
+     such that the LoadCheckpointer template method can report which checkpointer it has loaded.
+     Once Grid supports C++20, this may be enforced via concepts. */
+
   std::unique_ptr<BaseHmcCheckpointer<ImplementationPolicy> > CheckPointPtr;
   typedef CheckpointerParameters APar;
   typedef HMCModuleBase< BaseHmcCheckpointer<ImplementationPolicy> > Base;
@@ -59,6 +65,8 @@ public:
   }
 
 private:
+  /* Implementations of initialize() must set CheckPointPtr to an instance of the relevant checkpointer
+     (i.e. child class of BaseHmcCheckpointer). */
   virtual void initialize() = 0;
 
 };
@@ -96,7 +104,8 @@ class BinaryCPModule: public CheckPointerModule< ImplementationPolicy> {
   virtual void initialize(){
     this->CheckPointPtr.reset(new BinaryHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
-
+public:
+  constexpr static const char* const Name = "Binary";
 };
 
 
@@ -109,7 +118,8 @@ class NerscCPModule: public CheckPointerModule< ImplementationPolicy> {
   virtual void initialize(){
     this->CheckPointPtr.reset(new NerscHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
-
+public:
+  constexpr static const char* const Name = "Nersc";
 };
 
 
@@ -124,7 +134,8 @@ class ILDGCPModule: public CheckPointerModule< ImplementationPolicy> {
   virtual void initialize(){
     this->CheckPointPtr.reset(new ILDGHmcCheckpointer<ImplementationPolicy>(this->Par_));
   }
-
+public:
+  constexpr static const char* const Name = "ILDG";
 };
 
 template<class ImplementationPolicy, class Metadata>
@@ -140,6 +151,8 @@ public:
   ScidacCPModule(typename CPBase::APar Par, Metadata M_):M(M_), CPBase(Par) {}
   template <class ReaderClass>
   ScidacCPModule(Reader<ReaderClass>& Reader) : Parametrized<typename CPBase::APar>(Reader), M(Reader){};
+public:
+  constexpr static const char* const Name = "Scidac";
 };
 #endif
 
