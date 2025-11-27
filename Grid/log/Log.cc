@@ -10,6 +10,7 @@ Author: Antonin Portelli <antonin.portelli@me.com>
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Frederic Bonnet <frederic.bonnet@swansea.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -86,7 +87,7 @@ void GridLogConfigure(std::vector<std::string> &logstreams) {
   GridLogPerformance.Active(0);
   GridLogDslash.Active(0);
   GridLogIntegrator.Active(1);
-  GridLogColours.Active(1);
+  GridLogColours.Active(0);
   GridLogHMC.Active(1);
   GridLogLLR.Active(1);
 

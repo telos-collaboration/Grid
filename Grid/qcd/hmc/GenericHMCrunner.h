@@ -207,12 +207,6 @@ private:
 
     Smearing.set_Field(U);
 
-      std::cout <<GridLogMessage << "sizeof(U)         ---------->: "<< sizeof(U) <<std::endl;
-      //std::cout <<GridLogMessage << "U                 ---------->: "<< U <<std::endl;
-
-      std::cout <<GridLogMessage << "with_llr b4       ---------->: "<< with_llr     <<std::endl;
-      std::cout <<GridLogMessage << "HybridMonteCarlo call ------>: "<< __FUNCTION__ <<std::endl;
-
     HybridMonteCarlo<TheIntegrator> HMC(Parameters, MDynamics,
                                         Resources.GetSerialRNG(),
                                         Resources.GetParallelRNG(), 
@@ -232,7 +226,6 @@ using GenericHMCRunnerF = HMCWrapperTemplate<PeriodicGimplF, Integrator>;
 template <template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerD = HMCWrapperTemplate<PeriodicGimplD, Integrator>;
 
-
 // These are for gauge fields, default integrator MinimumNorm2
 template <template <typename, typename, typename> class Integrator>
 using ConjugateHMCRunner = HMCWrapperTemplate<ConjugateGimplR, Integrator>;
@@ -242,6 +235,8 @@ template <template <typename, typename, typename> class Integrator>
 using ConjugateHMCRunnerD = HMCWrapperTemplate<ConjugateGimplD, Integrator>;
 
 
+
+
 // LLR
 template <template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerLLR = HMCWrapperTemplate<PeriodicGimplR, Integrator>;
@@ -249,20 +244,25 @@ using GenericHMCRunnerLLR = HMCWrapperTemplate<PeriodicGimplR, Integrator>;
 template <template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerSpLLR = HMCWrapperTemplate<SpPeriodicGimplR, Integrator>;
 
+
+
+
 // HiRep
 template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
 using GenericHMCRunnerHirep =
-				     HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
+                     HMCWrapperTemplate<PeriodicGimplR, Integrator, RepresentationsPolicy>;
 
 // sp2n
+
 template <template <typename, typename, typename> class Integrator>
 using GenericSpHMCRunner = HMCWrapperTemplate<SpPeriodicGimplR, Integrator>;
 
 template <class RepresentationsPolicy,
           template <typename, typename, typename> class Integrator>
-using GenericSpHMCRunnerHirep =
-                     HMCWrapperTemplate<SpPeriodicGimplR, Integrator, RepresentationsPolicy>;
+using GenericSpHMCRunnerHirep = HMCWrapperTemplate<SpPeriodicGimplR, Integrator, RepresentationsPolicy>;
+
+
 
 
 template <class Implementation, class RepresentationsPolicy, 

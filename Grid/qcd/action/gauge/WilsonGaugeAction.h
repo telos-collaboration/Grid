@@ -29,8 +29,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-#include <Grid/qcd/llr_hmc/llr_hmc.h>
 			   /*  END LEGAL */
+#include <Grid/qcd/llr_hmc/llr_hmc.h>
 #ifndef QCD_WILSON_GAUGE_ACTION_H
 #define QCD_WILSON_GAUGE_ACTION_H
 

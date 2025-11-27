@@ -9,6 +9,7 @@ Copyright (C) 2015-2016
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Frederic Bonnet <frederic.bonnet@swansea.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -99,18 +100,18 @@ public:
   virtual RealD S(const GaugeField& U) = 0;                             // evaluate the action
   virtual RealD Sinitial(const GaugeField& U) { return this->S(U); } ;  // if the refresh computes the action, can cache it. Alternately refreshAndAction() ?
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;        // evaluate the action derivative
-    /////////////////////////////
-    // LLR methods
-    /////////////////////////////
-    /// [Sturct]
-    namespace_LLR::llrparams* p_llrparams_s;
-    /// [Getters]
-    virtual namespace_LLR::llrparams* get_struct_llrparams() {return p_llrparams_s;}
-    /// [Setters]
-    virtual void set_struct_llrparams(namespace_LLR::llrparams* llrparams_s_in) {
-        p_llrparams_s = llrparams_s_in;
-    }
-    /////////////////////////////////////////////////////////////
+  /////////////////////////////
+  // LLR methods
+  /////////////////////////////
+  /// [Sturct]
+  namespace_LLR::llrparams* p_llrparams_s;
+  /// [Getters]
+  virtual namespace_LLR::llrparams* get_struct_llrparams() {return p_llrparams_s;}
+  /// [Setters]
+  virtual void set_struct_llrparams(namespace_LLR::llrparams* llrparams_s_in) {
+    p_llrparams_s = llrparams_s_in;
+  }
+  /////////////////////////////////////////////////////////////
   // virtual smeared interface through configuration container
   /////////////////////////////////////////////////////////////
   virtual void refresh(ConfigurationBase<GaugeField> & U, GridSerialRNG &sRNG, GridParallelRNG& pRNG)

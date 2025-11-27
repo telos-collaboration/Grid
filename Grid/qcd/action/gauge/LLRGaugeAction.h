@@ -1,15 +1,38 @@
-//
-// Created by dc-bonn2 on 9/17/25.
-//
+/*************************************************************************************
 
+Grid physics library, www.github.com/paboyle/Grid
+
+Source file: ./lib/qcd/action/gauge/LLRGaugeAction.h
+
+Copyright (C) 2025
+
+Author: Frederic Bonnet <frederic.bonnet@swansea.ac.uk>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+See the full license in the file "LICENSE" in the top level distribution
+directory
+*************************************************************************************/
+               /*  END LEGAL */
 #include <Grid/qcd/llr_hmc/llr_hmc.h>
 
-#ifndef GRID_TELOS_DEVEL_LLRGAUGEACTION_H
-#define GRID_TELOS_DEVEL_LLRGAUGEACTION_H
+#ifndef QCD_LLR_GAUGE_ACTION_H
+#define QCD_LLR_GAUGE_ACTION_H
 
 NAMESPACE_BEGIN(Grid);
 
-//template<class Gimpl>
 template<typename GaugeAction, class Gimpl>
 class LLRGaugeAction  : public Action<typename Gimpl::GaugeField> {
 public:
@@ -32,39 +55,34 @@ public:
     explicit LLRGaugeAction(RealD beta_):
                 beta(beta_){};
 
+    explicit LLRGaugeAction(namespace_LLR::llrparams* llrparams_):
+                p_llrparams_s(llrparams_){};
+
     explicit LLRGaugeAction(namespace_LLR::llrparams* llrparams_, RealD beta_):
                 beta(beta_),
                 p_llrparams_s(llrparams_){};
 
-    virtual std::string action_name() {return "LLRGaugeAction";}
+    virtual std::string action_name() {return "LLR_WilsonGaugeAction";}
     /////////////////////////////////////////////////////////////
     /// [Logger]
     /////////////////////////////////////////////////////////////
     virtual std::string LogParameters(){
         std::stringstream sstream;
-        sstream << GridLogMessage << "[LLRGaugeAction] Beta: " << beta << std::endl;
+        sstream << GridLogLLR << "[LLR_WilsonGaugeAction] Beta: " << beta << std::endl;
         return sstream.str();
     }
     /////////////////////////////////////////////////////////////
     /// [Actions]
     /////////////////////////////////////////////////////////////
-    virtual RealD GActionS(const GaugeAction &p_GaugeAction, const GaugeField &U) {
-        RealD gauge_action = 0.0;
-        //gauge_action =  p_GaugeAction.S(U);
-        std::cout << GridLogLLR << B_GREEN << "Gauge action LLRGaugeAction      ----->: "<< gauge_action << C_RESET <<std::endl;
-        return gauge_action;
-    };
-
     virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};
 
     virtual RealD S(const GaugeField &U) {
         RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
         RealD vol = U.Grid()->gSites();
-        //RealD action = beta * (1.0 - plaq) * (Nd * (Nd - 1.0)) * vol * 0.5;
         RealD action = (1.0 - plaq) * (Nd * (Nd - 1.0)) * vol * 0.5;
         std::cout << GridLogLLR << B_GREEN << "plaq(nb) LLRGaugeAction         ----->: "<< plaq   << C_RESET <<std::endl;
         std::cout << GridLogLLR << B_GREEN << "Vol(nb)  LLRGaugeAction         ----->: "<< vol    << C_RESET <<std::endl;
-        std::cout << GridLogLLR << B_GREEN << "S(nb)    LLRGaugeAction         ----->: "<< action << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_GREEN <<   "S(nb)  LLRGaugeAction         ----->: "<< action << C_RESET <<std::endl;
         return action;
     };
 
@@ -91,16 +109,15 @@ public:
     /// [Deriv]
     /////////////////////////////////////////////////////////////
     virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
-        // not optimal implementation FIXME
         // extend Ta to include Lorentz indexes
-        std::cout << GridLogLLR << B_GREEN   << "(deriv)     LLRGaugeAction"              << C_RESET   << std::endl;
-        std::cout << GridLogLLR << B_MAGENTA << "beta(deriv) LLRGaugeAction      ----->: "<< beta      << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_GREEN   << "(deriv)     LLR_WilsonGaugeAction"       << C_RESET   << std::endl;
         std::cout << GridLogLLR << B_MAGENTA << "Nc(deriv)   LLRGaugeAction      ----->: "<< RealD(Nc) << C_RESET <<std::endl;
 
-        RealD factor = 0.5  / RealD(Nc);//0.5 * beta / RealD(Nc); //0.5 *
+        // Removing the beta dependence on 0.5 * beta / RealD(Nc);
+        RealD factor = 0.5  / RealD(Nc);
         GridBase *grid = U.Grid();
 
-        std::cout << GridLogLLR << B_YELLOW   << "factor(deriv) LLRGaugeAction    ----->: "<< factor << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_YELLOW  << "factor(deriv) LLRGaugeAction    ----->: "<< factor << C_RESET <<std::endl;
 
         GaugeLinkField dSdU_mu(grid);
         std::vector<GaugeLinkField> Umu(Nd, grid);
@@ -109,17 +126,12 @@ public:
             Umu[mu] = PeekIndex<LorentzIndex>(U, mu);
         }
 
-        // Get the average Plaquette to compute S_0
+        // Get the average Plaquette
         RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
         RealD vol = U.Grid()->gSites();
-        // now construct the S_0
-        RealD S0_plaq_ = 6 * vol * plaq;
-        // hard coded value for now TODO: remove this value when properly setup
-        RealD S0_ = p_llrparams_s->S0; //173088.00000;
 
         std::cout << GridLogLLR << B_RED     << "Vol(deriv)      LLRGaugeAction  ----->: "<< vol               << C_RESET <<std::endl;
         std::cout << GridLogLLR << B_CYAN    << "plaq(deriv)     LLRGaugeAction  ----->: "<< plaq              << C_RESET <<std::endl;
-        std::cout << GridLogLLR << B_YELLOW  << "S0_plaq_(deriv) LLRGaugeAction  ----->: "<< S0_plaq_          << C_RESET <<std::endl;
         std::cout << GridLogLLR << B_MAGENTA << "p->S0(deriv)    LLRGaugeAction  ----->: "<< p_llrparams_s->S0 << C_RESET <<std::endl;
         std::cout << GridLogLLR << B_YELLOW  << "p->a(deriv)     LLRGaugeAction  ----->: "<< p_llrparams_s->a  << C_RESET <<std::endl;
         std::cout << GridLogLLR << B_YELLOW  << "p->dS(deriv)    LLRGaugeAction  ----->: "<< p_llrparams_s->dS << C_RESET <<std::endl;
@@ -128,16 +140,16 @@ public:
         RealD action_u = 0.0;
         action_u = S(U);
         for (int mu = 0; mu < Nd; mu++) {
-            // Getting the action for when action
             // Staple in direction mu
             WilsonLoops<Gimpl>::Staple(dSdU_mu, Umu, mu);
 
+            // Implementation of Eq.(3.3) https://doi.org/10.22323/1.256.0276
             dSdU_mu *= ( p_llrparams_s->a + (action_u - p_llrparams_s->S0) / (p_llrparams_s->dS * p_llrparams_s->dS) );
             dSdU_mu = Ta(Umu[mu] * dSdU_mu) * factor;
 
             PokeIndex<LorentzIndex>(dSdU, dSdU_mu, mu);
         }
-}
+    }
     /////////////////////////////////////////////////////////////
     /// [Setters]
     /////////////////////////////////////////////////////////////
@@ -159,4 +171,4 @@ private:
 NAMESPACE_END(Grid);
 
 
-#endif //GRID_TELOS_DEVEL_LLRGAUGEACTION_H
+#endif //QCD_LLR_GAUGE_ACTION_H

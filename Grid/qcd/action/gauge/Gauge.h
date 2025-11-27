@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
-			   /*  END LEGAL */
+               /*  END LEGAL */
 #ifndef GRID_QCD_GAUGE_H
 #define GRID_QCD_GAUGE_H
 
@@ -45,8 +45,6 @@ typedef WilsonGaugeAction<PeriodicGimplD>          WilsonGaugeActionD;
 typedef WilsonGaugeAction<SpPeriodicGimplR>        SpWilsonGaugeActionR;
 typedef WilsonGaugeAction<SpPeriodicGimplF>        SpWilsonGaugeActionF;
 typedef WilsonGaugeAction<SpPeriodicGimplD>        SpWilsonGaugeActionD;
-
-//typedef LLRWilsonGaugeAction<PeriodicGimplR>          LLRWilsonGaugeActionR;
 
 typedef PlaqPlusRectangleAction<PeriodicGimplR>    PlaqPlusRectangleActionR;
 typedef PlaqPlusRectangleAction<PeriodicGimplF>    PlaqPlusRectangleActionF;

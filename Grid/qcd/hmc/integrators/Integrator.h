@@ -34,7 +34,7 @@ directory
 
 #include <memory>
 
-#include "Grid/qcd/llr_hmc/llr_hmc.h"
+#include <Grid/qcd/llr_hmc/llr_hmc.h>
 
 NAMESPACE_BEGIN(Grid);
 
@@ -147,9 +147,9 @@ public:
       as[level].actions.at(a)->deriv_timer_stop();
 
       auto name = as[level].actions.at(a)->action_name();
-        std::cout << GridLogIntegrator << C_RED   <<"Action name action_name() ----->: "<< name << C_RESET <<std::endl;
-        std::cout << GridLogIntegrator << C_GREEN <<"Fdt_max_average()         ----->: "<< as[level].actions.at(a)->Fdt_max_average() << C_RESET <<std::endl;
-        std::cout << GridLogIntegrator << C_CYAN  <<"Fdt_norm_average()        ----->: "<< as[level].actions.at(a)->Fdt_norm_average() << C_RESET <<std::endl;
+      std::cout << GridLogIntegrator << C_RED   <<"Action name action_name() ----->: "<< name << C_RESET <<std::endl;
+      std::cout << GridLogIntegrator << C_GREEN <<"Fdt_max_average()         ----->: "<< as[level].actions.at(a)->Fdt_max_average() << C_RESET <<std::endl;
+      std::cout << GridLogIntegrator << C_CYAN  <<"Fdt_norm_average()        ----->: "<< as[level].actions.at(a)->Fdt_norm_average() << C_RESET <<std::endl;
 
       force = FieldImplementation::projectForce(force); // Ta for gauge fields
       double end_force = usecond();
@@ -475,11 +475,11 @@ public:
         // get gauge field from the SmearingPolicy and
         // based on the boolean is_smeared in actionID
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] action eval " << std::endl;
-	        as[level].actions.at(actionID)->S_timer_start();
+	    as[level].actions.at(actionID)->S_timer_start();
 
         Hterm = as[level].actions.at(actionID)->S(Smearer);
 
-            as[level].actions.at(actionID)->S_timer_stop();
+        as[level].actions.at(actionID)->S_timer_stop();
         std::cout << GridLogMessage << "S [" << level << "][" << actionID << "] H = " << Hterm << std::endl;
         H += Hterm;
 
@@ -514,7 +514,6 @@ public:
                         << "p_llrparams_s->S0: [" << p_llrparams_s->S0 <<"]"
                         << std::endl;
 
-              MemoryManager::Print();
               // get gauge field from the SmearingPolicy and
               // based on the boolean is_smeared in actionID
               as[level].actions.at(actionID)->S_timer_start();
@@ -523,6 +522,7 @@ public:
 
               as[level].actions.at(actionID)->S_timer_stop();
 
+              // Implementation of Eq.(3.1) and Eq.(3.2) https://doi.org/10.22323/1.256.0276
               H = p_llrparams_s->a * S                                  +
                   ( S - p_llrparams_s->S0 ) * ( S - p_llrparams_s->S0 ) /
                   ( 2.0 * (p_llrparams_s->dS * p_llrparams_s->dS) ) + Hp;
@@ -532,8 +532,6 @@ public:
                         << "][S0 "      << p_llrparams_s->S0
                         << "][dS: "     << p_llrparams_s->dS << "] = " << H
                         << C_RESET      << std::endl;
-
-              MemoryManager::Print();
 
           }
           as[level].apply(S_hireps, Representations, level, H);
@@ -587,6 +585,7 @@ public:
 
               as[level].actions.at(actionID)->S_timer_stop();
 
+              // Implementation of Eq.(3.1) and Eq.(3.2) https://doi.org/10.22323/1.256.0276
               H_init = p_llrparams_s->a * S_init                                  +
                   ( S_init - p_llrparams_s->S0 ) * ( S_init - p_llrparams_s->S0 ) /
                   ( 2.0 * (p_llrparams_s->dS * p_llrparams_s->dS) ) + Hp;
@@ -663,7 +662,6 @@ public:
 
   }
 
-private:
 };
 
 NAMESPACE_END(Grid);
