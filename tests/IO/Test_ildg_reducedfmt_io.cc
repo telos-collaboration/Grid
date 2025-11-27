@@ -43,8 +43,10 @@ int main (int argc, char ** argv)
 
   auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
+  //std::vector<int> latt_size  ({48,48,48,96});
+  //std::vector<int> latt_size  ({32,32,32,32});
   Coordinate latt_size  ({8,8,8,16});
-  Coordinate clatt_size  ({4,4,4,8});
+  Coordinate clatt_size  ({2,2,2,4});
   int orthodir=3;
   int orthosz =latt_size[orthodir];
     
@@ -65,22 +67,23 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu_diff(&Fine);
   LatticeGaugeField Umu_saved(&Fine);
 
-  std::vector<LatticeColourMatrix> U(4,&Fine);
+  //std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  SU<Nc>::HotConfiguration(pRNGa,Umu);
-
+  //SU<Nc>::HotConfiguration(pRNGa,Umu);
+  Sp<Nc>::HotConfiguration(pRNGa,Umu);
+  //const bool reducedStorage = true;
+  //const bool store_as_float   = false; //write to disk in double or single precision
 
   FieldMetaData header;
 
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  std::cout <<GridLogMessage<<"** Writing out  ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"** Writing out FULL FAT ILDG cfg  ****"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  std::string file("./ckpoint_ildg.4000");
+  std::string file("./ckpoint_lat_test_FAT");
   IldgWriter _IldgWriter(Fine.IsBoss());
   _IldgWriter.open(file);
-  _IldgWriter.writeConfiguration(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter.writeConfiguration<vLorentzColourMatrixD,GroupName::Sp,false,false>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter.close();
-
   Umu_saved = Umu;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
@@ -90,7 +93,44 @@ int main (int argc, char ** argv)
   _IldgReader.readConfiguration(Umu,header);
   _IldgReader.close();
   Umu_diff = Umu - Umu_saved;
+  std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Writing out SU reduced ILDG cfg  **"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::string file1("./ckpoint_lat_test_SEMISKIMMED");
+  IldgWriter _IldgWriter1(Fine.IsBoss());
+  _IldgWriter1.open(file1);
+  _IldgWriter1.writeConfiguration<vLorentzColourMatrixD,GroupName::Sp,true,false>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter1.close();
+  Umu_saved = Umu;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  IldgReader _IldgReader1;
+  _IldgReader1.open(file1);
+  _IldgReader1.readConfiguration(Umu,header);
+  _IldgReader1.close();
+  Umu_diff = Umu - Umu_saved;
+  std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
+
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"*Writing out SU reduced single precision ILDG cfg*"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::string file2("./ckpoint_lat_test_SKIMMED");
+  IldgWriter _IldgWriter2(Fine.IsBoss());
+  _IldgWriter2.open(file2);
+  _IldgWriter2.writeConfiguration<vLorentzColourMatrixD,GroupName::Sp,true,true>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter2.close();
+  Umu_saved = Umu;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
+  std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+  IldgReader _IldgReader2;
+  _IldgReader2.open(file2);
+  _IldgReader2.readConfiguration(Umu,header);
+  _IldgReader2.close();
+  Umu_diff = Umu - Umu_saved;
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
   Grid_finalize();

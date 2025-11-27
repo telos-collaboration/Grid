@@ -417,7 +417,7 @@ class GridLimeWriter : public BinaryIO
   // This routine is Collectively called by all nodes
   // in communicator used by the field.Grid()
   ////////////////////////////////////////////////////
-  template<class vobj, class group_name=GroupName::SU, bool reduce_group=false, bool store_as_dbl=true>
+  template<class vobj, class group_name=GroupName::SU, bool reduce_group=false, bool store_as_float=false>
   void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
   {
     ////////////////////////////////////////////////////////////////////
@@ -442,7 +442,7 @@ class GridLimeWriter : public BinaryIO
     ////////////////////////////////////////////
     // Create record header
     ////////////////////////////////////////////
-	typedef typename GaugeUnMunger<vobj,group_name,reduce_group,store_as_dbl>::out_type sobj;
+	typedef typename GaugeUnMunger<vobj,group_name,reduce_group,store_as_float>::out_type sobj;
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     uint64_t PayloadSize = sizeof(sobj) * grid->_gsites;
@@ -469,7 +469,7 @@ class GridLimeWriter : public BinaryIO
     ///////////////////////////////////////////
     std::string format = getFormatString<sobj>();
 
-	GaugeUnMunger<vobj,group_name,reduce_group,store_as_dbl> unmunger;
+	GaugeUnMunger<vobj,group_name,reduce_group,store_as_float> unmunger;
 	
     BinaryIO::writeLatticeObject<vobj,sobj>(field,filename,unmunger,offset1,format,nersc_csum,scidac_csuma,scidac_csumb,control);
 
@@ -636,13 +636,11 @@ class IldgWriter : public ScidacWriter {
   // Don't require scidac records EXCEPT checksum
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class vobj, class group_name = GroupName::SU, bool reducedStorage = false, bool store_as_dbl=true, class stats = PeriodicGaugeStatistics>
+  template <class vobj, class group_name = GroupName::SU, bool reducedStorage = false, bool store_as_float=false, class stats = PeriodicGaugeStatistics>
   void writeConfiguration(Lattice<vobj> &Umu,int sequence,std::string LFN,std::string description) 
   {
+
     GridBase * grid = Umu.Grid();
-    //typedef Lattice<vLorentzColourMatrixD> GaugeField;
-    //typedef vLorentzColourMatrixD vobj;
-    //typedef typename vobj::scalar_object sobj;
 
     ////////////////////////////////////////
     // fill the Grid header
@@ -656,22 +654,16 @@ class IldgWriter : public ScidacWriter {
     stats Stats;
     Stats(Umu,header);
    
-	//header.floating_point = std::string("IEEE32BIG");
-    std::string format = header.floating_point;
     header.ensemble_id    = description;
     header.ensemble_label = description;
     header.sequence_number = sequence;
     header.ildg_lfn = LFN;
-    assert ( (format == std::string("IEEE32BIG"))  
-           ||(format == std::string("IEEE64BIG")) );
-
     //////////////////////////////////////////////////////
     // Fill ILDG header data struct
-    // Needs to be able to figure out what type of field
-    // is being written and change ilgfmt.field accordngly
     //////////////////////////////////////////////////////
     ildgFormat ildgfmt ;
     const std::string stNC = std::to_string(Nc) ;
+    std::string format;
 
 	// find out which gauge group is going to be written	
 	is_su<group_name> su;
@@ -695,13 +687,19 @@ class IldgWriter : public ScidacWriter {
     } else {
 	 	ildgfmt.rows = Nc;
 	}
-	
-	
-    if ( format == std::string("IEEE32BIG") ) { 
-      ildgfmt.precision = 32;
-    } else { 
-      ildgfmt.precision = 64;
-    }
+    // set fmt string for single/double precision	
+	if constexpr( store_as_float) {
+		format = std::string("IEEE32BIG");
+		header.floating_point = std::string("IEEE32BIG");
+        ildgfmt.precision = 32;
+	} else {
+		format = std::string("IEEE64BIG");
+		header.floating_point = std::string("IEEE64BIG");
+        ildgfmt.precision = 64;
+	}
+
+	std::cout << GridLogMessage << "format is " << format << std::endl;	
+	std::cout << GridLogMessage << "header.floating_point is " << header.floating_point << std::endl;	
 
     ildgfmt.version = 1.2; 
     ildgfmt.lx = header.dimension[0];
@@ -737,7 +735,7 @@ class IldgWriter : public ScidacWriter {
     writeLimeObject(0,0,info,info.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
     writeLimeObject(0,0,ildgfmt,std::string("ildgFormat")   ,std::string(ILDG_FORMAT)); // rec
     //writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
-    writeLimeLatticeBinaryObject<vobj,group_name,reducedStorage,store_as_dbl>(Umu,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
+    writeLimeLatticeBinaryObject<vobj,group_name,reducedStorage,store_as_float>(Umu,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
     writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
     //    limeDestroyWriter(LimeW);
   }
@@ -753,11 +751,11 @@ class IldgReader : public GridLimeReader {
   // Else use ILDG MetaData object if present.
   // Else use SciDAC MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class stats = PeriodicGaugeStatistics>
-  void readConfiguration(Lattice<vLorentzColourMatrixD> &Umu, FieldMetaData &FieldMetaData_) {
+  template <class vobj, class stats = PeriodicGaugeStatistics>
+  void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_) {
 
-    typedef Lattice<vLorentzColourMatrixD > GaugeField;
-    typedef typename GaugeField::vector_object  vobj;
+    //typedef Lattice<vLorentzColourMatrixD > GaugeField;
+    //typedef typename GaugeField::vector_object  vobj;
     typedef typename vobj::scalar_object sobj;
 
 	// need all the types we could possibly read from,
