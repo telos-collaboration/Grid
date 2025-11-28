@@ -44,12 +44,6 @@ namespace namespace_LLR {
 /// [ActionLoggerObsParameters]
 ////////////////////////
     struct ActionLoggerObsParameters : Grid::Serializable {
-        /*
-            Grid::GRID_SERIALIZABLE_CLASS_MEMBERS(ActionLoggerObsParameters,
-                    Grid::RealD, beta,
-                    Grid::RealD, a,
-                    namespace_LLR::llrparams*, s_llrparams_in );
-        */
         Grid::RealD beta_ = 0.0;
         int MDsteps_ = 1;
         Grid::RealD a_ = 0.0;

@@ -82,7 +82,7 @@ public:
         RealD action = (1.0 - plaq) * (Nd * (Nd - 1.0)) * vol * 0.5;
         std::cout << GridLogLLR << B_GREEN << "plaq(nb) LLRGaugeAction         ----->: "<< plaq   << C_RESET <<std::endl;
         std::cout << GridLogLLR << B_GREEN << "Vol(nb)  LLRGaugeAction         ----->: "<< vol    << C_RESET <<std::endl;
-        std::cout << GridLogLLR << B_GREEN <<   "S(nb)  LLRGaugeAction         ----->: "<< action << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_GREEN << "S(nb)    LLRGaugeAction         ----->: "<< action << C_RESET <<std::endl;
         return action;
     };
 
@@ -111,7 +111,7 @@ public:
     virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
         // extend Ta to include Lorentz indexes
         std::cout << GridLogLLR << B_GREEN   << "(deriv)     LLR_WilsonGaugeAction"       << C_RESET   << std::endl;
-        std::cout << GridLogLLR << B_MAGENTA << "Nc(deriv)   LLRGaugeAction      ----->: "<< RealD(Nc) << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_MAGENTA << "Nc(deriv) LLRGaugeAction        ----->: "<< RealD(Nc) << C_RESET <<std::endl;
 
         // Removing the beta dependence on 0.5 * beta / RealD(Nc);
         RealD factor = 0.5  / RealD(Nc);
@@ -130,11 +130,11 @@ public:
         RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
         RealD vol = U.Grid()->gSites();
 
-        std::cout << GridLogLLR << B_RED     << "Vol(deriv)      LLRGaugeAction  ----->: "<< vol               << C_RESET <<std::endl;
-        std::cout << GridLogLLR << B_CYAN    << "plaq(deriv)     LLRGaugeAction  ----->: "<< plaq              << C_RESET <<std::endl;
-        std::cout << GridLogLLR << B_MAGENTA << "p->S0(deriv)    LLRGaugeAction  ----->: "<< p_llrparams_s->S0 << C_RESET <<std::endl;
-        std::cout << GridLogLLR << B_YELLOW  << "p->a(deriv)     LLRGaugeAction  ----->: "<< p_llrparams_s->a  << C_RESET <<std::endl;
-        std::cout << GridLogLLR << B_YELLOW  << "p->dS(deriv)    LLRGaugeAction  ----->: "<< p_llrparams_s->dS << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_RED     << "Vol(deriv)   LLRGaugeAction     ----->: "<< vol               << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_CYAN    << "plaq(deriv)  LLRGaugeAction     ----->: "<< plaq              << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_MAGENTA << "p->S0(deriv) LLRGaugeAction     ----->: "<< p_llrparams_s->S0 << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_YELLOW  << "p->a(deriv)  LLRGaugeAction     ----->: "<< p_llrparams_s->a  << C_RESET <<std::endl;
+        std::cout << GridLogLLR << B_YELLOW  << "p->dS(deriv) LLRGaugeAction     ----->: "<< p_llrparams_s->dS << C_RESET <<std::endl;
 
         //GaugeLinkField new_dSdU_mu(grid);
         RealD action_u = 0.0;

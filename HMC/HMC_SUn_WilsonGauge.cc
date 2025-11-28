@@ -40,12 +40,6 @@ directory
 /// [ActionLoggerObsParameters]
 ////////////////////////
 struct ActionLoggerObsParameters: Grid::Serializable {
-    /*
-        Grid::GRID_SERIALIZABLE_CLASS_MEMBERS(ActionLoggerObsParameters,
-                Grid::RealD, beta,
-                Grid::RealD, a,
-                namespace_LLR::llrparams*, s_llrparams_in );
-    */
     Grid::TopologyObsParameters* QObsParameters_ = nullptr;
     Grid::RealD beta_ = 0.0;
     int MDsteps_ = 1;
@@ -128,14 +122,14 @@ public:
 
         Grid::RealD plaq = Grid::WilsonLoops<Impl>::avgPlaquette(U);
         Grid::RealD vol = U.Grid()->gSites();
-
+		//////////////////////////////////////////////////////////////////////////
+		/// [Action]
+		//////////////////////////////////////////////////////////////////////////
         Grid::RealD action = Pars.beta_ * (1.0 - plaq) * (Grid::Nd * (Grid::Nd - 1.0)) * vol * 0.5;
 
         // putting the results in the setter
         set_action(action);
         set_plaquette(plaq);
-
-        // TODO : bring in the return variables for the action and the plaquette.
 		//////////////////////////////////////////////////////////////////////////
 		/// [TopoQ]
 		//////////////////////////////////////////////////////////////////////////
