@@ -48,7 +48,6 @@ public:
 
     // instantiating the llr_hmc helper class via the namespace LLR
     namespace_LLR::llrparams* p_llrparams_s;
-    namespace_LLR::llr_hmc* p_llr_hmc_o = new namespace_LLR::llr_hmc();
     /////////////////////////////////////////////////////////////
     /// [Constructors]
     /////////////////////////////////////////////////////////////

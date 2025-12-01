@@ -183,10 +183,10 @@ private:
 
     TheIntegrator.reset_timer();
 
-      std::cout << GridLogHMC << C_RED << "with_llr at Integrator.refresh ---->: "<< with_llr <<C_RESET <<std::endl;
-      int set_llr_if = 0;
-      if (with_llr == true) { set_llr_if = 1234; }
-      std::cout << GridLogHMC << B_RED << "set_llr_if at Int.refresh      ---->: "<< set_llr_if <<C_RESET <<std::endl;
+    std::cout << GridLogHMC << C_RED << "with_llr at Integrator.refresh  ----->: "<< with_llr <<C_RESET <<std::endl;
+    int set_llr_if = 0;
+    if (with_llr == true) { set_llr_if = 1234; }
+    std::cout << GridLogHMC << B_RED << "set_llr_if at Int.refresh       ----->: "<< set_llr_if <<C_RESET <<std::endl;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // set U and initialize P and phi's
@@ -345,14 +345,14 @@ public:
       double t0=usecond();
       Ucopy = Ucur;
 
-        std::cout << GridLogHMC << "\x1b[33m"<<"DeltaH b4 evolve_hmc_step      --------->: "<< DeltaH <<"\x1b[0m"<<std::endl;
+      std::cout << GridLogHMC << C_YELLOW << "DeltaH @ evolve_hmc_step        ----->: "<< DeltaH <<C_RESET<<std::endl;
       DeltaH = evolve_hmc_step(Ucopy);
-        std::cout << GridLogHMC << "\x1b[33m"<<"DeltaH                         --------->: "<< DeltaH <<"\x1b[0m"<<std::endl;
+      std::cout << GridLogHMC << C_YELLOW << "DeltaH                          ----->: "<< DeltaH <<C_RESET<<std::endl;
       // Metropolis-Hastings test
       bool accept = true;
       if (Params.MetropolisTest && traj >= Params.StartTrajectory + Params.NoMetropolisUntil) {
         accept = metropolis_test(DeltaH);
-          std::cout <<GridLogMessage << "DeltaH      (accept) ---------->: "<< DeltaH <<std::endl;
+        std::cout <<GridLogHMC << B_MAGENTA <<"DeltaH      (accept)            ----->: "<< DeltaH << C_RESET <<std::endl;
       } else {
       	std::cout << GridLogHMC << "Skipping Metropolis test" << std::endl;
       }

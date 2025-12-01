@@ -30,6 +30,7 @@ directory
 // System
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 // Application includes
 #include <Grid/Grid.h>
 
@@ -266,7 +267,6 @@ int main(int argc, char **argv) {
     s_llrparams_in->S = 1234.5678;
     s_llrparams_in->plaq = 4321.9876;
 
-
     // Create and initialise to some arbitrary values the hmc_parameters structure
     namespace_LLR::hmc_params_llr* s_hmc_params_llr_in =
             (struct namespace_LLR::hmc_params_llr*) malloc(sizeof (struct namespace_LLR::hmc_params_llr));
@@ -279,9 +279,56 @@ int main(int argc, char **argv) {
     s_hmc_params_llr_in->Trajectories = 40;
     s_hmc_params_llr_in->Thermalizations = 20;
 
+    // Distribution test
+    int na = 1;
+    Grid::RealD sigma = 3.0;
+    Grid::RealD a_del = 0.0;
+    Grid::RealD a_int = s_llrparams_in->starta - sigma;
+    Grid::RealD a_fin = s_llrparams_in->starta + sigma;
+    std::vector<Grid::RealD> a_array(na);
+    if (na>1) {a_del = (a_fin - a_int) / (na - 1);}
+
+    for (int i = 0; i < na; i++) {a_array[i] = a_int + i * a_del;}
+
+    int mid = na / 2;
+    a_array[mid] = s_llrparams_in->starta;
+
+    // Printing out the vector list
+    for (int i = 0; i < na; i++) {
+        std::cout << Grid::GridLogLLR
+                  << B_BLUE << "Test_llr_contrained value     a ----->: "
+                  << C_CYAN << "[" << C_GREEN << std::setw(4) << i << C_CYAN << "]: --->: " << C_RED << a_array[i]
+                  << C_RESET << std::endl;
+    }
+    /////////////////////////////////////////////////////////////
+    // Main loop for multiple a tests The runs will take about 30 minutes on 1 node
+    /////////////////////////////////////////////////////////////
+for (int i = 0; i < na; i++) {
+
+    std::cout << Grid::GridLogLLR
+    << C_BLUE << "Loop over a starts              ----->: ["<<C_CYAN<<"..."<<C_BLUE<<"]" << C_RESET <<std::endl;
+
+    // Mapping the screening value from a_array[i] into
+    s_llrparams_in->a = a_array[i];
+
+    std::cout << Grid::GridLogLLR
+    << B_BLUE << "Test_llr_contrained value     a ----->: "
+    <<C_CYAN<<"["<<C_GREEN<< std::setw(4)<<i<<C_CYAN<<"]: --->: "<<C_RED<< s_llrparams_in->a << C_RESET <<std::endl;
+
     // The epsilon for the assertion
     Grid::RealD epsilon_plaquette = 0.001;
     Grid::RealD epsilon_S = 20.0;
+
+    Grid::RealD epsilon_a = 0; //std::abs(a_fin - a_int);
+    if (na == 2) {
+        epsilon_a = std::abs(a_fin - a_int) / 2;
+        epsilon_plaquette = 0.1;  // For multiple a values use 0,1
+        epsilon_S = 1000.0;       // For multiple a values use 1000.0
+    } else if (na > 2){
+        epsilon_a = std::abs(a_fin - a_int);
+        epsilon_plaquette = 0.1;  // For multiple a values use 0,1
+        epsilon_S = 1000.0;       // For multiple a values use 1000.0
+    }
 
     // The expected values
     Grid::RealD expected_plaquette = 0.459;
@@ -304,8 +351,15 @@ int main(int argc, char **argv) {
     // Creating the output file
     std::cout << Grid::GridLogLLR << C_RED<<"<---- Creating/Opening output log file ... --->"<<C_RESET<<std::endl;
     int md = s_hmc_params_llr_in->MDsteps;
-    std::ofstream run_LLR_HMC_logfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".log");
-    std::ofstream run_LLR_HMC_csvfile("test_llr_constrained_action_MDsteps-"+std::to_string(md)+".csv");
+
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(4) << s_llrparams_in->a;
+
+    std::string filename_log = "test_llr_constrained_action_MDsteps-" + std::to_string(md) +"-a" + oss.str() + ".log";
+    std::string filename_csv = "test_llr_constrained_action_MDsteps-" + std::to_string(md) +"-a" + oss.str() + ".csv";
+
+    std::ofstream run_LLR_HMC_logfile(filename_log);
+    std::ofstream run_LLR_HMC_csvfile(filename_csv);
     // Writing to csv file the header.
     run_LLR_HMC_csvfile
             << "Grid::GridLogMessage"
@@ -322,17 +376,17 @@ int main(int argc, char **argv) {
 
     // Start of the main commands.
     bool with_llr = false;
-    std::cout << Grid::GridLogLLR <<"<---- with_llr (initialized)     ---->: " << with_llr << std::endl;
-    std::cout << Grid::GridLogLLR <<"<---- llr_config                 ---->: " << llr_config << std::endl;
+    std::cout << Grid::GridLogLLR << "<---- with_llr (initialized)     ---->: " << with_llr << std::endl;
+    std::cout << Grid::GridLogLLR << "<---- llr_config                 ---->: " << llr_config << std::endl;
 #if defined(llr_config)
     with_llr = true;
 #endif
     std::cout << Grid::GridLogLLR << "<---- with_llr (llr_config)      ---->: " << with_llr << std::endl;
-    std::cout << Grid::GridLogLLR <<"<---- Sp2n_config                ---->: " << Sp2n_config << std::endl;
+    std::cout << Grid::GridLogLLR << "<---- Sp2n_config                ---->: " << Sp2n_config << std::endl;
 
     // if --enable--LLR switch is activated
     if (with_llr) {
-        std::cout<<C_CYAN<<"Start of if block ...  with_llr ----->: "<< with_llr << C_RESET <<std::endl;
+        std::cout<< Grid::GridLogLLR<<C_CYAN<<"Start of if block ...  with_llr  ---->: "<< with_llr << C_RESET <<std::endl;
         // Sp(2n) representation
         typedef Grid::GenericHMCRunnerSpLLR<Grid::MinimumNorm2> HMCWrapperSpLLR;
         HMCWrapperSpLLR TheHMC;
@@ -404,18 +458,17 @@ int main(int argc, char **argv) {
 
         // Creating the test PASS/FAIL
         std::cout << Grid::GridLogLLR << "--------------------------------------------------"<<std::endl;
-        std::cout
-                << Grid::GridLogLLR
-                << "Final action and Plaquette:"
-                << std::endl;
+        std::cout << Grid::GridLogLLR << C_YELLOW << "Final action and Plaquette:" << C_RESET << std::endl;
 
         // Compute diffs
         Grid::RealD diff_plaquette = std::abs(s_llrparams_in->plaq - expected_plaquette);
         Grid::RealD diff_action    = std::abs(s_llrparams_in->S    - expected_action);
+        Grid::RealD diff_a         = std::abs(s_llrparams_in->a    - s_llrparams_in->starta);
 
         // Determine pass/fail
         bool pass_plaquette = (diff_plaquette < epsilon_plaquette);
         bool pass_action    = (diff_action    < epsilon_S);
+        bool pass_a         = (diff_a         <= epsilon_a);
 
         // Print results
         std::cout << Grid::GridLogLLR
@@ -426,6 +479,20 @@ int main(int argc, char **argv) {
             << "Epsilon P --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
             << C_CYAN << epsilon_plaquette << C_RESET
             << std::endl;
+        std::cout << Grid::GridLogLLR
+            << "Epsilon a --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
+            << C_CYAN << epsilon_a << " --->: "
+            << C_CYAN<< "starta[" << s_llrparams_in->starta << "] --->: "
+            << "current a[" << s_llrparams_in->a << "]" << C_RESET
+            << std::endl;
+
+        std::cout << Grid::GridLogLLR
+            << "a values  --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
+            << C_MAGENTA << std::setw(12) << s_llrparams_in->a << C_RESET
+            << "   (starta    " << s_llrparams_in->starta
+            << ", diff = " << std::setw(14) << diff_a
+            << ")  ==> " << (pass_a ? C_GREEN "PASS" : C_RED "FAIL") << C_RESET
+                << std::endl;
 
         std::cout << Grid::GridLogLLR
             << "Action    --->: MDsteps[" << s_hmc_params_llr_in->MDsteps << "] --->: "
@@ -480,14 +547,20 @@ int main(int argc, char **argv) {
         std::cout << Grid::GridLogLLR << C_CYAN<<"End of if block ...    with_llr ----->: "<< with_llr << C_RESET <<std::endl;
     } /* [end-if] with_llr */
 
-    // Finalising Grid environment.
-    Grid::Grid_finalize();
 
     // End statement
-    std::cout << Grid::GridLogLLR << C_RED<<"<---- End Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
+    std::cout << Grid::GridLogLLR << C_RED<< "<---- End Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
     run_LLR_HMC_logfile <<"<---- End Test_llr_contrained_action.cc ---->"<<C_RESET<<std::endl;
     // Closing log file
     run_LLR_HMC_logfile.close();
     run_LLR_HMC_csvfile.close();
 
+} /* [end-For-Loop] Main loop (int i = 0; i < na; i++) */
+
+    // Finalising Grid environment.
+    Grid::Grid_finalize();
+
 } /* end of main Test_llr_contrained_action.cc */
+/////////////////////////////////////////////////////////////
+// End of main code
+/////////////////////////////////////////////////////////////
