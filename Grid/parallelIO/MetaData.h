@@ -217,7 +217,8 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
-inline void reconstructSp(LorentzColourMatrix & cm) {
+inline void reconstructSp(LorentzColourMatrix & cm) 
+{
 	assert( Nc%2==0 ); 
 	int N = Nc/2;
 	for(int mu=0;mu<Nd;mu++){
@@ -239,7 +240,6 @@ typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
 typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
 
-//typedef iLorentzColourNx2N<Complex>   LorentzColourNx2N; // better to always specify F or D?
 typedef iLorentzColourNx2N<ComplexF>  LorentzColourNx2NF;
 typedef iLorentzColourNx2N<ComplexD>  LorentzColourNx2ND;
 
@@ -385,79 +385,21 @@ struct GaugeSpunmunger{
   }
 };
 
-/*
-// this struct is used to choose the appropriate
-// unmunger (for writing) at compile time.
-template<class vobj, class group_name, bool reduce_group, bool store_as_float>
-struct GaugeUnMunger;
-
-// no group reduction
-template<class vobj, class group_name, bool store_as_float>
-struct GaugeUnMunger<vobj,group_name,false,store_as_float>
-{	
-  using in_type  = typename vobj::scalar_object; 
-  using out_type = typename std::conditional<store_as_float,LorentzColourMatrixF,LorentzColourMatrixD>::type;
-  BinarySimpleUnmunger<out_type,in_type> unmunger;
-
-  void operator() (in_type &in, out_type &out){
-  unmunger(in,out);
-  }
-
-};
-
-//group reduction for SU
-template<class vobj, bool store_as_float>
-struct GaugeUnMunger<vobj,GroupName::SU,true,store_as_float>
-{
-	using in_type  = typename vobj::scalar_object; 
-    using tmp_type = typename std::conditional<store_as_float,LorentzColourMatrixF,LorentzColourMatrixD>::type;
-	using out_type = typename std::conditional<store_as_float,LorentzColour2x3F,LorentzColour2x3D>::type;
-
-	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
-	Gauge3x2unmunger<out_type,tmp_type> gauge_unmunger;
-
-	void operator() (in_type &in, out_type &out){
-	tmp_type tmp;
-  	binary_unmunger(in, tmp);
-	gauge_unmunger(tmp,out);
-  }
-
-};
-
-//group reduction for Sp
-template<class vobj, bool store_as_float>
-struct GaugeUnMunger<vobj,GroupName::Sp,true,store_as_float>
-{
-    using in_type  = typename vobj::scalar_object;
-    using tmp_type = typename std::conditional<store_as_float,LorentzColourMatrixF,LorentzColourMatrixD>::type;
-	using out_type = typename std::conditional<store_as_float,LorentzColourNx2NF,LorentzColourNx2ND>::type;
-
-	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
-	GaugeSpunmunger<out_type,tmp_type> gauge_unmunger;
-
-	void operator() (in_type &in, out_type &out){
-	tmp_type tmp;
-  	binary_unmunger(in, tmp);
-	gauge_unmunger(tmp, out);
-	}
-
-};
-*/
-
-// this enum should cover all the cases for reading and writing
+// add other options? eg. IEEE64LITTLE ?
 enum struct FP_FMT { IEEE64BIG, IEEE32BIG };
+enum struct MATRIX_FMT { FULL, REDUCED };
 
 // this struct is used to choose the appropriate
 // unmunger (for writing) at compile time.
-template<class vobj, class group_name, bool reduce_group, FP_FMT fmt>
+template<class vobj, class group_name, MATRIX_FMT m_fmt, FP_FMT fp_fmt>
 struct GaugeUnMunger;
 
 // no group reduction
-template<class vobj, class group_name, FP_FMT fmt>
-struct GaugeUnMunger<vobj,group_name,false,fmt>
+template<class vobj, class group_name, FP_FMT fp_fmt>
+struct GaugeUnMunger<vobj,group_name,MATRIX_FMT::FULL,fp_fmt>
 {	
   using in_type  = typename vobj::scalar_object; 
-  using out_type = typename std::tuple_element_t<static_cast<int>(fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
   BinarySimpleUnmunger<out_type,in_type> unmunger;
 
   void operator() (in_type &in, out_type &out){
@@ -467,12 +409,12 @@ struct GaugeUnMunger<vobj,group_name,false,fmt>
 };
 
 //group reduction for SU
-template<class vobj, FP_FMT fmt>
-struct GaugeUnMunger<vobj,GroupName::SU,true,fmt>
+template<class vobj, FP_FMT fp_fmt>
+struct GaugeUnMunger<vobj,GroupName::SU,MATRIX_FMT::REDUCED,fp_fmt>
 {
 	using in_type  = typename vobj::scalar_object; 
-    using tmp_type = typename std::tuple_element_t<static_cast<int>(fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
-    using out_type = typename std::tuple_element_t<static_cast<int>(fmt),std::tuple<LorentzColour2x3D,LorentzColour2x3F>>;
+    using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+    using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColour2x3D,LorentzColour2x3F>>;
 
 	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
 	Gauge3x2unmunger<out_type,tmp_type> gauge_unmunger;
@@ -486,12 +428,12 @@ struct GaugeUnMunger<vobj,GroupName::SU,true,fmt>
 };
 
 //group reduction for Sp
-template<class vobj, FP_FMT fmt>
-struct GaugeUnMunger<vobj,GroupName::Sp,true,fmt>
+template<class vobj, FP_FMT fp_fmt>
+struct GaugeUnMunger<vobj,GroupName::Sp,MATRIX_FMT::REDUCED,fp_fmt>
 {
     using in_type  = typename vobj::scalar_object;
-    using tmp_type = typename std::tuple_element_t<static_cast<int>(fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
-    using out_type = typename std::tuple_element_t<static_cast<int>(fmt),std::tuple<LorentzColourNx2ND,LorentzColourNx2NF>>;
+    using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+    using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourNx2ND,LorentzColourNx2NF>>;
 
 	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
 	GaugeSpunmunger<out_type,tmp_type> gauge_unmunger;

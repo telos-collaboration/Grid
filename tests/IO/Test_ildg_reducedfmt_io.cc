@@ -69,20 +69,26 @@ int main (int argc, char ** argv)
 
   //std::vector<LatticeColourMatrix> U(4,&Fine);
   
-  //SU<Nc>::HotConfiguration(pRNGa,Umu);
-  Sp<Nc>::HotConfiguration(pRNGa,Umu);
-  //const bool reducedStorage = true;
-  //const bool store_as_float   = false; //write to disk in double or single precision
+  SU<Nc>::HotConfiguration(pRNGa,Umu);
+  using grpName = GroupName::SU; 
+
+  //Sp<Nc>::HotConfiguration(pRNGa,Umu);
+  //using grpName = GroupName::Sp; // ideally want to automate this
+
+  FP_FMT const fmt64 = FP_FMT::IEEE64BIG; 
+  FP_FMT const fmt32 = FP_FMT::IEEE32BIG; 
+  MATRIX_FMT const noGrpRdc = MATRIX_FMT::FULL;
+  MATRIX_FMT const GrpRdc =   MATRIX_FMT::REDUCED;
 
   FieldMetaData header;
 
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::cout <<GridLogMessage<<"** Writing out FULL FAT ILDG cfg  ****"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  std::string file("./ckpoint_lat_test_FAT");
+  std::string file("./ckpoint_lat_test_FULLFAT");
   IldgWriter _IldgWriter(Fine.IsBoss());
   _IldgWriter.open(file);
-  _IldgWriter.writeConfiguration<vLorentzColourMatrixD,GroupName::Sp,false,false>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter.writeConfiguration<grpName,noGrpRdc,fmt64>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter.close();
   Umu_saved = Umu;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
@@ -96,12 +102,12 @@ int main (int argc, char ** argv)
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  std::cout <<GridLogMessage<<"** Writing out SU reduced ILDG cfg  **"<<std::endl;
+  std::cout <<GridLogMessage<<"** Writing out reduced matrix ILDG cfg **"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::string file1("./ckpoint_lat_test_SEMISKIMMED");
   IldgWriter _IldgWriter1(Fine.IsBoss());
   _IldgWriter1.open(file1);
-  _IldgWriter1.writeConfiguration<vLorentzColourMatrixD,GroupName::Sp,true,false>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter1.writeConfiguration<grpName,GrpRdc,fmt64>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter1.close();
   Umu_saved = Umu;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
@@ -115,12 +121,12 @@ int main (int argc, char ** argv)
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-  std::cout <<GridLogMessage<<"*Writing out SU reduced single precision ILDG cfg*"<<std::endl;
+  std::cout <<GridLogMessage<<"*Writing out reduced single precision ILDG cfg*"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::string file2("./ckpoint_lat_test_SKIMMED");
   IldgWriter _IldgWriter2(Fine.IsBoss());
   _IldgWriter2.open(file2);
-  _IldgWriter2.writeConfiguration<vLorentzColourMatrixD,GroupName::Sp,true,true>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter2.writeConfiguration<grpName,GrpRdc,fmt32>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter2.close();
   Umu_saved = Umu;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
