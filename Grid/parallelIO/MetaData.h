@@ -217,6 +217,26 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
+// insert multiline comment here
+// template on vtype?
+inline void reconstructSU(LorentzColourMatrix &cm)
+{
+  // what type does this expect?
+  using iLorentzColourNminus1xNminus1 = iVector<iVector<iVector<vtype, Nc-1>, Nc-1>, Nd >;
+  using iLorentzColourNminus1xNminus1<ComplexD> = LorentzColourNmxNmD;
+  LorentzColourNmxNmD tmp(grid);
+  for(int mu=0;mu<Nd;mu++){
+    for(k=0;k<Nc;k++){
+      for(i=0; i<Nc-1; i++) {
+        for(j=0;(j<Nc && j!=k);j++){
+          int J = (j>k) ? j-1 : j; // for correct indexing of columns in tmp
+          tmp(mu)()(i,J) = cm(mu)()(i,j);
+        }
+      }
+      cm(mu)()(N,k) = adj(Determinant(tmp));
+    } 
+  }
+}
 ////////////////////////////////////////////////////////////////
 //  this function takes a reduced format
 //  Sp(2N) field with N rows and 2N columns 
