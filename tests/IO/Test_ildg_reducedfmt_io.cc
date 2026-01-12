@@ -9,6 +9,7 @@
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 Author: paboyle <paboyle@ph.ed.ac.uk>
+Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,7 +32,24 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
+
+
+//////////////////////////////////////////////
+//
+// this template function generates a
+// LatticeGaugeField of the chosen gauge
+// group, passed as a template argument.
+//
+//////////////////////////////////////////////
+template<class gaugeGroup>
+inline void generateFieldHotConfiguration( LatticeGaugeField &Umu, GridParallelRNG &pRNG ) {
+  if constexpr( std::is_same_v<gaugeGroup, GroupName::SU> == true ) {
+    SU<Nc>::HotConfiguration(pRNG,Umu);
+  } else if constexpr ( std::is_same_v<gaugeGroup, GroupName::Sp> == true ) {
+      Sp<Nc>::HotConfiguration(pRNG,Umu);
+  } else { static_assert(true, "Grid does not recognise the gauge group"); } 
+
+}
 
 
 int main (int argc, char ** argv)
@@ -43,8 +61,6 @@ int main (int argc, char ** argv)
 
   auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
-  //std::vector<int> latt_size  ({48,48,48,96});
-  //std::vector<int> latt_size  ({32,32,32,32});
   Coordinate latt_size  ({8,8,8,16});
   Coordinate clatt_size  ({2,2,2,4});
   int orthodir=3;
@@ -54,9 +70,7 @@ int main (int argc, char ** argv)
   GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
 
   GridParallelRNG   pRNGa(&Fine);
-  GridParallelRNG   pRNGb(&Fine);
   GridSerialRNG     sRNGa;
-  GridSerialRNG     sRNGb;
 
   std::cout <<GridLogMessage<< " seeding... "<<std::endl;
   pRNGa.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
@@ -67,18 +81,13 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu_diff(&Fine);
   LatticeGaugeField Umu_saved(&Fine);
 
-  //std::vector<LatticeColourMatrix> U(4,&Fine);
-  
-  SU<Nc>::HotConfiguration(pRNGa,Umu);
-  using grpName = GroupName::SU; 
+  using grpName = GroupName::Sp; 
+  generateFieldHotConfiguration<grpName>(Umu, pRNGa);
 
-  //Sp<Nc>::HotConfiguration(pRNGa,Umu);
-  //using grpName = GroupName::Sp; // ideally want to automate this
-
-  FP_FMT const fmt64 = FP_FMT::IEEE64BIG; 
-  FP_FMT const fmt32 = FP_FMT::IEEE32BIG; 
-  MATRIX_FMT const noGrpRdc = MATRIX_FMT::FULL;
-  MATRIX_FMT const GrpRdc =   MATRIX_FMT::REDUCED;
+  FloatingPointFormat const fmt64 = FloatingPointFormat::IEEE64BIG; 
+  FloatingPointFormat const fmt32 = FloatingPointFormat::IEEE32BIG; 
+  MatrixFormat const noGrpRdc = MatrixFormat::FULL;
+  MatrixFormat const GrpRdc =   MatrixFormat::REDUCED;
 
   FieldMetaData header;
 

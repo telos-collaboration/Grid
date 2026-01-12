@@ -2104,20 +2104,25 @@ These are specialised to SciDAC writers, introducing facilities for generating t
     void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord);
   };
 
-They are also specialised to ILDG format writers, available and defined only for Gauge configurations::
+They are also specialised to ILDG format writers, available and defined only for Gauge configurations. Following the publication of Rev. 1.2 of the ILDG Binary File Format by the ILDG Metadata Working Group the ILDG format writer and reader have been updated to be able to write SU(2/3) and Sp(2N) lattice configurations in reduced formats and to read and reconstruct reduced format lattices.::
 
   class IldgWriter : public ScidacWriter {
 
-    template <class vsimd>
-    void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,int sequence,std::string LFN,std::string description);
+    template <class group_name = GroupName::SU, MatrixFormat matrix_fmt = MatrixFormat::FULL, FloatingPointFormat fp_fmt = FloatingPointFormat::IEEE64BIG, class stats = PeriodicGaugeStatistics, class vobj>
+    void writeConfiguration(Lattice<vobj> &Umu, int sequence, std::string LFN, std::string description)
 
   };
 
   class IldgReader : public GridLimeReader {
-    template <class vsimd>
-    void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu, FieldMetaData &FieldMetaData_) ;
+
+    template <class vobj, class stats = PeriodicGaugeStatistics>
+    void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_);
 
   };
+
+The template parameters *group_name*, *MatrixFormat*, *FloatingPointFormat* specify the exact format the lattices are to be written to disk with. At present there are two options for the group, SU and Sp, two options for the matrix format, reduced or not reduced, and two options for the floating point format, 32 bit and 64 bit precision. If a lattice is not written out in reduced format then *group_name* has no practical effect on the writing process.  
+
+Put a table here describing these constructs in more detail?
 
 **Implementation detail**
 
