@@ -385,18 +385,17 @@ struct GaugeSpunmunger{
   }
 };
 
-// add other options? eg. IEEE64LITTLE ?
-enum struct FP_FMT { IEEE64BIG, IEEE32BIG };
-enum struct MATRIX_FMT { FULL, REDUCED };
+enum struct FloatingPointFormat { IEEE64BIG, IEEE32BIG };
+enum struct MatrixFormat { FULL, REDUCED };
 
 // this struct is used to choose the appropriate
 // unmunger (for writing) at compile time.
-template<class vobj, class group_name, MATRIX_FMT m_fmt, FP_FMT fp_fmt>
+template<class vobj, class group_name, MatrixFormat m_fmt, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger;
 
 // no group reduction
-template<class vobj, class group_name, FP_FMT fp_fmt>
-struct GaugeUnMunger<vobj,group_name,MATRIX_FMT::FULL,fp_fmt>
+template<class vobj, class group_name, FloatingPointFormat fp_fmt>
+struct GaugeUnMunger<vobj,group_name,MatrixFormat::FULL,fp_fmt>
 {	
   using in_type  = typename vobj::scalar_object; 
   using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
@@ -409,8 +408,8 @@ struct GaugeUnMunger<vobj,group_name,MATRIX_FMT::FULL,fp_fmt>
 };
 
 //group reduction for SU
-template<class vobj, FP_FMT fp_fmt>
-struct GaugeUnMunger<vobj,GroupName::SU,MATRIX_FMT::REDUCED,fp_fmt>
+template<class vobj, FloatingPointFormat fp_fmt>
+struct GaugeUnMunger<vobj,GroupName::SU,MatrixFormat::REDUCED,fp_fmt>
 {
 	using in_type  = typename vobj::scalar_object; 
     using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
@@ -428,8 +427,8 @@ struct GaugeUnMunger<vobj,GroupName::SU,MATRIX_FMT::REDUCED,fp_fmt>
 };
 
 //group reduction for Sp
-template<class vobj, FP_FMT fp_fmt>
-struct GaugeUnMunger<vobj,GroupName::Sp,MATRIX_FMT::REDUCED,fp_fmt>
+template<class vobj, FloatingPointFormat fp_fmt>
+struct GaugeUnMunger<vobj,GroupName::Sp,MatrixFormat::REDUCED,fp_fmt>
 {
     using in_type  = typename vobj::scalar_object;
     using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;

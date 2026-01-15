@@ -33,24 +33,31 @@ Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 using namespace std;
 using namespace Grid;
 
-
 //////////////////////////////////////////////
 //
 // this template function generates a
 // LatticeGaugeField of the chosen gauge
-// group, passed as a template argument.
+// group passed as a template argument.
 //
 //////////////////////////////////////////////
 template<class gaugeGroup>
-inline void generateFieldHotConfiguration( LatticeGaugeField &Umu, GridParallelRNG &pRNG ) {
+LatticeGaugeField generateHotFieldConfiguration( GridCartesian &Fine, std::vector<int> seed ) {
+
+  GridParallelRNG   pRNGa(&Fine);
+  std::cout <<GridLogMessage<< " seeding... "<<std::endl;
+  pRNGa.SeedFixedIntegers(seed);
+  std::cout <<GridLogMessage<< " ...done "<<std::endl;
+
+  LatticeGaugeField Umu(&Fine);
+
   if constexpr( std::is_same_v<gaugeGroup, GroupName::SU> == true ) {
-    SU<Nc>::HotConfiguration(pRNG,Umu);
+    SU<Nc>::HotConfiguration(pRNGa,Umu);
   } else if constexpr ( std::is_same_v<gaugeGroup, GroupName::Sp> == true ) {
-      Sp<Nc>::HotConfiguration(pRNG,Umu);
-  } else { static_assert(true, "Grid does not recognise the gauge group"); } 
+    Sp<Nc>::HotConfiguration(pRNGa,Umu);
+  } else { static_assert(true, "Grid does not recognise the gauge group"); }
 
+  return Umu; 
 }
-
 
 int main (int argc, char ** argv)
 {
@@ -62,32 +69,25 @@ int main (int argc, char ** argv)
   auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
   Coordinate latt_size  ({8,8,8,16});
-  Coordinate clatt_size  ({2,2,2,4});
-  int orthodir=3;
-  int orthosz =latt_size[orthodir];
-    
-  GridCartesian     Fine(latt_size,simd_layout,mpi_layout);
-  GridCartesian     Coarse(clatt_size,simd_layout,mpi_layout);
 
-  GridParallelRNG   pRNGa(&Fine);
-  GridSerialRNG     sRNGa;
+  std::vector<int> seed0 = {15,16,23,42};
+  std::vector<int> seed1 = {7,10,19,95};
+  std::vector<int> seed2 = {55,34,23,13};
 
-  std::cout <<GridLogMessage<< " seeding... "<<std::endl;
-  pRNGa.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  sRNGa.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
-  std::cout <<GridLogMessage<< " ...done "<<std::endl;
+  GridCartesian  Fine(latt_size,simd_layout,mpi_layout);
 
-  LatticeGaugeField Umu(&Fine);
-  LatticeGaugeField Umu_diff(&Fine);
-  LatticeGaugeField Umu_saved(&Fine);
-
+  // set the gauge group
   using grpName = GroupName::Sp; 
-  generateFieldHotConfiguration<grpName>(Umu, pRNGa);
 
+  LatticeGaugeField Umu       = generateHotFieldConfiguration<grpName>(Fine, seed0);
+  LatticeGaugeField Umu_diff  = generateHotFieldConfiguration<grpName>(Fine, seed1);
+  LatticeGaugeField Umu_saved = generateHotFieldConfiguration<grpName>(Fine, seed2);
+
+  // define enums for different field formats
   FloatingPointFormat const fmt64 = FloatingPointFormat::IEEE64BIG; 
   FloatingPointFormat const fmt32 = FloatingPointFormat::IEEE32BIG; 
-  MatrixFormat const noGrpRdc = MatrixFormat::FULL;
-  MatrixFormat const GrpRdc =   MatrixFormat::REDUCED;
+  MatrixFormat const noGrpRdc     = MatrixFormat::FULL;
+  MatrixFormat const GrpRdc       = MatrixFormat::REDUCED;
 
   FieldMetaData header;
 
