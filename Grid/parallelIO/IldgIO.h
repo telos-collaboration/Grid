@@ -440,7 +440,7 @@ class GridLimeWriter : public BinaryIO
     ////////////////////////////////////////////
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-	typedef typename GaugeUnMunger<vobj,group_name,matrix_fmt,fp_fmt>::out_type sobj;
+	  typedef typename GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt>::out_type sobj;
     uint64_t PayloadSize = sizeof(sobj) * grid->_gsites;
     if ( boss_node ) {
       createLimeRecordHeader(record_name, 0, 0, PayloadSize);
@@ -465,7 +465,7 @@ class GridLimeWriter : public BinaryIO
     ///////////////////////////////////////////
     std::string format = getFormatString<sobj>();
 
-	GaugeUnMunger<vobj,group_name,matrix_fmt,fp_fmt> unmunger;
+	  GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt> unmunger;
 	
     BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, unmunger, offset1, format, nersc_csum, scidac_csuma, scidac_csumb, control);
 
@@ -734,6 +734,62 @@ class IldgWriter : public ScidacWriter {
 class IldgReader : public GridLimeReader {
  public:
 
+  //////////////////////////////////////////////////////////////////
+  // this helper function wraps the logic for choosing
+  // the correct munger and intermediate lattice data type
+  // before then reading a lattice field from disk.  
+  // This is a runtime choice as Grid won't know which munger/itype 
+  // to use until it has read the header of a lattice cfg. Therefore
+  // templating this function on fp_fmt etc. does not work.
+  // At present we use a rather cumbersome if statement with 6 branches. 
+  // The benefit of organising IldgReader this way is it makes 
+  // readConfiguration clearer and more readable.
+  //////////////////////////////////////////////////////////////////
+  template<class vobj>
+  void readLatticeBinaryObject(Lattice<vobj> &Umu, std::string filename, FloatingPointFormat fp_fmt, MatrixFormat matrix_fmt, bool is_grp_su, bool is_grp_sp, uint64_t &offset, uint32_t &nersc_csum, uint32_t &scidac_csuma, uint32_t &scidac_csumb) 
+  {
+
+    typedef typename vobj::scalar_object sobj;
+	  // need all the types we could possibly read from
+	  // including the intermediate data types for 
+	  // reduced format lattices and single/double precision
+    typedef LorentzColourMatrixF  fobj;
+    typedef LorentzColourMatrixD  dobj;
+	  typedef LorentzColour2x3F     fobjsuR;
+	  typedef LorentzColour2x3D     dobjsuR;
+	  typedef LorentzColourNx2NF    fobjspR;
+	  typedef LorentzColourNx2ND    dobjspR;
+
+    std::string format;
+    
+    if ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
+      format = std::string("IEEE64BIG");
+      if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
+        Gauge3x2munger<dobjsuR,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,dobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb); 
+      } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
+        GaugeSpmunger<dobjspR,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,dobjspR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      } else {
+        GaugeSimpleMunger<dobj,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,dobj>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      }
+      } else if ( fp_fmt == FloatingPointFormat::IEEE32BIG) {
+        format = std::string("IEEE32BIG");
+        if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
+        Gauge3x2munger<fobjsuR,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,fobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
+        GaugeSpmunger<fobjspR,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,fobjspR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      } else {
+        GaugeSimpleMunger<fobj,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,fobj>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      }	  
+      } else { assert("Unable to determine which readLatticeObject function template to instantiate."); }	
+
+  }
+
   ////////////////////////////////////////////////////////////////
   // Read either Grid/SciDAC/ILDG configuration
   // Don't require scidac records EXCEPT checksum
@@ -743,17 +799,6 @@ class IldgReader : public GridLimeReader {
   ////////////////////////////////////////////////////////////////
   template <class vobj, class stats = PeriodicGaugeStatistics>
   void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_) {
-
-    typedef typename vobj::scalar_object sobj;
-
-	// need all the types we could possibly read from,
-	// including the intermediate data types for reduced format lattices.
-    typedef LorentzColourMatrixF  fobj;
-    typedef LorentzColourMatrixD  dobj;
-	  typedef LorentzColour2x3F     fobjsuR;
-	  typedef LorentzColour2x3D     dobjsuR;
-	  typedef LorentzColourNx2NF    fobjspR;
-	  typedef LorentzColourNx2ND    dobjspR;
 
     GridBase *grid = Umu.Grid();
 
@@ -780,13 +825,13 @@ class IldgReader : public GridLimeReader {
     uint32_t scidac_csuma;
     uint32_t scidac_csumb;
 
-	// these variables store information about the binary data that is read
-	// from the ildg-format header. if matrix_fmt==REDUCED 
-	// then Grid will reconstruct the full matrix using the appropriate munger.
-	FloatingPointFormat fp_fmt;
-	MatrixFormat matrix_fmt;
-	bool is_grp_su;
-	bool is_grp_sp;
+    // these variables store information about the binary data that is read
+    // from the ildg-format header. if matrix_fmt==REDUCED 
+    // then Grid will reconstruct the full matrix using the appropriate munger.
+    FloatingPointFormat fp_fmt;
+    MatrixFormat matrix_fmt;
+    bool is_grp_su;
+    bool is_grp_sp;
     // Binary format
     std::string format;
 
@@ -919,64 +964,10 @@ class IldgReader : public GridLimeReader {
 
 	uint64_t offset= ftello(File);
   
-  if ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
-		format = std::string("IEEE64BIG");
-		if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-		  Gauge3x2munger<dobjsuR,sobj> munge;
-	   BinaryIO::readLatticeObject<vobj,dobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb); 
-		} else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
-		  GaugeSpmunger<dobjspR,sobj> munge;
-	    BinaryIO::readLatticeObject<vobj,dobjspR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-	  } else {
-		  GaugeSimpleMunger<dobj,sobj> munge;
-	    BinaryIO::readLatticeObject<vobj,dobj>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-		}
-	  } else if ( fp_fmt == FloatingPointFormat::IEEE32BIG) {
-		  format = std::string("IEEE32BIG");
-	   	if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-			Gauge3x2munger<fobjsuR,sobj> munge;
-	  	BinaryIO::readLatticeObject<vobj,fobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-		} else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
-			GaugeSpmunger<fobjspR,sobj> munge;
-	  	BinaryIO::readLatticeObject<vobj,fobjspR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-		} else {
-		  GaugeSimpleMunger<fobj,sobj> munge;
-	  	BinaryIO::readLatticeObject<vobj,fobj>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-		}	  
-	  } else { assert("Unable to determine which readLatticeObject function template to instantiate."); }	
-
-
-/*	 if ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
-		 format = std::string("IEEE64BIG");
-		 if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-		   Gauge3x2munger<dobjsuR,sobj> munge;
-       using diskobj = dobjsuR;
-		 } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
-			 GaugeSpmunger<dobjspR,sobj> munge;
-       using diskobj = dobjspR;
-	   } else {
-		   GaugeSimpleMunger<dobj,sobj> munge;
-       using diskobj = dobj;
-		 }
-	 } else if ( fp_fmt == FloatingPointFormat::IEEE32BIG) {
-		  format = std::string("IEEE32BIG");
-	   	if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-			Gauge3x2munger<fobjsuR,sobj> munge;
-      using diskobj = fobjsuR;
-		} else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
-			GaugeSpmunger<fobjspR,sobj> munge;
-      using diskobj = fobjspR;
-		} else {
-		  GaugeSimpleMunger<fobj,sobj> munge;
-      using diskobj = fobj;
-		}	  
-	 } else { assert("Unable to determine which readLatticeObject function template to instantiate."); }	
-
-  // read lattice into Umu using the appropriate munger.
- 	BinaryIO::readLatticeObject<vobj,diskobj>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb); 
-*/	
+  readLatticeBinaryObject(Umu, filename, fp_fmt, matrix_fmt, is_grp_su, is_grp_sp, offset, nersc_csum, scidac_csuma, scidac_csumb); 
 
 	found_ildgBinary = 1;
+
       }
 
     }
