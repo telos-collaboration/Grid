@@ -217,6 +217,17 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
+////////////////////////////////////////////////////////////////
+//  this function takes a reduced format
+//  Sp(2N) field with N rows and 2N columns 
+//  and reconstructs the full 2Nx2N matrix.
+//  the full matrix has block structure: 
+//      | A  B |
+//      |-B* A*|
+//  where A and B are NxN matrices.
+//  see appendix A.2 of
+//  https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
+////////////////////////////////////////////////////////////////
 inline void reconstructSp(LorentzColourMatrix & cm) 
 {
 	assert( Nc%2==0 ); 
@@ -234,12 +245,12 @@ inline void reconstructSp(LorentzColourMatrix & cm)
 // Some data types for intermediate storage
 ////////////////////////////////////////////////////////////////////////////////
 template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, Nc-1>, Nd >;
-template<typename vtype> using iLorentzColourNx2N = iVector<iVector<iVector<vtype, Nc>, Nc/2>, Nd >;
-
 typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
 typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
 
+// intermediate types for Sp(2N) fields
+template<typename vtype> using iLorentzColourNx2N = iVector<iVector<iVector<vtype, Nc>, Nc/2>, Nd >;
 typedef iLorentzColourNx2N<ComplexF>  LorentzColourNx2NF;
 typedef iLorentzColourNx2N<ComplexD>  LorentzColourNx2ND;
 
@@ -363,86 +374,90 @@ struct GaugeSpmunger{
   void operator() (fobj &in,sobj &out){
     for(int mu=0;mu<Nd;mu++){
       for(int i=0;i<Nc/2;i++){
-		for(int j=0;j<Nc;j++){
-	  	  out(mu)()(i,j) = in(mu)(i)(j);
-		}
-	  }
+		    for(int j=0;j<Nc;j++){
+	  	    out(mu)()(i,j) = in(mu)(i)(j);
+		    }
+	    }
     }
   	reconstructSp(out);
   }
 };
 
+// write out Sp(2N) fields in reduced Nx2N format.
 template<class fobj,class sobj>
 struct GaugeSpunmunger{
   void operator() (sobj &in,fobj &out){
     for(int mu=0;mu<Nd;mu++){
       for(int i=0;i<Nc/2;i++){
-	    for(int j=0;j<Nc;j++){
-	      out(mu)(i)(j) = in(mu)()(i,j);
-		}
-	  }
+	      for(int j=0;j<Nc;j++){
+	        out(mu)(i)(j) = in(mu)()(i,j);
+		    }
+	    }
     }
   }
 };
 
+// use these as non-type template parameters in the GaugeUnMunger
 enum struct FloatingPointFormat { IEEE64BIG, IEEE32BIG };
 enum struct MatrixFormat { FULL, REDUCED };
-
+/////////////////////////////////////////////////////////
 // this struct is used to choose the appropriate
 // unmunger (for writing) at compile time.
+// there are 3 partial template specialisations,
+// > no group reduction - treat SU and Sp the same
+// > group reduction for SU fields
+// > group reduction for Sp fields
+/////////////////////////////////////////////////////////
 template<class vobj, class group_name, MatrixFormat m_fmt, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger;
 
 // no group reduction
 template<class vobj, class group_name, FloatingPointFormat fp_fmt>
-struct GaugeUnMunger<vobj,group_name,MatrixFormat::FULL,fp_fmt>
+struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, fp_fmt>
 {	
   using in_type  = typename vobj::scalar_object; 
-  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
-  BinarySimpleUnmunger<out_type,in_type> unmunger;
+  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  BinarySimpleUnmunger<out_type, in_type> unmunger;
 
   void operator() (in_type &in, out_type &out){
-  unmunger(in,out);
+    unmunger(in,out);
   }
-
 };
 
 //group reduction for SU
 template<class vobj, FloatingPointFormat fp_fmt>
-struct GaugeUnMunger<vobj,GroupName::SU,MatrixFormat::REDUCED,fp_fmt>
+struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
 {
 	using in_type  = typename vobj::scalar_object; 
-    using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
-    using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColour2x3D,LorentzColour2x3F>>;
+  using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColour2x3D,LorentzColour2x3F>>;
 
-	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
-	Gauge3x2unmunger<out_type,tmp_type> gauge_unmunger;
+	BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
+	Gauge3x2unmunger<out_type, tmp_type> gauge_unmunger;
 
 	void operator() (in_type &in, out_type &out){
-	tmp_type tmp;
+	  tmp_type tmp;
   	binary_unmunger(in, tmp);
-	gauge_unmunger(tmp,out);
+	  gauge_unmunger(tmp,out);
   }
-
 };
 
 //group reduction for Sp
 template<class vobj, FloatingPointFormat fp_fmt>
-struct GaugeUnMunger<vobj,GroupName::Sp,MatrixFormat::REDUCED,fp_fmt>
+struct GaugeUnMunger<vobj, GroupName::Sp, MatrixFormat::REDUCED, fp_fmt>
 {
-    using in_type  = typename vobj::scalar_object;
-    using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
-    using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt),std::tuple<LorentzColourNx2ND,LorentzColourNx2NF>>;
+  using in_type  = typename vobj::scalar_object;
+  using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourNx2ND,LorentzColourNx2NF>>;
 
-	BinarySimpleUnmunger<tmp_type,in_type> binary_unmunger;
-	GaugeSpunmunger<out_type,tmp_type> gauge_unmunger;
+	BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
+	GaugeSpunmunger<out_type, tmp_type> gauge_unmunger;
 
 	void operator() (in_type &in, out_type &out){
-	tmp_type tmp;
+  	tmp_type tmp;
   	binary_unmunger(in, tmp);
-	gauge_unmunger(tmp, out);
+	  gauge_unmunger(tmp, out);
 	}
-
 };
 
 
