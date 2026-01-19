@@ -77,7 +77,7 @@ int main (int argc, char ** argv)
   GridCartesian  Fine(latt_size,simd_layout,mpi_layout);
 
   // set the gauge group
-  using grpName = GroupName::Sp; 
+  using grpName = GroupName::SU;
 
   LatticeGaugeField Umu       = generateHotFieldConfiguration<grpName>(Fine, seed0);
   LatticeGaugeField Umu_diff  = generateHotFieldConfiguration<grpName>(Fine, seed1);
