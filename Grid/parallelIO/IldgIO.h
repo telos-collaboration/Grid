@@ -737,22 +737,22 @@ class IldgReader : public GridLimeReader {
   //////////////////////////////////////////////////////////////////
   // this helper function wraps the logic for choosing
   // the correct munger and intermediate lattice data type
-  // before then reading a lattice field from disk.  
-  // This is a runtime choice as Grid won't know which munger/itype 
-  // to use until it has read the header of a lattice cfg. Therefore
-  // templating this function on fp_fmt etc. does not work.
-  // At present we use a rather cumbersome if statement with 6 branches. 
-  // The benefit of organising IldgReader this way is it makes 
+  // before reading a lattice field from disk.  
+  // This is a runtime choice as Grid has to first read the 
+  // header of the lattice cfg. Therefore templating this function on
+  // FloatingPointFormat etc. does not work. It is rather 
+  // cumbersome, it's if statement with 6 branches, 
+  // but the benefit of organising IldgReader this way is it makes 
   // readConfiguration clearer and more readable.
   //////////////////////////////////////////////////////////////////
   template<class vobj>
   void readLatticeBinaryObject(Lattice<vobj> &Umu, std::string filename, FloatingPointFormat fp_fmt, MatrixFormat matrix_fmt, bool is_grp_su, bool is_grp_sp, uint64_t &offset, uint32_t &nersc_csum, uint32_t &scidac_csuma, uint32_t &scidac_csumb) 
   {
 
-    typedef typename vobj::scalar_object sobj;
 	  // need all the types we could possibly read from
 	  // including the intermediate data types for 
 	  // reduced format lattices and single/double precision
+    typedef typename vobj::scalar_object sobj;
     typedef LorentzColourMatrixF  fobj;
     typedef LorentzColourMatrixD  dobj;
 	  typedef LorentzColour2x3F     fobjsuR;
@@ -825,15 +825,15 @@ class IldgReader : public GridLimeReader {
     uint32_t scidac_csuma;
     uint32_t scidac_csumb;
 
-    // these variables store information about the binary data that is read
-    // from the ildg-format header. if matrix_fmt==REDUCED 
+    // these variables store information about the lattice that is read
+    // from its ildg-format header. if matrix_fmt==MatrixFormat::REDUCED 
     // then Grid will reconstruct the full matrix using the appropriate munger.
-    FloatingPointFormat fp_fmt;
     MatrixFormat matrix_fmt;
     bool is_grp_su;
     bool is_grp_sp;
     // Binary format
     std::string format;
+    FloatingPointFormat fp_fmt;
 
     //////////////////////////////////////////////////////////////////////////
     // Loop over all records

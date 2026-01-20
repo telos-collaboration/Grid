@@ -397,7 +397,9 @@ struct GaugeSpunmunger{
   }
 };
 
-// use these as non-type template parameters in the GaugeUnMunger
+// these are used as non-type template parameters when
+// writing with GaugeUnMunger and as regular parameters
+// when reading with IldgReader.readConfiguration 
 enum struct FloatingPointFormat { IEEE64BIG, IEEE32BIG };
 enum struct MatrixFormat { FULL, REDUCED };
 /////////////////////////////////////////////////////////
@@ -407,6 +409,8 @@ enum struct MatrixFormat { FULL, REDUCED };
 // > no group reduction - treat SU and Sp the same
 // > group reduction for SU fields
 // > group reduction for Sp fields
+// It also exposes the intermediate out_type for use in 
+// IldgWriter.writeConfiguration
 /////////////////////////////////////////////////////////
 template<class vobj, class group_name, MatrixFormat m_fmt, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger;
@@ -424,7 +428,7 @@ struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, fp_fmt>
   }
 };
 
-//group reduction for SU
+//template specialisation for SU
 template<class vobj, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
 {
@@ -442,7 +446,7 @@ struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
   }
 };
 
-//group reduction for Sp
+//template specialisation for Sp
 template<class vobj, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger<vobj, GroupName::Sp, MatrixFormat::REDUCED, fp_fmt>
 {
