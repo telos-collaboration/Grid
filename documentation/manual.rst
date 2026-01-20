@@ -2104,7 +2104,7 @@ These are specialised to SciDAC writers, introducing facilities for generating t
     void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord);
   };
 
-They are also specialised to ILDG format writers, available and defined only for Gauge configurations. Following the publication of Rev. 1.2 of the ILDG Binary File Format by the ILDG Metadata Working Group the ILDG format writer and reader have been updated to be able to write SU(2/3) and Sp(2N) lattice configurations in reduced formats and to read and reconstruct reduced format lattices.::
+They are also specialised to ILDG format writers, available and defined only for Gauge configurations. Following the publication of Rev. 1.2 of the ILDG Binary File Format by the ILDG Metadata Working Group the ILDG format writer and reader have been updated to be able to read and write SU(2/3) and Sp(2N) lattice configurations in reduced formats.::
 
   class IldgWriter : public ScidacWriter {
 
@@ -2120,9 +2120,7 @@ They are also specialised to ILDG format writers, available and defined only for
 
   };
 
-The template parameters *group_name*, *MatrixFormat*, *FloatingPointFormat* specify the exact format the lattices are to be written to disk with. At present there are two options for the group, SU and Sp, two options for the matrix format, reduced or not reduced, and two options for the floating point format, 32 bit and 64 bit precision. If a lattice is not written out in reduced format then *group_name* has no practical effect on the writing process.  
-
-Put a table here describing these constructs in more detail?
+The template parameters *group_name*, *MatrixFormat*, *FloatingPointFormat* specify the format the lattices are to be written to disk with. At present there are two options for the group, SU and Sp, two options for the matrix format, reduced or not reduced, and two options for the floating point format, 32 bit and 64 bit precision. Reduced format Sp gauge fields take up half as much memory as the non-reduced fields while SU(3) fields take up 2/3 as much memory as their non-reduced counterparts.
 
 **Implementation detail**
 
