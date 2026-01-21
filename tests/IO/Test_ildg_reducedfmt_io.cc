@@ -33,13 +33,16 @@ Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 using namespace std;
 using namespace Grid;
 
+// this test demonstrates and checks IldgWriter/Readers' ability to 
+// read/write ildg 1.2 compliant SU and Sp lattices, including in reduced format.
+
 //////////////////////////////////////////////
 // this template function returns a
 // LatticeGaugeField of the chosen gauge
 // group passed as a template argument.
 //////////////////////////////////////////////
 template<class gaugeGroup>
-LatticeGaugeField generateHotFieldConfiguration( GridCartesian &Grid, std::vector<int> seed = {83,8,34,59} ) {
+LatticeGaugeField generateHotFieldConfiguration( GridCartesian &Grid, std::vector<int> seed ) {
 
   GridParallelRNG   pRNGa(&Grid);
   std::cout <<GridLogMessage<< " seeding... "<<std::endl;
@@ -66,25 +69,13 @@ LatticeGaugeField generateHotFieldConfiguration( GridCartesian &Grid, std::vecto
 template<class gaugeGroup, int N, MatrixFormat matrix_fmt, FloatingPointFormat fp_fmt>
 void writeReadIldgConfiguration( LatticeGaugeField &Umu, GridCartesian &Grid, std::string file)  {
 
-  // if the IldgReader class is not able to handle
-  // the binary format do nothing and exit the function 
   if constexpr( std::is_same_v<gaugeGroup,GroupName::Sp> && N%2==1) {
     std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-    std::cout <<GridLogMessage<< "CAN NOT WRITE REDUCED LATTICE" << std::endl;
+    std::cout <<GridLogMessage<< "CAN NOT WRITE LATTICE" << std::endl;
     std::cout <<GridLogMessage<< "For Sp fields Nc must be even and >= 4" << std::endl;
     std::cout <<GridLogMessage<<"**************************************"<<std::endl;
     return;
   } 
-  if constexpr( std::is_same_v<gaugeGroup,GroupName::SU> && matrix_fmt==MatrixFormat::REDUCED && N>3)
-  { 
-    std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-    std::cout <<GridLogMessage<< "CAN NOT WRITE REDUCED LATTICE" << std::endl;
-    std::cout << GridLogMessage << "currently when writing reduced SU fields Nc must be either 2 or 3" << std::endl;
-    std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-    return;
-  }
-
-  FieldMetaData header;
 
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::cout <<GridLogMessage<<"*** Writing out ILDG cfg ***"<<std::endl;
@@ -94,7 +85,18 @@ void writeReadIldgConfiguration( LatticeGaugeField &Umu, GridCartesian &Grid, st
   _IldgWriter.writeConfiguration<gaugeGroup, matrix_fmt, fp_fmt>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter.close();
 
-  LatticeGaugeField Umu_saved = generateHotFieldConfiguration<gaugeGroup>(Grid);
+  if constexpr( std::is_same_v<gaugeGroup,GroupName::SU> && matrix_fmt==MatrixFormat::REDUCED && N>3)
+  { 
+    std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+    std::cout <<GridLogMessage<< "CAN NOT READ REDUCED LATTICE" << std::endl;
+    std::cout << GridLogMessage << "currently when reading reduced SU fields Nc must be either 2 or 3" << std::endl;
+    std::cout <<GridLogMessage<<"**************************************"<<std::endl;
+    return;
+  }
+
+  LatticeGaugeField Umu_saved(&Grid);
+
+  FieldMetaData header;
 
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
@@ -126,17 +128,17 @@ int main (int argc, char ** argv)
   LatticeGaugeField Umu   = generateHotFieldConfiguration<GroupName::SU>(Grid, seed0);
   LatticeGaugeField UmuSp = generateHotFieldConfiguration<GroupName::Sp>(Grid, seed1);
 
-  // write/read SU fields
-  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(Umu, Grid, "./ckpoint_su_full64.4000");
-  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(Umu, Grid, "./ckpoint_su_rdc64.4000");
-  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(Umu, Grid, "./ckpoint_su_full32.4000");
-  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(Umu, Grid, "./ckpoint_su_rdc32.4000");
+  // write and read SU fields
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(Umu, Grid, "./ckpoint_su64_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(Umu, Grid, "./ckpoint_su64_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(Umu, Grid, "./ckpoint_su32_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(Umu, Grid, "./ckpoint_su32_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
   
-  // write/read Sp fields 
-  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(UmuSp, Grid, "./ckpoint_sp_full64.4000");
-  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(UmuSp, Grid, "./ckpoint_sp_rdc64.4000");
-  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(UmuSp, Grid, "./ckpoint_sp_full32.4000");
-  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(UmuSp, Grid, "./ckpoint_sp_rdc32.4000");
+  // write and read Sp fields 
+  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(UmuSp, Grid, "./ckpoint_sp64_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(UmuSp, Grid, "./ckpoint_sp64_"+std::to_string(Nc/2)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(UmuSp, Grid, "./ckpoint_sp32_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(UmuSp, Grid, "./ckpoint_sp32_"+std::to_string(Nc/2)+"x"+std::to_string(Nc)+".4000");
 
   Grid_finalize();
 #endif
