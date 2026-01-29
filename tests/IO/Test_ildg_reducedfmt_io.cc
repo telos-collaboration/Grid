@@ -2,13 +2,12 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_nersc_io.cc
+    Source file: ./Test_ildg_reducedfmt_io.cc
 
     Copyright (C) 2015
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>
-Author: paboyle <paboyle@ph.ed.ac.uk>
 Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
