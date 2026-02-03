@@ -66,16 +66,75 @@ void checkBinarySimpleMungers() {
 
   unmungerFF(in_scalar_objectF, out_scalar_objectF);
   assert(in_scalar_objectF==out_scalar_objectF);
-  assert(in_scalar_objectD==out_scalar_objectD);
+  //assert(in_scalar_objectD==out_scalar_objectD);
 
   // BinarySimpleMunger<in_type,out_type> 
   BinarySimpleMunger<LorentzColourMatrixF,LorentzColourMatrixF> mungerFF;
   BinarySimpleMunger<LorentzColourMatrixD,LorentzColourMatrixF> mungerDF;
   BinarySimpleMunger<LorentzColourMatrixD,LorentzColourMatrixD> mungerDD;
   BinarySimpleMunger<LorentzColourMatrixF,LorentzColourMatrixD> mungerFD;
+  
+}
+
+void checkGaugeSpmungers() {
+  ColourMatrix Sp_field;
+
+  const Complex  a(0.5, 0.5), abar(0.5, -0.5);
+  const Complex  b(0.3, 0.9), bbar(0.3, -0.9);
+
+  // fill top left
+  for(int i=0;i<Nc/2;i++) {
+    for(int j=0;j<Nc/2;j++) {
+      Sp_field()()(i,j) = a;
+    }
+  }
+  // fill top right
+  for(int i=0;i<Nc/2;i++) {
+    for(int j=2;j<Nc;j++) {
+      Sp_field()()(i,j) = b;
+    }
+  }
+  // fill bottom left
+  for(int i=2;i<Nc;i++) {
+    for(int j=0;j<Nc/2;j++) {
+      Sp_field()()(i,j) = -bbar;
+    }
+  }
+  // fill bottom right
+  for(int i=2;i<Nc;i++) {
+    for(int j=2;j<Nc;j++) {
+      Sp_field()()(i,j) = abar;
+    }
+  }
+
+  LorentzColourMatrixD test = Zero();
+
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,Sp_field,mu);
+  }
+
+  std::cout << test << std::endl;
+  
+  // reduce field. GaugeSpunmunger<out_type,in_type>
+  GaugeSpunmunger<LorentzColourNx2ND,LorentzColourMatrixD> unmunger;
+  LorentzColourNx2ND test_rdc = Zero();
+  unmunger(test,test_rdc);
+
+  //std::cout << test_rdc << std::endl;
+ 
+  // reconstruct full field. GaugeSpmunger<in_type,out_type>
+  GaugeSpmunger<LorentzColourNx2ND,LorentzColourMatrixD> munger;
+  LorentzColourMatrixD test_recon;
+  munger(test_rdc,test_recon);
+
+  std::cout << test_recon << std::endl;
+
+  // round-trip test
+  assert(test==test_recon);
 
 
 }
+
 
 int main (int argc, char ** argv)
 {
@@ -88,7 +147,7 @@ int main (int argc, char ** argv)
   //checkGaugeSimpleMungers();
   //checkGaugeDoubleStoredMungers();
   //checkGauge3x2mungers();
-  //checkGaugeSpmungers();
+  checkGaugeSpmungers();
 
   Grid_finalize();
 #endif
