@@ -383,7 +383,7 @@ struct GaugeSpmunger{
   }
 };
 
-// write out Sp(2N) fields in reduced Nx2N format.
+// transform Sp(2N) fields into reduced Nx2N format.
 template<class fobj,class sobj>
 struct GaugeSpunmunger{
   void operator() (sobj &in,fobj &out){
