@@ -32,7 +32,11 @@ Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 using namespace std;
 using namespace Grid;
 
-// Unit tests to check the various (un)munger classes in parallelIO/Metadata.h
+// Unit tests to check the various (un)munger classes 
+// and functions in parallelIO/Metadata.h
+void check_reconstruct3();
+void check_reconstructSp();
+// void check reconstructSU();
 void checkBinarySimpleMungers();
 void checkGaugeSimpleMungers();
 void checkGaugeDoubleStoredMungers();
@@ -76,6 +80,50 @@ void checkBinarySimpleMungers() {
   
 }
 
+// generate SU(3) matrix -> reduce it -> reconstruct it -> all good?
+void checkGauge3x2mungers() {
+  ColourMatrix Ta, Tb, Tc, arg;
+  SU3::generator(1, Ta);
+  SU3::generator(4, Tb);
+  SU3::generator(6, Tc);
+
+  const RealD  a(0.6), b(0.9), c(0.7);
+
+  ColourMatrix SU3_field;
+  arg = timesI(a*Ta + b*Tb + c*Tc);
+  SU3_field = Exponentiate(arg, 2.0); // what is RealD alpha??
+
+//  std::cout << SU3_field*adj(SU3_field);
+  LorentzColourMatrixD test=Zero(); 
+
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,SU3_field,mu);
+  }
+
+  std::cout << test << std::endl;
+  
+  // reduce field. Gauge3x2unmunger<out_type,in_type>
+  Gauge3x2unmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
+  LorentzColour2x3D test_rdc = Zero();
+  unmunger(test,test_rdc);
+
+  //std::cout << test_rdc;
+
+  // reconstruct full field. Gauge3x2munger<in_type,out_type>
+  Gauge3x2munger<LorentzColour2x3D,LorentzColourMatrixD> munger;
+  LorentzColourMatrixD test_recon;
+  munger(test_rdc,test_recon);
+
+  std::cout << test_recon << std::endl;
+
+  // round-trip test
+  std::cout << norm2(test_recon-test);
+  //assert(norm2(test_recon-test)<1e-05);
+
+}
+
+// round trip test - start with field in non-reduced format then reduce it and
+// recover the non-reduced field before assert(final==start)
 void checkGaugeSpmungers() {
   ColourMatrix Sp_field;
 
@@ -132,7 +180,6 @@ void checkGaugeSpmungers() {
   // round-trip test
   assert(test==test_recon);
 
-
 }
 
 
@@ -143,11 +190,11 @@ int main (int argc, char ** argv)
 
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
-  checkBinarySimpleMungers();
+  //checkBinarySimpleMungers();
   //checkGaugeSimpleMungers();
   //checkGaugeDoubleStoredMungers();
-  //checkGauge3x2mungers();
-  checkGaugeSpmungers();
+  checkGauge3x2mungers();
+  //checkGaugeSpmungers();
 
   Grid_finalize();
 #endif
