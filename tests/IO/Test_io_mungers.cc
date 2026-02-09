@@ -43,22 +43,111 @@ void checkGaugeDoubleStoredMungers();
 void checkGauge3x2mungers();
 void checkGaugeSpmungers();
 
+// check result is still in SU, determinant==1
+// need to mock up an SU matrix 
+void check_reconstruct3() {
+
+  ColourMatrixD Ta, Tb, Tc, arg;
+  SU3::generator(1, Ta);
+  SU3::generator(4, Tb);
+  SU3::generator(6, Tc);
+
+  const RealD  a(0.6), b(0.9), c(0.7);
+
+  ColourMatrixD SU3_field;
+  arg = timesI(a*Ta + b*Tb + c*Tc);
+  SU3_field = Exponentiate(arg, 2.0); // what is RealD alpha??
+  std::cout << GridLogMessage << SU3_field()()(Nc-1,1) << std::endl;
+
+  //set last row equal to zero
+  for(int j=0;j<Nc;j++) {
+    SU3_field()()(Nc-1,j) = 0.0;
+  }
+
+  std::cout << GridLogMessage << SU3_field()()(Nc-1,1) << std::endl;
+  LorentzColourMatrixD test = Zero();
+
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,SU3_field,mu);
+  }
+
+  reconstruct3(test);
+
+  ColourMatrixD new_cm = Zero();
+
+  // check result is unitary and det==1
+  for(int mu=0;mu<Nd;mu++) {
+    new_cm = peekIndex<LorentzIndex>(test, mu);
+    std::cout << GridLogMessage << new_cm()()(Nc-1,1) << std::endl;
+    auto det = Determinant(new_cm);
+    std::cout << GridLogMessage << "det: " << det << " norm2: " << norm2(det) << std::endl;
+    std::cout << GridLogMessage << "norm2(UU^dag-1.0): " << norm2( new_cm*adj(new_cm)-1.0 ) << std::endl;
+    assert( abs(norm2(det)-1.0) < 1e-15 );
+  }
+
+
+}
+
+// is result an Sp matrix, Zero(), One()?
+/*void check_reconstructSp() {
+
+  ColourMatrix Sp_field = Zero();
+
+  LorentzColourMatrix cm = Zero();
+  LorentzColourMatrix cm_zero = Zero();
+  LorentzColourMatrix cm_one;
+  cm_one = 1.0;
+
+  // should be zero matrix after reconstruction.
+  reconstructSp(cm);
+  assert(cm==cm_zero);
+
+  
+  reconstructSp(cm);
+  
+
+  const Complex  a(0.5, 0.5), abar(0.5, -0.5);
+  const Complex  b(0.3, 0.9), bbar(0.3, -0.9);
+
+  // fill top left
+  for(int i=0;i<Nc/2;i++) {
+    for(int j=0;j<Nc/2;j++) {
+      Sp_field()()(i,j) = a;
+    }
+  }
+  // fill top right
+  for(int i=0;i<Nc/2;i++) {
+    for(int j=2;j<Nc;j++) {
+      Sp_field()()(i,j) = b;
+    }
+  }
+  // fill bottom left
+  for(int i=2;i<Nc;i++) {
+    for(int j=0;j<Nc/2;j++) {
+      Sp_field()()(i,j) = -bbar;
+    }
+  }
+  // fill bottom right
+  for(int i=2;i<Nc;i++) {
+    for(int j=2;j<Nc;j++) {
+      Sp_field()()(i,j) = abar;
+    }
+  }
+
+  LorentzColourMatrixD test = Zero();
+
+
+}
+*/
+
 // mungeing between the same type should yield the same result.
 void checkBinarySimpleMungers() {
-  auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
-  auto mpi_layout  = GridDefaultMpi();
-  Coordinate latt_size = GridDefaultLatt();
-
-  GridCartesian  Grid(latt_size,simd_layout,mpi_layout);
 
   LorentzColourMatrixF in_scalar_objectF;  // single precision
-  LorentzColourMatrixF out_scalar_objectF;  // single precision
+  LorentzColourMatrixF out_scalar_objectF = Zero();  
   LorentzColourMatrixD in_scalar_objectD;  // double precision
-  LorentzColourMatrixD out_scalar_objectD;  // double precision
+  LorentzColourMatrixD out_scalar_objectD = Zero();  
   
-  out_scalar_objectF = Zero();
-  out_scalar_objectD = Zero();
-
   in_scalar_objectF = 1.0;
   in_scalar_objectD = 1.0;
  
@@ -77,19 +166,85 @@ void checkBinarySimpleMungers() {
   BinarySimpleMunger<LorentzColourMatrixD,LorentzColourMatrixF> mungerDF;
   BinarySimpleMunger<LorentzColourMatrixD,LorentzColourMatrixD> mungerDD;
   BinarySimpleMunger<LorentzColourMatrixF,LorentzColourMatrixD> mungerFD;
-  
+
+  mungerDD(in_scalar_objectD, out_scalar_objectD);
+  assert(in_scalar_objectD==out_scalar_objectD);
+  //assert(out_scalar_objectF==out_scalar_objectD);
+
+ 
 }
+// these are used in NerscIO.h
+void checkGaugeSimpleMungers() {
+
+  LorentzColourMatrixF in_scalar_objectF;  // single precision
+  LorentzColourMatrixF out_scalar_objectF = Zero(); 
+  LorentzColourMatrixD in_scalar_objectD;  // double precision
+  LorentzColourMatrixD out_scalar_objectD = Zero(); 
+  
+  in_scalar_objectF = 1.0;
+  in_scalar_objectD = 1.0;
+
+  // GaugeSimpleUnmunger<out_type,in_type> 
+  GaugeSimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixF> unmungerFF;
+  GaugeSimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixF> unmungerDF;
+  GaugeSimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixD> unmungerDD;
+  GaugeSimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixD> unmungerFD;
+
+  unmungerFF(in_scalar_objectF, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  // GaugeSimpleMunger<in_type,out_type> 
+  GaugeSimpleMunger<LorentzColourMatrixF,LorentzColourMatrixF> mungerFF;
+  GaugeSimpleMunger<LorentzColourMatrixD,LorentzColourMatrixF> mungerDF;
+  GaugeSimpleMunger<LorentzColourMatrixD,LorentzColourMatrixD> mungerDD;
+  GaugeSimpleMunger<LorentzColourMatrixF,LorentzColourMatrixD> mungerFD;
+ 
+  mungerDD(in_scalar_objectD, out_scalar_objectD);
+  assert(in_scalar_objectD==out_scalar_objectD);
+
+}
+
+void checkGaugeDoubleStoredMungers() {
+
+  DoubleStoredColourMatrixF in_scalar_objectF;  // single precision
+  DoubleStoredColourMatrixF out_scalar_objectF = Zero(); 
+  DoubleStoredColourMatrixD in_scalar_objectD;  // double precision
+  DoubleStoredColourMatrixD out_scalar_objectD = Zero(); 
+  
+  in_scalar_objectF = 1.0;
+  in_scalar_objectD = 1.0;
+
+  // GaugeDoubleStoredUnmunger<out_type,in_type> 
+  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixF> unmungerFF;
+  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixF> unmungerDF;
+  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixD> unmungerDD;
+  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixD> unmungerFD;
+
+  unmungerFF(in_scalar_objectF, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  // GaugeDoubleStoredMunger<in_type,out_type> 
+  GaugeDoubleStoredMunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixF> mungerFF;
+  GaugeDoubleStoredMunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixF> mungerDF;
+  GaugeDoubleStoredMunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixD> mungerDD;
+  GaugeDoubleStoredMunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixD> mungerFD;
+ 
+  mungerDD(in_scalar_objectD, out_scalar_objectD);
+  assert(in_scalar_objectD==out_scalar_objectD);
+
+}
+
 
 // generate SU(3) matrix -> reduce it -> reconstruct it -> all good?
 void checkGauge3x2mungers() {
-  ColourMatrix Ta, Tb, Tc, arg;
+  ColourMatrixD Ta, Tb, Tc, arg;
   SU3::generator(1, Ta);
   SU3::generator(4, Tb);
   SU3::generator(6, Tc);
 
   const RealD  a(0.6), b(0.9), c(0.7);
 
-  ColourMatrix SU3_field;
+  ColourMatrixD SU3_field;
   arg = timesI(a*Ta + b*Tb + c*Tc);
   SU3_field = Exponentiate(arg, 2.0); // what is RealD alpha??
 
@@ -190,10 +345,15 @@ int main (int argc, char ** argv)
 
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
+  std::cout << GridLogMessage << "Nd is " << Nd << std::endl;
+  std::cout << GridLogMessage << "Nc is " << Nc << std::endl;
+  std::cout << GridLogMessage << "Nds is " << Nds << std::endl;
+  
+  check_reconstruct3();
   //checkBinarySimpleMungers();
   //checkGaugeSimpleMungers();
   //checkGaugeDoubleStoredMungers();
-  checkGauge3x2mungers();
+  //checkGauge3x2mungers();
   //checkGaugeSpmungers();
 
   Grid_finalize();
