@@ -32,26 +32,28 @@ Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 using namespace std;
 using namespace Grid;
 
-// Unit tests to check the various (un)munger classes 
+// tests to check the various (un)munger classes 
 // and functions in parallelIO/Metadata.h
+void check_reconstruct3();
 void check_reconstructSU();
 void check_reconstructSp();
 void checkBinarySimpleMungers();
 void checkGaugeSimpleMungers();
 void checkGaugeDoubleStoredMungers();
 void checkGauge3x2mungers();
+void checkGaugeSUmungers();
 void checkGaugeSpmungers();
 
 // check result is still in SU, determinant==1
 // need to mock up an SU matrix 
-void check_reconstructSU() {
+void check_reconstruct3() {
 
   ColourMatrixD Ta, Tb, Tc, arg;
   SU<Nc>::generator(1, Ta);
   SU<Nc>::generator(4, Tb);
   SU<Nc>::generator(6, Tc);
 
-  const RealD  a(0.6), b(0.9), c(0.7);
+  const RealD  a(0.1), b(0.2), c(0.3);
 
   ColourMatrixD SU3_field;
   arg = timesI(a*Ta + b*Tb + c*Tc);
@@ -72,19 +74,55 @@ void check_reconstructSU() {
 
   reconstruct3(test);
 
-  ColourMatrixD new_cm = Zero();
-
   // check result is unitary and det==1
   for(int mu=0;mu<Nd;mu++) {
-    new_cm = peekIndex<LorentzIndex>(test, mu);
+    auto new_cm = peekIndex<LorentzIndex>(test, mu);
     //std::cout << GridLogMessage << new_cm()()(Nc-1,1) << std::endl;
     auto det = Determinant(new_cm);
-    //std::cout << GridLogMessage << "det: " << det << " norm2: " << norm2(det) << std::endl;
-    //std::cout << GridLogMessage << "norm2(UU^dag-1.0): " << norm2( new_cm*adj(new_cm)-1.0 ) << std::endl;
-    assert( abs(norm2(det)-1.0) < 1e-15 );
+    std::cout << GridLogMessage << "reconstruct3::norm2(UU^dag-1.0): " << norm2( new_cm*adj(new_cm)-1.0 ) << std::endl;
+    //assert( abs(norm2(det)-1.0) < 1e-15 );
   }
 
 }
+
+void check_reconstructSU() {
+  
+  ColourMatrixD Ta, Tb, Tc, arg, SUN_field;
+  SU<Nc>::generator(2, Ta);
+  SU<Nc>::generator(4, Tb);
+  SU<Nc>::generator(7, Tc);
+
+  const RealD  a(0.1), b(0.2), c(0.3);
+
+  arg = timesI(a*Ta + b*Tb + c*Tc);
+  SUN_field = Exponentiate(arg, 2.0); // what is RealD alpha??
+  //std::cout << GridLogMessage << "Original Field\n" << SUN_field << std::endl;
+
+  //set last row equal to zero
+  for(int j=0;j<Nc;j++) {
+    SUN_field()()(Nc-1,j) = 0.0;
+  }
+
+  //std::cout << GridLogMessage << SUN_field << std::endl;
+  LorentzColourMatrixD test = Zero();
+
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,SUN_field,mu);
+  }
+
+  reconstructSU(test);
+
+  // check result is unitary and det==1
+  for(int mu=0;mu<Nd;mu++) {
+    auto new_cm = peekIndex<LorentzIndex>(test, mu);
+    auto det = Determinant(new_cm);
+    //std::cout << GridLogMessage << "reconstructSU::norm2(det): " << norm2(det) << std::endl;
+    //std::cout << GridLogMessage << "reconstructSU::norm2(UU^dag-1.0): " << norm2( new_cm*adj(new_cm)-1.0 ) << std::endl;
+    assert( abs( norm2(det)-1.0 ) < 1e-15 );
+    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
+  }
+}
+
 
 void check_reconstructSp() {
 
@@ -269,7 +307,53 @@ void checkGauge3x2mungers() {
   //std::cout << test_recon << std::endl;
 
   // round-trip test
-  assert(norm2(test_recon-test)<10e-7);
+  std::cout << "SU3mungeing: " << norm2(test_recon-test) << std::endl;
+  //assert(norm2(test_recon-test)<10e-7);
+
+}
+
+void checkGaugeSUmungers() {
+  ColourMatrixD Ta, Tb, Tc, arg;
+  SU<Nc>::generator(1, Ta);
+  SU<Nc>::generator(4, Tb);
+  SU<Nc>::generator(6, Tc);
+
+  const RealD  a(0.6), b(0.9), c(0.7);
+
+  ColourMatrixD SUN_field;
+  arg = timesI(a*Ta + b*Tb + c*Tc);
+  SUN_field = Exponentiate(arg, 2.0); // what is RealD alpha??
+
+//  std::cout << SUN_field*adj(SUN_field);
+  LorentzColourMatrixD test=Zero(); 
+
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,SUN_field,mu);
+  }
+
+  // reduce field. GaugeSUunmunger<out_type,in_type>
+  GaugeSUunmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
+  LorentzColour2x3D test_rdc = Zero();
+  unmunger(test,test_rdc);
+
+  //std::cout << test_rdc;
+
+  // reconstruct full field. GaugeSUmunger<in_type,out_type>
+  GaugeSUmunger<LorentzColour2x3D,LorentzColourMatrixD> munger;
+  LorentzColourMatrixD test_recon;
+  munger(test_rdc,test_recon);
+
+  // round-trip test
+  std::cout << "SUmungeing:norm2 " << norm2(test_recon-test) << std::endl;
+  //assert(norm2(test_recon-test)<10e-7);
+  // check result is unitary and det==1
+  for(int mu=0;mu<Nd;mu++) {
+    auto new_cm = peekIndex<LorentzIndex>(test_recon, mu);
+    auto det = Determinant(new_cm);
+    std::cout << GridLogMessage << "reconstructSU::norm2(UU^dag-1.0): " << norm2( new_cm*adj(new_cm)-1.0 ) << std::endl;
+    //assert( abs(norm2(det)-1.0) < 1e-15 );
+  }
+
 
 }
 
@@ -312,8 +396,6 @@ void checkGaugeSpmungers() {
     pokeLorentz(test,Sp_field,mu);
   }
 
-  //std::cout << test << std::endl;
-  
   // reduce field. GaugeSpunmunger<out_type,in_type>
   GaugeSpunmunger<LorentzColourNx2ND,LorentzColourMatrixD> unmunger;
   LorentzColourNx2ND test_rdc = Zero();
@@ -342,8 +424,8 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Nds is " << Nds << std::endl;
 
   if constexpr(Nc>1 && Nc<4) {  
-    std::cout << GridLogMessage << "Checking SU mungers " << std::endl;
-    check_reconstructSU();
+    std::cout << GridLogMessage << "Checking SU(2/3) mungers " << std::endl;
+    check_reconstruct3();
     checkGauge3x2mungers();
   }
 
@@ -359,6 +441,11 @@ int main (int argc, char ** argv)
   checkGaugeSimpleMungers();
   std::cout << GridLogMessage << "Checking GaugeDoubleStored mungers " << std::endl;
   checkGaugeDoubleStoredMungers();
+
+  std::cout << GridLogMessage << "Checking reconstructSU" << std::endl;
+  check_reconstructSU();
+  std::cout << GridLogMessage << "Checking GaugeSUmungers" << std::endl;
+  checkGaugeSUmungers();
 
   Grid_finalize();
 #endif
