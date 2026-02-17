@@ -217,7 +217,14 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
-// insert multiline comment here
+// the elements of the final row of an SU(N) matrix
+// can be obtained from the determinants of the N N-1 by N-1 matrices
+// formed by deleting each column and the Nth row of the SU(N) matrix.
+// 1) create a ColourMatrixNm object to store the N-1 dim matrix.
+// 2) peek the colour matrix in a particular direction. 
+// 3) fill the ColourMatrixNm object from the peeked matrix.
+// 4) take the Determinant and fill the corresponding element
+// 5) repeat for each Lorentz index 
 inline void reconstructSU(LorentzColourMatrix &cm)
 {
   using ColourMatrixNm = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
@@ -399,6 +406,33 @@ struct Gauge3x2unmunger{
 };
 
 template<class fobj,class sobj>
+struct GaugeSUmunger{
+  void operator() (fobj &in,sobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc-1;i++){
+	      for(int j=0;j<Nc;j++){
+	        out(mu)()(i,j) = in(mu)(i)(j);
+	      }
+      }
+    }
+    reconstructSU(out);
+  }
+};
+
+template<class fobj,class sobj>
+struct GaugeSUunmunger{
+  void operator() (sobj &in,fobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc-1;i++){
+	      for(int j=0;j<Nc;j++){
+	        out(mu)(i)(j) = in(mu)()(i,j);
+	      }
+      }
+    }
+  }
+};
+
+template<class fobj,class sobj>
 struct GaugeSpmunger{
   void operator() (fobj &in,sobj &out){
     for(int mu=0;mu<Nd;mu++){
@@ -467,6 +501,7 @@ struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
 
 	BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
 	Gauge3x2unmunger<out_type, tmp_type> gauge_unmunger;
+	//GaugeSUunmunger<out_type, tmp_type> gauge_unmunger;
 
 	void operator() (in_type &in, out_type &out){
 	  tmp_type tmp;
