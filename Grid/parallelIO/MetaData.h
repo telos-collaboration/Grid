@@ -218,25 +218,34 @@ inline void reconstruct3(LorentzColourMatrix & cm)
 }
 
 // insert multiline comment here
-// template on vtype?
 inline void reconstructSU(LorentzColourMatrix &cm)
 {
-  // what type does this expect?
-  using iLorentzColourNminus1xNminus1 = iVector<iVector<iVector<vtype, Nc-1>, Nc-1>, Nd >;
-  using iLorentzColourNminus1xNminus1<ComplexD> = LorentzColourNmxNmD;
-  LorentzColourNmxNmD tmp(grid);
-  for(int mu=0;mu<Nd;mu++){
-    for(k=0;k<Nc;k++){
-      for(i=0; i<Nc-1; i++) {
-        for(j=0;(j<Nc && j!=k);j++){
-          int J = (j>k) ? j-1 : j; // for correct indexing of columns in tmp
-          tmp(mu)()(i,J) = cm(mu)()(i,j);
+  using ColourMatrixNm = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
+
+  ColourMatrixNm red; // for the Nc-1 by Nc-1 matrix
+  ColourMatrix old;   // for the Nc-1 by N matrix read from disk
+
+  for(int mu=0; mu<Nd; mu++) {
+    old = Zero();
+    red = Zero();
+    old = peekIndex<LorentzIndex>(cm,mu); 
+    for(int k=0; k<Nc; k++) {
+      for(int i=0; i<Nc-1; i++) {
+        for(int j=0; j<Nc-1; j++) {
+          int J = (j<k) ? j : j+1; // for correct indexing of columns in old
+          red()()(i,j) = old()()(i,J);
+          //std::cout << "row:" << i << " col:" << J << " val:" << red()()(i,J) << std::endl;
         }
       }
-      cm(mu)()(N,k) = adj(Determinant(tmp));
+      //std::cout << "for column: " << k << std::endl;
+      //std::cout << "red: "<< red << std::endl; 
+      //std::cout << "adj DET: " << adj(Determinant(red)) << std::endl;
+      old()()(Nc-1,k) = std::pow(-1,k) * adj(Determinant(red));
     } 
+    pokeIndex<LorentzIndex>(cm,old,mu);
   }
 }
+
 ////////////////////////////////////////////////////////////////
 //  this function takes a reduced format
 //  Sp(2N) field with N rows and 2N columns 
