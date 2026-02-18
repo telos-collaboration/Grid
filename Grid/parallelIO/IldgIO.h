@@ -765,7 +765,7 @@ class IldgReader : public GridLimeReader {
     if ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
       format = std::string("IEEE64BIG");
       if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-        Gauge3x2munger<dobjsuR,sobj> munge;
+        GaugeSUmunger<dobjsuR,sobj> munge;
         BinaryIO::readLatticeObject<vobj,dobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb); 
       } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
         GaugeSpmunger<dobjspR,sobj> munge;
@@ -777,7 +777,7 @@ class IldgReader : public GridLimeReader {
       } else if ( fp_fmt == FloatingPointFormat::IEEE32BIG) {
         format = std::string("IEEE32BIG");
         if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-        Gauge3x2munger<fobjsuR,sobj> munge;
+        GaugeSUmunger<fobjsuR,sobj> munge;
         BinaryIO::readLatticeObject<vobj,fobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
       } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
         GaugeSpmunger<fobjspR,sobj> munge;
