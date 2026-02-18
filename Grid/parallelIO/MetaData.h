@@ -241,13 +241,9 @@ inline void reconstructSU(LorentzColourMatrix &cm)
         for(int j=0; j<Nc-1; j++) {
           int J = (j<k) ? j : j+1; // for correct indexing of columns in old
           red()()(i,j) = old()()(i,J);
-          //std::cout << "row:" << i << " col:" << J << " val:" << red()()(i,J) << std::endl;
         }
       }
-      //std::cout << "for column: " << k << std::endl;
-      //std::cout << "red: "<< red << std::endl; 
-      //std::cout << "adj DET: " << adj(Determinant(red)) << std::endl;
-      old()()(Nc-1,k) = std::pow(-1,k) * adj(Determinant(red));
+      old()()(Nc-1,k) = std::pow(-1,k+Nc-1) * adj(Determinant(red));
     } 
     pokeIndex<LorentzIndex>(cm,old,mu);
   }
