@@ -496,8 +496,8 @@ struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
   using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColour2x3D,LorentzColour2x3F>>;
 
 	BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
-	Gauge3x2unmunger<out_type, tmp_type> gauge_unmunger;
-	//GaugeSUunmunger<out_type, tmp_type> gauge_unmunger;
+	//Gauge3x2unmunger<out_type, tmp_type> gauge_unmunger;
+	GaugeSUunmunger<out_type, tmp_type> gauge_unmunger;
 
 	void operator() (in_type &in, out_type &out){
 	  tmp_type tmp;
