@@ -84,15 +84,6 @@ void writeReadIldgConfiguration( LatticeGaugeField &Umu, GridCartesian &Grid, st
   _IldgWriter.writeConfiguration<gaugeGroup, matrix_fmt, fp_fmt>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter.close();
 
-  if constexpr( std::is_same_v<gaugeGroup,GroupName::SU> && matrix_fmt==MatrixFormat::REDUCED && N>3)
-  { 
-    std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-    std::cout <<GridLogMessage<< "CAN NOT READ REDUCED LATTICE" << std::endl;
-    std::cout << GridLogMessage << "currently when reading reduced SU fields Nc must be either 2 or 3" << std::endl;
-    std::cout <<GridLogMessage<<"**************************************"<<std::endl;
-    return;
-  }
-
   LatticeGaugeField Umu_saved(&Grid);
 
   FieldMetaData header;
