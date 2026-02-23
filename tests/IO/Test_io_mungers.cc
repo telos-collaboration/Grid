@@ -36,28 +36,52 @@ using namespace Grid;
 // and functions in parallelIO/Metadata.h
 void check_reconstruct3();
 void check_reconstructSU();
+void checkGauge3x2mungers();
+void checkGaugeSUmungers();
 void check_reconstructSp();
+void checkGaugeSpmungers();
 void checkBinarySimpleMungers();
 void checkGaugeSimpleMungers();
 void checkGaugeDoubleStoredMungers();
-void checkGauge3x2mungers();
-void checkGaugeSUmungers();
-void checkGaugeSpmungers();
+
+void mock_SU_field();
+
+//////////////////////////////////////////////
+// helper function for generating SU matrices
+//////////////////////////////////////////////
+void mock_SU_field( ColourMatrixD &cm, std::vector<int> seed )  {
+  GridSerialRNG sRNG;   sRNG.SeedFixedIntegers(seed);
+
+  ComplexD ca;
+  ColourMatrixD lie, la, ta;
+  ComplexD ci(0.0, 1.0);
+
+  lie = Zero(); 
+    
+  for (int a = 0; a < Nc*Nc-1; a++) {
+    random(sRNG, ca);
+
+    ca = (ca + conjugate(ca)) * 0.5;
+    ca = ca - 0.5;
+
+    SU<Nc>::generator(a, ta);
+
+    la = timesI(ca * ta);
+
+    lie = lie + la;  // e^{i la ta}
+  }
+
+  cm = Exponentiate(lie, 2.0);
+
+}
+////////////////////////////////////////////
 
 void check_reconstruct3() {
 
-  // start by mocking up an SU matrix
-  ColourMatrixD Ta, Tb, Tc, arg;
-  SU<Nc>::generator(1, Ta);
-  SU<Nc>::generator(4, Tb);
-  SU<Nc>::generator(6, Tc);
-
-  const RealD  a(0.1), b(0.2), c(0.3);
-
   ColourMatrixD SU3_field;
-  arg = timesI(a*Ta + b*Tb + c*Tc);
-  SU3_field = Exponentiate(arg, 2.0); 
- 
+  std::vector<int> rng_seed = {1,2,3,4};
+  mock_SU_field(SU3_field, rng_seed);
+
   //set last row equal to zero
   for(int j=0;j<Nc;j++) {
     SU3_field()()(Nc-1,j) = 0.0;
@@ -83,15 +107,9 @@ void check_reconstruct3() {
 
 void check_reconstructSU() {
   
-  ColourMatrixD Ta, Tb, Tc, arg, SUN_field;
-  SU<Nc>::generator(2, Ta);
-  SU<Nc>::generator(4, Tb);
-  SU<Nc>::generator(7, Tc);
-
-  const RealD  a(0.1), b(0.2), c(0.3);
-
-  arg = timesI(a*Ta + b*Tb + c*Tc);
-  SUN_field = Exponentiate(arg, 2.0); 
+  ColourMatrixD SUN_field;
+  std::vector<int> rnd_seed = {4,8,15,16};
+  mock_SU_field(SUN_field, rnd_seed);
 
   //set last row equal to zero
   for(int j=0;j<Nc;j++) {
@@ -113,6 +131,68 @@ void check_reconstructSU() {
     assert( abs( norm2(det)-1.0 ) < 1e-15 );
     assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
   }
+}
+
+void checkGauge3x2mungers() {
+
+  ColourMatrixD SU3_field;
+  std::vector<int> rnd_seed{20,6,15,8};
+  mock_SU_field(SU3_field, rnd_seed);
+
+  LorentzColourMatrixD test=Zero(); 
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,SU3_field,mu);
+  }
+
+  // reduce field. Gauge3x2unmunger<out_type,in_type>
+  Gauge3x2unmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
+  LorentzColour2x3D test_rdc;
+  unmunger(test,test_rdc);
+
+  // reconstruct full field. Gauge3x2munger<in_type,out_type>
+  Gauge3x2munger<LorentzColour2x3D,LorentzColourMatrixD> munger;
+  LorentzColourMatrixD test_recon;
+  munger(test_rdc,test_recon);
+
+  // round-trip test
+  //std::cout << "checkGauge3x2mungers: " << norm2(test_recon-test) << std::endl;
+  assert(norm2(test_recon-test)<1e-10);
+
+}
+
+void checkGaugeSUmungers() {
+  ColourMatrixD SUN_field;
+  std::vector<int> rnd_seed{23,42,66,98};
+  mock_SU_field(SUN_field, rnd_seed);
+
+  LorentzColourMatrixD test=Zero(); 
+
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,SUN_field,mu);
+  }
+
+  // reduce field. GaugeSUunmunger<out_type,in_type>
+  GaugeSUunmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
+  LorentzColour2x3D test_rdc = Zero();
+  unmunger(test,test_rdc);
+
+  // reconstruct full field. GaugeSUmunger<in_type,out_type>
+  GaugeSUmunger<LorentzColour2x3D,LorentzColourMatrixD> munger;
+  LorentzColourMatrixD test_recon;
+  munger(test_rdc,test_recon);
+  
+  // round-trip test
+  //std::cout << "checkGaugeSUmungers: " << norm2(test_recon-test) << std::endl;
+  assert(norm2(test_recon-test)<1e-15);
+
+  // check result is unitary and det==1
+  for(int mu=0;mu<Nd;mu++) {
+    auto new_cm = peekIndex<LorentzIndex>(test_recon, mu);
+    auto det = Determinant(new_cm);
+    assert( abs(norm2(det)-1.0) < 1e-15 );
+    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
+  }
+
 }
 
 
@@ -163,6 +243,58 @@ void check_reconstructSp() {
       }
     }
   }
+
+}
+
+void checkGaugeSpmungers() {
+  ColourMatrix Sp_field;
+
+  const Complex  a(0.5, 0.5), abar(0.5, -0.5);
+  const Complex  b(0.3, 0.9), bbar(0.3, -0.9);
+
+  // fill top left
+  for(int i=0;i<Nc/2;i++) {
+    for(int j=0;j<Nc/2;j++) {
+      Sp_field()()(i,j) = a;
+    }
+  }
+  // fill top right
+  for(int i=0;i<Nc/2;i++) {
+    for(int j=2;j<Nc;j++) {
+      Sp_field()()(i,j) = b;
+    }
+  }
+  // fill bottom left
+  for(int i=2;i<Nc;i++) {
+    for(int j=0;j<Nc/2;j++) {
+      Sp_field()()(i,j) = -bbar;
+    }
+  }
+  // fill bottom right
+  for(int i=2;i<Nc;i++) {
+    for(int j=2;j<Nc;j++) {
+      Sp_field()()(i,j) = abar;
+    }
+  }
+
+  LorentzColourMatrixD test = Zero();
+
+  for(int mu=0; mu<Nd; mu++){
+    pokeLorentz(test,Sp_field,mu);
+  }
+
+  // reduce field. GaugeSpunmunger<out_type,in_type>
+  GaugeSpunmunger<LorentzColourNx2ND,LorentzColourMatrixD> unmunger;
+  LorentzColourNx2ND test_rdc = Zero();
+  unmunger(test,test_rdc);
+
+  // reconstruct full field. GaugeSpmunger<in_type,out_type>
+  GaugeSpmunger<LorentzColourNx2ND,LorentzColourMatrixD> munger;
+  LorentzColourMatrixD test_recon;
+  munger(test_rdc,test_recon);
+
+  // round-trip test
+  assert(test==test_recon);
 
 }
 
@@ -258,138 +390,12 @@ void checkGaugeDoubleStoredMungers() {
 
 }
 
-void checkGauge3x2mungers() {
-  ColourMatrixD Ta, Tb, Tc, arg;
-  SU<Nc>::generator(1, Ta);
-  SU<Nc>::generator(4, Tb);
-  SU<Nc>::generator(6, Tc);
-
-  const RealD  a(0.6), b(0.9), c(0.7);
-
-  ColourMatrixD SU3_field;
-  arg = timesI(a*Ta + b*Tb + c*Tc);
-  SU3_field = Exponentiate(arg, 2.0); // what is RealD alpha??
-
-  LorentzColourMatrixD test=Zero(); 
-
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,SU3_field,mu);
-  }
-
-  // reduce field. Gauge3x2unmunger<out_type,in_type>
-  Gauge3x2unmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
-  LorentzColour2x3D test_rdc = Zero();
-  unmunger(test,test_rdc);
-
-  // reconstruct full field. Gauge3x2munger<in_type,out_type>
-  Gauge3x2munger<LorentzColour2x3D,LorentzColourMatrixD> munger;
-  LorentzColourMatrixD test_recon;
-  munger(test_rdc,test_recon);
-
-  // round-trip test
-  assert(norm2(test_recon-test)<1e-10);
-
-}
-
-void checkGaugeSUmungers() {
-  ColourMatrixD Ta, Tb, Tc, arg;
-  SU<Nc>::generator(1, Ta);
-  SU<Nc>::generator(4, Tb);
-  SU<Nc>::generator(6, Tc);
-
-  const RealD  a(0.6), b(0.9), c(0.7);
-
-  ColourMatrixD SUN_field;
-  arg = timesI(a*Ta + b*Tb + c*Tc);
-  SUN_field = Exponentiate(arg, 2.0); // what is RealD alpha??
-
-  LorentzColourMatrixD test=Zero(); 
-
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,SUN_field,mu);
-  }
-
-  // reduce field. GaugeSUunmunger<out_type,in_type>
-  GaugeSUunmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
-  LorentzColour2x3D test_rdc = Zero();
-  unmunger(test,test_rdc);
-
-  // reconstruct full field. GaugeSUmunger<in_type,out_type>
-  GaugeSUmunger<LorentzColour2x3D,LorentzColourMatrixD> munger;
-  LorentzColourMatrixD test_recon;
-  munger(test_rdc,test_recon);
-  
-  // round-trip test
-  assert(norm2(test_recon-test)<1e-15);
-
-  // check result is unitary and det==1
-  for(int mu=0;mu<Nd;mu++) {
-    auto new_cm = peekIndex<LorentzIndex>(test_recon, mu);
-    auto det = Determinant(new_cm);
-    assert( abs(norm2(det)-1.0) < 1e-15 );
-    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
-  }
-
-}
-
-void checkGaugeSpmungers() {
-  ColourMatrix Sp_field;
-
-  const Complex  a(0.5, 0.5), abar(0.5, -0.5);
-  const Complex  b(0.3, 0.9), bbar(0.3, -0.9);
-
-  // fill top left
-  for(int i=0;i<Nc/2;i++) {
-    for(int j=0;j<Nc/2;j++) {
-      Sp_field()()(i,j) = a;
-    }
-  }
-  // fill top right
-  for(int i=0;i<Nc/2;i++) {
-    for(int j=2;j<Nc;j++) {
-      Sp_field()()(i,j) = b;
-    }
-  }
-  // fill bottom left
-  for(int i=2;i<Nc;i++) {
-    for(int j=0;j<Nc/2;j++) {
-      Sp_field()()(i,j) = -bbar;
-    }
-  }
-  // fill bottom right
-  for(int i=2;i<Nc;i++) {
-    for(int j=2;j<Nc;j++) {
-      Sp_field()()(i,j) = abar;
-    }
-  }
-
-  LorentzColourMatrixD test = Zero();
-
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,Sp_field,mu);
-  }
-
-  // reduce field. GaugeSpunmunger<out_type,in_type>
-  GaugeSpunmunger<LorentzColourNx2ND,LorentzColourMatrixD> unmunger;
-  LorentzColourNx2ND test_rdc = Zero();
-  unmunger(test,test_rdc);
-
-  // reconstruct full field. GaugeSpmunger<in_type,out_type>
-  GaugeSpmunger<LorentzColourNx2ND,LorentzColourMatrixD> munger;
-  LorentzColourMatrixD test_recon;
-  munger(test_rdc,test_recon);
-
-  // round-trip test
-  assert(test==test_recon);
-
-}
-
 
 int main (int argc, char ** argv)
 {
 #ifdef HAVE_LIME
   Grid_init(&argc,&argv);
-
+  
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
   std::cout << GridLogMessage << "Nd is " << Nd << std::endl;
@@ -397,7 +403,7 @@ int main (int argc, char ** argv)
   std::cout << GridLogMessage << "Nds is " << Nds << std::endl;
 
   if constexpr(Nc>1 && Nc<4) {  
-    std::cout << GridLogMessage << "Checking SU(2/3) mungers " << std::endl;
+    std::cout << GridLogMessage << "Checking SU(" << Nc << ") mungers " << std::endl;
     check_reconstruct3();
     checkGauge3x2mungers();
   }
