@@ -45,16 +45,17 @@ bool checkGaugeSimpleMungers();
 bool checkGaugeDoubleStoredMungers();
 
 void mock_SU_field();
+void mock_Sp_field();
 
 //////////////////////////////////////////////
-// helper function for generating SU matrices
+// helper functions for generating (mock) SU/Sp matrices
 //////////////////////////////////////////////
 void mock_SU_field( ColourMatrixD &cm, std::vector<int> seed )  {
+
   GridSerialRNG sRNG;   sRNG.SeedFixedIntegers(seed);
 
-  ComplexD ca;
   ColourMatrixD lie, la, ta;
-  ComplexD ci(0.0, 1.0);
+  ComplexD ca;
 
   lie = Zero(); 
     
@@ -74,30 +75,56 @@ void mock_SU_field( ColourMatrixD &cm, std::vector<int> seed )  {
   cm = Exponentiate(lie, 2.0);
 
 }
+
+void mock_Sp_field( ColourMatrixD &cm, std::vector<int> seed ) {
+
+  GridSerialRNG sRNG;   sRNG.SeedFixedIntegers(seed);
+
+  std::vector<ComplexD> elem(Nc*Nc/2);
+  for(auto&& e: elem) {
+    random(sRNG,e);
+  }
+
+  // fill upper left and upper right blocks only
+  for(int i=0;i<Nc/2;i++) {
+    for(int j=0;j<Nc/2;j++) {
+      cm()()(i,j) = elem[i*Nc+j];
+      cm()()(i,j+Nc/2) = elem[i*Nc+j+Nc/2];
+    }
+  }
+
+}
 ////////////////////////////////////////////
 
 bool check_reconstruct3() {
 
-  ColourMatrixD SU3_field;
-  std::vector<int> rng_seed = {1,2,3,4};
-  mock_SU_field(SU3_field, rng_seed);
+  ColourMatrixD SU3_xfield, SU3_yfield, SU3_zfield, SU3_tfield;
+
+  mock_SU_field(SU3_xfield, std::vector<int>({30}));
+  mock_SU_field(SU3_yfield, std::vector<int>({95}));
+  mock_SU_field(SU3_zfield, std::vector<int>({7}));
+  mock_SU_field(SU3_tfield, std::vector<int>({10}));
 
   //set last row equal to zero
   for(int j=0;j<Nc;j++) {
-    SU3_field()()(Nc-1,j) = 0.0;
+    SU3_xfield()()(Nc-1,j) = 0.0;
+    SU3_yfield()()(Nc-1,j) = 0.0;
+    SU3_zfield()()(Nc-1,j) = 0.0;
+    SU3_tfield()()(Nc-1,j) = 0.0;
   }
 
-  LorentzColourMatrixD test = Zero();
+  LorentzColourMatrixD scalar = Zero();
 
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,SU3_field,mu);
-  }
+  pokeLorentz(scalar, SU3_xfield, 0);
+  pokeLorentz(scalar, SU3_yfield, 1);
+  pokeLorentz(scalar, SU3_zfield, 2);
+  pokeLorentz(scalar, SU3_tfield, 3);
 
-  reconstruct3(test);
+  reconstruct3(scalar);
 
   // check result is unitary and det==1
   for(int mu=0;mu<Nd;mu++) {
-    auto new_cm = peekIndex<LorentzIndex>(test, mu);
+    auto new_cm = peekIndex<LorentzIndex>(scalar, mu);
     auto det = Determinant(new_cm);
     assert( abs(norm2(det)-1.0) < 1e-15 );
     assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
@@ -108,27 +135,34 @@ bool check_reconstruct3() {
 }
 
 bool check_reconstructSU() {
-  
-  ColourMatrixD SUN_field;
-  std::vector<int> rnd_seed = {4,8,15,16};
-  mock_SU_field(SUN_field, rnd_seed);
+
+  ColourMatrixD SUN_xfield, SUN_yfield, SUN_zfield, SUN_tfield;
+
+  mock_SU_field(SUN_xfield, std::vector<int>({4}));
+  mock_SU_field(SUN_yfield, std::vector<int>({8}));
+  mock_SU_field(SUN_zfield, std::vector<int>({15}));
+  mock_SU_field(SUN_tfield, std::vector<int>({16}));
 
   //set last row equal to zero
   for(int j=0;j<Nc;j++) {
-    SUN_field()()(Nc-1,j) = 0.0;
+    SUN_xfield()()(Nc-1,j) = 0.0;
+    SUN_yfield()()(Nc-1,j) = 0.0;
+    SUN_zfield()()(Nc-1,j) = 0.0;
+    SUN_tfield()()(Nc-1,j) = 0.0;
   }
 
-  LorentzColourMatrixD test = Zero();
+  LorentzColourMatrixD scalar = Zero();
 
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,SUN_field,mu);
-  }
+  pokeLorentz(scalar, SUN_xfield, 0);
+  pokeLorentz(scalar, SUN_yfield, 1);
+  pokeLorentz(scalar, SUN_zfield, 2);
+  pokeLorentz(scalar, SUN_tfield, 3);
 
-  reconstructSU(test);
+  reconstructSU(scalar);
 
   // check result is unitary and det==1
   for(int mu=0;mu<Nd;mu++) {
-    auto new_cm = peekIndex<LorentzIndex>(test, mu);
+    auto new_cm = peekIndex<LorentzIndex>(scalar, mu);
     auto det = Determinant(new_cm);
     assert( abs( norm2(det)-1.0 ) < 1e-15 );
     assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
@@ -140,65 +174,65 @@ bool check_reconstructSU() {
 
 bool checkGauge3x2mungers() {
 
-  ColourMatrixD SU3_field;
-  std::vector<int> rnd_seed{20,6,15,8};
-  mock_SU_field(SU3_field, rnd_seed);
+  ColourMatrixD SU3_xfield, SU3_yfield, SU3_zfield, SU3_tfield;
 
-  LorentzColourMatrixD test=Zero(); 
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,SU3_field,mu);
-  }
+  mock_SU_field(SU3_xfield, std::vector<int>({66}));
+  mock_SU_field(SU3_yfield, std::vector<int>({63}));
+  mock_SU_field(SU3_zfield, std::vector<int>({71}));
+  mock_SU_field(SU3_tfield, std::vector<int>({98}));
+
+  LorentzColourMatrixD scalar = Zero();
+
+  pokeLorentz(scalar, SU3_xfield, 0);
+  pokeLorentz(scalar, SU3_yfield, 1);
+  pokeLorentz(scalar, SU3_zfield, 2);
+  pokeLorentz(scalar, SU3_tfield, 3);
 
   // reduce field. Gauge3x2unmunger<out_type,in_type>
   Gauge3x2unmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
-  LorentzColour2x3D test_rdc;
-  unmunger(test,test_rdc);
+  LorentzColour2x3D scalar_rdc;
+  unmunger(scalar,scalar_rdc);
 
   // reconstruct full field. Gauge3x2munger<in_type,out_type>
   Gauge3x2munger<LorentzColour2x3D,LorentzColourMatrixD> munger;
-  LorentzColourMatrixD test_recon;
-  munger(test_rdc,test_recon);
+  LorentzColourMatrixD scalar_recon;
+  munger(scalar_rdc,scalar_recon);
 
   // round-trip test
-  //std::cout << "checkGauge3x2mungers: " << norm2(test_recon-test) << std::endl;
-  assert(norm2(test_recon-test)<1e-10);
+  assert(norm2(scalar_recon-scalar)<1e-10);
 
   return true;
 
 }
 
 bool checkGaugeSUmungers() {
-  ColourMatrixD SUN_field;
-  std::vector<int> rnd_seed{23,42,66,98};
-  mock_SU_field(SUN_field, rnd_seed);
 
-  LorentzColourMatrixD test=Zero(); 
+  ColourMatrixD SUN_xfield, SUN_yfield, SUN_zfield, SUN_tfield;
 
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,SUN_field,mu);
-  }
+  mock_SU_field(SUN_xfield, std::vector<int>({360}));
+  mock_SU_field(SUN_yfield, std::vector<int>({804}));
+  mock_SU_field(SUN_zfield, std::vector<int>({77}));
+  mock_SU_field(SUN_tfield, std::vector<int>({65}));
+
+  LorentzColourMatrixD scalar = Zero();
+
+  pokeLorentz(scalar, SUN_xfield, 0);
+  pokeLorentz(scalar, SUN_yfield, 1);
+  pokeLorentz(scalar, SUN_zfield, 2);
+  pokeLorentz(scalar, SUN_tfield, 3);
 
   // reduce field. GaugeSUunmunger<out_type,in_type>
   GaugeSUunmunger<LorentzColour2x3D,LorentzColourMatrixD> unmunger;
-  LorentzColour2x3D test_rdc = Zero();
-  unmunger(test,test_rdc);
+  LorentzColour2x3D scalar_rdc = Zero();
+  unmunger(scalar,scalar_rdc);
 
   // reconstruct full field. GaugeSUmunger<in_type,out_type>
   GaugeSUmunger<LorentzColour2x3D,LorentzColourMatrixD> munger;
-  LorentzColourMatrixD test_recon;
-  munger(test_rdc,test_recon);
+  LorentzColourMatrixD scalar_recon;
+  munger(scalar_rdc,scalar_recon);
   
   // round-trip test
-  //std::cout << "checkGaugeSUmungers: " << norm2(test_recon-test) << std::endl;
-  assert(norm2(test_recon-test)<1e-15);
-
-  // check result is unitary and det==1
-  for(int mu=0;mu<Nd;mu++) {
-    auto new_cm = peekIndex<LorentzIndex>(test_recon, mu);
-    auto det = Determinant(new_cm);
-    assert( abs(norm2(det)-1.0) < 1e-15 );
-    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
-  }
+  assert(norm2(scalar_recon-scalar)<1e-15);
 
   return true;
 
@@ -207,44 +241,28 @@ bool checkGaugeSUmungers() {
 
 bool check_reconstructSp() {
 
-  LorentzColourMatrix cm = Zero();
-  LorentzColourMatrix cm_zero = Zero();
+  ColourMatrixD Sp_xfield, Sp_yfield, Sp_zfield, Sp_tfield;
+  Sp_xfield = Sp_yfield = Sp_zfield = Sp_tfield = Zero();
 
-  // should be zero matrix after reconstruction.
-  reconstructSp(cm);
-  assert(cm==cm_zero);
-  
-  ColourMatrix Sp_field = Zero();
+  mock_Sp_field(Sp_xfield, std::vector<int>({1066}));
+  mock_Sp_field(Sp_yfield, std::vector<int>({1995}));
+  mock_Sp_field(Sp_zfield, std::vector<int>({997}));
+  mock_Sp_field(Sp_tfield, std::vector<int>({58}));
 
-  const Complex  a(0.5, 0.5), abar(0.5, -0.5);
-  const Complex  b(0.3, 0.9), bbar(0.3, -0.9);
+  LorentzColourMatrixD scalar = Zero();
 
-  // fill top left
-  for(int i=0;i<Nc/2;i++) {
-    for(int j=0;j<Nc/2;j++) {
-      Sp_field()()(i,j) = a;
-    }
-  }
-  // fill top right
-  for(int i=0;i<Nc/2;i++) {
-    for(int j=2;j<Nc;j++) {
-      Sp_field()()(i,j) = b;
-    }
-  }
+  pokeLorentz(scalar, Sp_xfield, 0);
+  pokeLorentz(scalar, Sp_yfield, 1);
+  pokeLorentz(scalar, Sp_zfield, 2);
+  pokeLorentz(scalar, Sp_tfield, 3);
 
-  LorentzColourMatrixD test = Zero();
-
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,Sp_field,mu);
-  }
-
-  reconstructSp(test);
+  reconstructSp(scalar);
 
   // test Sp block structure 
   //  A  B
   // -B* A*
   for(int mu=0; mu<Nd; mu++) {
-    auto Sp_cm = peekIndex<LorentzIndex>(test,mu);
+    auto Sp_cm = peekIndex<LorentzIndex>(scalar,mu);
     for(int i=0;i<Nc/2;i++) {
       for(int j=0;j<Nc/2;j++) {
         assert( Sp_cm()()(i,j) == conjugate(Sp_cm()()(i+Nc/2,j+Nc/2)) );
@@ -258,79 +276,75 @@ bool check_reconstructSp() {
 }
 
 bool checkGaugeSpmungers() {
-  ColourMatrix Sp_field;
 
-  const Complex  a(0.5, 0.5), abar(0.5, -0.5);
-  const Complex  b(0.3, 0.9), bbar(0.3, -0.9);
+  ColourMatrixD Sp_xfield, Sp_yfield, Sp_zfield, Sp_tfield;
+  Sp_xfield = Sp_yfield = Sp_zfield = Sp_tfield = Zero();
 
-  // fill top left
-  for(int i=0;i<Nc/2;i++) {
-    for(int j=0;j<Nc/2;j++) {
-      Sp_field()()(i,j) = a;
-    }
-  }
-  // fill top right
-  for(int i=0;i<Nc/2;i++) {
-    for(int j=2;j<Nc;j++) {
-      Sp_field()()(i,j) = b;
-    }
-  }
-  // fill bottom left
-  for(int i=2;i<Nc;i++) {
-    for(int j=0;j<Nc/2;j++) {
-      Sp_field()()(i,j) = -bbar;
-    }
-  }
-  // fill bottom right
-  for(int i=2;i<Nc;i++) {
-    for(int j=2;j<Nc;j++) {
-      Sp_field()()(i,j) = abar;
-    }
-  }
+  mock_Sp_field(Sp_xfield, std::vector<int>({23}));
+  mock_Sp_field(Sp_yfield, std::vector<int>({42}));
+  mock_Sp_field(Sp_zfield, std::vector<int>({93}));
+  mock_Sp_field(Sp_tfield, std::vector<int>({49}));
 
-  LorentzColourMatrixD test = Zero();
+  LorentzColourMatrixD scalar = Zero();
 
-  for(int mu=0; mu<Nd; mu++){
-    pokeLorentz(test,Sp_field,mu);
-  }
+  pokeLorentz(scalar, Sp_xfield, 0);
+  pokeLorentz(scalar, Sp_yfield, 1);
+  pokeLorentz(scalar, Sp_zfield, 2);
+  pokeLorentz(scalar, Sp_tfield, 3);
+
+  reconstructSp(scalar);
 
   // reduce field. GaugeSpunmunger<out_type,in_type>
   GaugeSpunmunger<LorentzColourNx2ND,LorentzColourMatrixD> unmunger;
-  LorentzColourNx2ND test_rdc = Zero();
-  unmunger(test,test_rdc);
+  LorentzColourNx2ND scalar_rdc = Zero();
+  unmunger(scalar,scalar_rdc);
 
   // reconstruct full field. GaugeSpmunger<in_type,out_type>
   GaugeSpmunger<LorentzColourNx2ND,LorentzColourMatrixD> munger;
-  LorentzColourMatrixD test_recon;
-  munger(test_rdc,test_recon);
+  LorentzColourMatrixD scalar_recon;
+  munger(scalar_rdc,scalar_recon);
 
   // round-trip test
-  assert(test==test_recon);
+  assert(scalar==scalar_recon);
 
   return true;
 
 }
 
 
-// mungeing between the same type should yield the same result.
 bool checkBinarySimpleMungers() {
 
   LorentzColourMatrixF in_scalar_objectF;  // single precision
   LorentzColourMatrixF out_scalar_objectF = Zero();  
   LorentzColourMatrixD in_scalar_objectD;  // double precision
   LorentzColourMatrixD out_scalar_objectD = Zero();  
-  
-  in_scalar_objectF = 1.0;
-  in_scalar_objectD = 1.0;
- 
+
+  GridSerialRNG sRNG;   sRNG.SeedFixedIntegers(std::vector<int>({117}));
+
+  random(sRNG,in_scalar_objectF);
+  random(sRNG,in_scalar_objectD);
+
   // BinarySimpleUnmunger<out_type,in_type> 
   BinarySimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixF> unmungerFF;
-  BinarySimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixF> unmungerDF;
+  BinarySimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixF> unmungerFD;
   BinarySimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixD> unmungerDD;
-  BinarySimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixD> unmungerFD;
+  BinarySimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixD> unmungerDF;
 
   unmungerFF(in_scalar_objectF, out_scalar_objectF);
+  unmungerDD(in_scalar_objectD, out_scalar_objectD);
   assert(in_scalar_objectF==out_scalar_objectF);
+  assert(in_scalar_objectD==out_scalar_objectD);
+
+  random(sRNG,in_scalar_objectF);
+  unmungerFD(in_scalar_objectF, out_scalar_objectD);
+  unmungerDF(out_scalar_objectD, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  random(sRNG,in_scalar_objectD);
+  unmungerDF(in_scalar_objectD, out_scalar_objectF);
+  unmungerFD(out_scalar_objectF, out_scalar_objectD);
+  // lose exactness when going from double-->single precision
+  assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
   // BinarySimpleMunger<in_type,out_type> 
   BinarySimpleMunger<LorentzColourMatrixF,LorentzColourMatrixF> mungerFF;
@@ -338,12 +352,29 @@ bool checkBinarySimpleMungers() {
   BinarySimpleMunger<LorentzColourMatrixD,LorentzColourMatrixD> mungerDD;
   BinarySimpleMunger<LorentzColourMatrixF,LorentzColourMatrixD> mungerFD;
 
+  random(sRNG,in_scalar_objectF);
+  random(sRNG,in_scalar_objectD);
+
+  mungerFF(in_scalar_objectF, out_scalar_objectF);
   mungerDD(in_scalar_objectD, out_scalar_objectD);
   assert(in_scalar_objectD==out_scalar_objectD);
+  assert(in_scalar_objectF==out_scalar_objectF);
  
+  random(sRNG,in_scalar_objectF);
+  mungerFD(in_scalar_objectF, out_scalar_objectD);
+  mungerDF(out_scalar_objectD, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  random(sRNG,in_scalar_objectD);
+  mungerDF(in_scalar_objectD, out_scalar_objectF);
+  mungerFD(out_scalar_objectF, out_scalar_objectD);
+  // lose exactness when going from double-->single precision
+  assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
+
   return true;
 
 }
+
 // these are used in NerscIO.h
 bool checkGaugeSimpleMungers() {
 
@@ -352,26 +383,57 @@ bool checkGaugeSimpleMungers() {
   LorentzColourMatrixD in_scalar_objectD;  // double precision
   LorentzColourMatrixD out_scalar_objectD = Zero(); 
   
-  in_scalar_objectF = 1.0;
-  in_scalar_objectD = 1.0;
+  GridSerialRNG sRNG;   sRNG.SeedFixedIntegers(std::vector<int>({57}));
+
+  random(sRNG,in_scalar_objectF);
+  random(sRNG,in_scalar_objectD);
 
   // GaugeSimpleUnmunger<out_type,in_type> 
   GaugeSimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixF> unmungerFF;
-  GaugeSimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixF> unmungerDF;
+  GaugeSimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixF> unmungerFD;
   GaugeSimpleUnmunger<LorentzColourMatrixD,LorentzColourMatrixD> unmungerDD;
-  GaugeSimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixD> unmungerFD;
+  GaugeSimpleUnmunger<LorentzColourMatrixF,LorentzColourMatrixD> unmungerDF;
 
   unmungerFF(in_scalar_objectF, out_scalar_objectF);
+  unmungerDD(in_scalar_objectD, out_scalar_objectD);
   assert(in_scalar_objectF==out_scalar_objectF);
+  assert(in_scalar_objectD==out_scalar_objectD);
+
+  random(sRNG,in_scalar_objectF);
+  unmungerFD(in_scalar_objectF, out_scalar_objectD);
+  unmungerDF(out_scalar_objectD, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  random(sRNG,in_scalar_objectD);
+  unmungerDF(in_scalar_objectD, out_scalar_objectF);
+  unmungerFD(out_scalar_objectF, out_scalar_objectD);
+  // lose exactness when going from double-->single precision
+  assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
   // GaugeSimpleMunger<in_type,out_type> 
   GaugeSimpleMunger<LorentzColourMatrixF,LorentzColourMatrixF> mungerFF;
   GaugeSimpleMunger<LorentzColourMatrixD,LorentzColourMatrixF> mungerDF;
   GaugeSimpleMunger<LorentzColourMatrixD,LorentzColourMatrixD> mungerDD;
   GaugeSimpleMunger<LorentzColourMatrixF,LorentzColourMatrixD> mungerFD;
- 
+
+  random(sRNG,in_scalar_objectF);
+  random(sRNG,in_scalar_objectD);
+
+  mungerFF(in_scalar_objectF, out_scalar_objectF);
   mungerDD(in_scalar_objectD, out_scalar_objectD);
   assert(in_scalar_objectD==out_scalar_objectD);
+  assert(in_scalar_objectF==out_scalar_objectF);
+ 
+  random(sRNG,in_scalar_objectF);
+  mungerFD(in_scalar_objectF, out_scalar_objectD);
+  mungerDF(out_scalar_objectD, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  random(sRNG,in_scalar_objectD);
+  mungerDF(in_scalar_objectD, out_scalar_objectF);
+  mungerFD(out_scalar_objectF, out_scalar_objectD);
+  // lose exactness when going from double-->single precision
+  assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
   return true;
 
@@ -383,18 +445,33 @@ bool checkGaugeDoubleStoredMungers() {
   DoubleStoredColourMatrixF out_scalar_objectF = Zero(); 
   DoubleStoredColourMatrixD in_scalar_objectD;  // double precision
   DoubleStoredColourMatrixD out_scalar_objectD = Zero(); 
-  
-  in_scalar_objectF = 1.0;
-  in_scalar_objectD = 1.0;
+ 
+  GridSerialRNG sRNG;   sRNG.SeedFixedIntegers(std::vector<int>({169}));
+
+  random(sRNG,in_scalar_objectF);
+  random(sRNG,in_scalar_objectD);
 
   // GaugeDoubleStoredUnmunger<out_type,in_type> 
   GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixF> unmungerFF;
-  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixF> unmungerDF;
+  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixF> unmungerFD;
   GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixD> unmungerDD;
-  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixD> unmungerFD;
+  GaugeDoubleStoredUnmunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixD> unmungerDF;
 
   unmungerFF(in_scalar_objectF, out_scalar_objectF);
+  unmungerDD(in_scalar_objectD, out_scalar_objectD);
   assert(in_scalar_objectF==out_scalar_objectF);
+  assert(in_scalar_objectD==out_scalar_objectD);
+
+  random(sRNG,in_scalar_objectF);
+  unmungerFD(in_scalar_objectF, out_scalar_objectD);
+  unmungerDF(out_scalar_objectD, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  random(sRNG,in_scalar_objectD);
+  unmungerDF(in_scalar_objectD, out_scalar_objectF);
+  unmungerFD(out_scalar_objectF, out_scalar_objectD);
+  // lose exactness when going from double-->single precision
+  assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
   // GaugeDoubleStoredMunger<in_type,out_type> 
   GaugeDoubleStoredMunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixF> mungerFF;
@@ -402,8 +479,24 @@ bool checkGaugeDoubleStoredMungers() {
   GaugeDoubleStoredMunger<DoubleStoredColourMatrixD,DoubleStoredColourMatrixD> mungerDD;
   GaugeDoubleStoredMunger<DoubleStoredColourMatrixF,DoubleStoredColourMatrixD> mungerFD;
  
+  random(sRNG,in_scalar_objectF);
+  random(sRNG,in_scalar_objectD);
+
+  mungerFF(in_scalar_objectF, out_scalar_objectF);
   mungerDD(in_scalar_objectD, out_scalar_objectD);
   assert(in_scalar_objectD==out_scalar_objectD);
+  assert(in_scalar_objectF==out_scalar_objectF);
+ 
+  random(sRNG,in_scalar_objectF);
+  mungerFD(in_scalar_objectF, out_scalar_objectD);
+  mungerDF(out_scalar_objectD, out_scalar_objectF);
+  assert(in_scalar_objectF==out_scalar_objectF);
+
+  random(sRNG,in_scalar_objectD);
+  mungerDF(in_scalar_objectD, out_scalar_objectF);
+  mungerFD(out_scalar_objectF, out_scalar_objectD);
+  // lose exactness when going from double-->single precision
+  assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
   return true;
 
