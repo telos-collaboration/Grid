@@ -289,7 +289,7 @@ public:
       	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
       	std::cout << GridLogDebug << "Observables total " << Observables.size() << std::endl;
       	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;
-        Observables[obs]->TrajectoryComplete(traj + 1, TheIntegrator.Smearer, sRNG, pRNG);
+        Observables[obs]->TrajectoryComplete(traj + 1, TheIntegrator.Smearer, sRNG, pRNG, accept);
       }
       std::cout << GridLogHMC << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }

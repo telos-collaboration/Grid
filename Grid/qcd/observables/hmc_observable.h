@@ -45,6 +45,25 @@ class HmcObservable {
                                   Field &U,
                                   GridSerialRNG &sRNG,
                                   GridParallelRNG &pRNG) = 0;
+
+  // allow backward compatibility with current observables that do not have 
+  // acceptance argument
+  virtual void TrajectoryComplete(int traj,
+                                  ConfigurationBase<Field> &SmartConfig,
+                                  GridSerialRNG &sRNG,
+                                  GridParallelRNG &pRNG, 
+                                  bool accept)
+  {
+    TrajectoryComplete(traj,SmartConfig,sRNG,pRNG); // Unsmeared observable
+  };
+  virtual void TrajectoryComplete(int traj, 
+                                  Field &U,
+                                  GridSerialRNG &sRNG,
+                                  GridParallelRNG &pRNG,
+                                  bool accept) 
+  {
+    TrajectoryComplete(traj, U, sRNG, pRNG);
+  };
 };
 
 NAMESPACE_END(Grid);
