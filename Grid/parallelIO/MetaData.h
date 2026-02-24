@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/parallelIO/NerscIO.h
+    Source file: ./lib/parallelIO/Metadata.h
 
     Copyright (C) 2015
 
