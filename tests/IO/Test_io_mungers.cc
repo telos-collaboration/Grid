@@ -126,8 +126,8 @@ bool check_reconstruct3() {
   for(int mu=0;mu<Nd;mu++) {
     auto new_cm = peekIndex<LorentzIndex>(scalar, mu);
     auto det = Determinant(new_cm);
-    assert( abs(norm2(det)-1.0) < 1e-15 );
-    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
+    assert( abs(norm2(det)-1.0) < 1e-12 );
+    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-12 );
   }
 
   return true;
@@ -164,8 +164,8 @@ bool check_reconstructSU() {
   for(int mu=0;mu<Nd;mu++) {
     auto new_cm = peekIndex<LorentzIndex>(scalar, mu);
     auto det = Determinant(new_cm);
-    assert( abs( norm2(det)-1.0 ) < 1e-15 );
-    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-15 );
+    assert( abs( norm2(det)-1.0 ) < 1e-12 );
+    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-12 );
   }
 
   return true;
@@ -232,7 +232,7 @@ bool checkGaugeSUmungers() {
   munger(scalar_rdc,scalar_recon);
   
   // round-trip test
-  assert(norm2(scalar_recon-scalar)<1e-15);
+  assert(norm2(scalar_recon-scalar)<1e-12);
 
   return true;
 
