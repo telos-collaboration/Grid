@@ -737,35 +737,35 @@ class IldgReader : public GridLimeReader {
   //////////////////////////////////////////////////////////////////
   // this helper function wraps the logic for choosing
   // the correct munger and intermediate lattice data type
-  // before reading a lattice field from disk.  
+  // when reading a lattice field from disk.  
   // This is a runtime choice as Grid has to first read the 
   // header of the lattice cfg. Therefore templating this function on
-  // FloatingPointFormat etc. does not work. It is rather 
-  // cumbersome, it's if statement with 6 branches, 
+  // FloatingPointFormat etc. does not work. It is a rather 
+  // cumbersome if statement with 6 branches, 
   // but the benefit of organising IldgReader this way is it makes 
   // readConfiguration clearer and more readable.
   //////////////////////////////////////////////////////////////////
-  template<class vobj>
+  template<bool unique_su, class vobj>
   void readLatticeBinaryObject(Lattice<vobj> &Umu, std::string filename, FloatingPointFormat fp_fmt, MatrixFormat matrix_fmt, bool is_grp_su, bool is_grp_sp, uint64_t &offset, uint32_t &nersc_csum, uint32_t &scidac_csuma, uint32_t &scidac_csumb) 
   {
 
-	  // need all the types we could possibly read from
-	  // including the intermediate data types for 
-	  // reduced format lattices and single/double precision
+    // need all the types we could possibly read from
+    // including the intermediate data types for 
+    // reduced format lattices and single/double precision
     typedef typename vobj::scalar_object sobj;
     typedef LorentzColourMatrixF  fobj;
     typedef LorentzColourMatrixD  dobj;
-	  typedef LorentzColour2x3F     fobjsuR;
-	  typedef LorentzColour2x3D     dobjsuR;
-	  typedef LorentzColourNx2NF    fobjspR;
-	  typedef LorentzColourNx2ND    dobjspR;
+    typedef LorentzColour2x3F     fobjsuR;
+    typedef LorentzColour2x3D     dobjsuR;
+    typedef LorentzColourNx2NF    fobjspR;
+    typedef LorentzColourNx2ND    dobjspR;
 
     std::string format;
     
     if ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
       format = std::string("IEEE64BIG");
       if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-        GaugeSUmunger<dobjsuR,sobj> munge;
+        GaugeSUmunger<dobjsuR,sobj,unique_su> munge;
         BinaryIO::readLatticeObject<vobj,dobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb); 
       } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
         GaugeSpmunger<dobjspR,sobj> munge;
@@ -777,7 +777,7 @@ class IldgReader : public GridLimeReader {
       } else if ( fp_fmt == FloatingPointFormat::IEEE32BIG) {
         format = std::string("IEEE32BIG");
         if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
-        GaugeSUmunger<fobjsuR,sobj> munge;
+        GaugeSUmunger<fobjsuR,sobj,unique_su> munge;
         BinaryIO::readLatticeObject<vobj,fobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
       } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
         GaugeSpmunger<fobjspR,sobj> munge;
@@ -797,7 +797,7 @@ class IldgReader : public GridLimeReader {
   // Else use ILDG MetaData object if present.
   // Else use SciDAC MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class vobj, class stats = PeriodicGaugeStatistics>
+  template <bool unique_su = false, class stats = PeriodicGaugeStatistics, class vobj>
   void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_) {
 
     GridBase *grid = Umu.Grid();
@@ -964,7 +964,7 @@ class IldgReader : public GridLimeReader {
 
 	uint64_t offset= ftello(File);
   
-  readLatticeBinaryObject(Umu, filename, fp_fmt, matrix_fmt, is_grp_su, is_grp_sp, offset, nersc_csum, scidac_csuma, scidac_csumb); 
+  readLatticeBinaryObject<unique_su>(Umu, filename, fp_fmt, matrix_fmt, is_grp_su, is_grp_sp, offset, nersc_csum, scidac_csuma, scidac_csumb); 
 
 	found_ildgBinary = 1;
 
