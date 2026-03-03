@@ -304,7 +304,7 @@ inline void unique_reconstructSU(LorentzColourMatrix &cm)
         bool E = is_perm_even(P);
         ComplexD prod(1,0);
         for(int i=0;i<Nc-1;i++) {
-          prod = cm(mu)()(i,c[i]) * prod;
+          prod *= cm(mu)()(i,c[i]) ;
         }
         if(E) { cm(mu)()(Nc-1,k) += conjugate(prod); }
         else  { cm(mu)()(Nc-1,k) -= conjugate(prod); }
