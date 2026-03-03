@@ -29,7 +29,6 @@ Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
 
 // this test demonstrates and checks IldgWriter/Readers' ability to 
@@ -38,7 +37,7 @@ using namespace Grid;
 //////////////////////////////////////////////
 // this template function returns a
 // LatticeGaugeField of the chosen gauge
-// group passed as a template argument.
+// group (passed as a template argument)
 //////////////////////////////////////////////
 template<class gaugeGroup>
 LatticeGaugeField generateHotFieldConfiguration( GridCartesian &Grid, std::vector<int> seed ) {
@@ -59,13 +58,14 @@ LatticeGaugeField generateHotFieldConfiguration( GridCartesian &Grid, std::vecto
   return Umu; 
 }
 
-///////////////////////////////////////////////////////////////
-// this template function generates writes a lattice
+/////////////////////////////////////////////////////////////
+// this template function writes a lattice
 // field of a given gaugeGroup to disk. It can write in
-// reduced format and single precision depending on 
-// the values of matrix_fmt and fp_fmt. 
-///////////////////////////////////////////////////////////////
-template<class gaugeGroup, int N, MatrixFormat matrix_fmt, FloatingPointFormat fp_fmt>
+// reduced format and single/double precision depending on 
+// the values of matrix_fmt and fp_fmt. unique_su toggles
+// between different functions when reading reduced fmt lattices. 
+/////////////////////////////////////////////////////////////
+template<class gaugeGroup, int N, MatrixFormat matrix_fmt, FloatingPointFormat fp_fmt, bool unique_su = false>
 void writeReadIldgConfiguration( LatticeGaugeField &Umu, GridCartesian &Grid, std::string file)  {
 
   if constexpr( std::is_same_v<gaugeGroup,GroupName::Sp> && N%2==1) {
@@ -93,7 +93,7 @@ void writeReadIldgConfiguration( LatticeGaugeField &Umu, GridCartesian &Grid, st
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   IldgReader _IldgReader;
   _IldgReader.open(file);
-  _IldgReader.readConfiguration(Umu_saved, header);
+  _IldgReader.readConfiguration<unique_su>(Umu_saved, header);
   _IldgReader.close();
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2((Umu_saved-Umu))<<std::endl;
 }
@@ -115,18 +115,25 @@ int main (int argc, char ** argv)
 
   GridCartesian  Grid(latt_size,simd_layout,mpi_layout);
 
+  const bool not_unique_su = false; // use reconstructSU
+  const bool unique_su = true;      // use unique_reconstructSU
+
   LatticeGaugeField Umu   = generateHotFieldConfiguration<GroupName::SU>(Grid, seed0);
   LatticeGaugeField UmuSp = generateHotFieldConfiguration<GroupName::Sp>(Grid, seed1);
 
-  // write and read SU fields
+  // write and read back SU lattices
   writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(Umu, Grid, "./ckpoint_su64_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
-  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(Umu, Grid, "./ckpoint_su64_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG, not_unique_su>(Umu, Grid, "./ckpoint_su64_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG, unique_su>(Umu, Grid, "./ckpoint_su64_unique_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
+
   writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(Umu, Grid, "./ckpoint_su32_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
-  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(Umu, Grid, "./ckpoint_su32_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG, not_unique_su>(Umu, Grid, "./ckpoint_su32_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
+  writeReadIldgConfiguration<GroupName::SU, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG, unique_su>(Umu, Grid, "./ckpoint_su32_unique_"+std::to_string(Nc-1)+"x"+std::to_string(Nc)+".4000");
   
-  // write and read Sp fields 
-  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(UmuSp, Grid, "./ckpoint_sp64_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
+  // write and read Sp lattices
+  writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG, not_unique_su>(UmuSp, Grid, "./ckpoint_sp64_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
   writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(UmuSp, Grid, "./ckpoint_sp64_"+std::to_string(Nc/2)+"x"+std::to_string(Nc)+".4000");
+
   writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(UmuSp, Grid, "./ckpoint_sp32_"+std::to_string(Nc)+"x"+std::to_string(Nc)+".4000");
   writeReadIldgConfiguration<GroupName::Sp, Nc, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(UmuSp, Grid, "./ckpoint_sp32_"+std::to_string(Nc/2)+"x"+std::to_string(Nc)+".4000");
 
