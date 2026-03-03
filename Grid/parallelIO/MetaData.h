@@ -229,23 +229,88 @@ inline void reconstructSU(LorentzColourMatrix &cm)
 {
   using ColourMatrixNm = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
 
-  ColourMatrixNm red; // for the Nc-1 by Nc-1 matrix
-  ColourMatrix old;   // for the Nc-1 by N matrix read from disk
+  ColourMatrixNm Su; // for the Nc-1 by Nc-1 matrix
+  ColourMatrix SU;   // for the Nc-1 by N matrix read from disk
 
   for(int mu=0; mu<Nd; mu++) {
-    old = Zero();
-    red = Zero();
-    old = peekIndex<LorentzIndex>(cm,mu); 
+    Su = Zero();
+    SU = peekIndex<LorentzIndex>(cm,mu); 
     for(int k=0; k<Nc; k++) {
       for(int i=0; i<Nc-1; i++) {
         for(int j=0; j<Nc-1; j++) {
-          int J = (j<k) ? j : j+1; // for correct indexing of columns in old
-          red()()(i,j) = old()()(i,J);
+          int J = (j<k) ? j : j+1; // for correct indexing of columns in SU
+          Su()()(i,j) = SU()()(i,J);
         }
       }
-      old()()(Nc-1,k) = std::pow(-1,k+Nc-1) * adj(Determinant(red));
+      SU()()(Nc-1,k) = std::pow(-1,k+Nc-1) * adj(Determinant(Su));
     } 
-    pokeIndex<LorentzIndex>(cm,old,mu);
+    pokeIndex<LorentzIndex>(cm,SU,mu);
+  }
+}
+
+
+bool is_perm_even(std::vector<int> &v) {
+
+    int n = v.size();
+    std::vector<int> a(n,0);
+    int c = 0;
+
+    for(int j=0; j<n; j++) {
+        if(a[j]==0) {
+            c += 1;
+            a[j] = 1;
+            int i = j;
+            while(v[i]!=j) {
+                i = v[i];
+                a[i] = 1;
+            }
+        }
+    }
+
+    if ((n-c)%2==0) {
+      return true;
+    } else {
+      return false;
+    }
+}
+
+
+///////////////////////////////////////////////////////////
+//
+//  this function follows the prescription laid out by the
+//  ildg spec (linked in the comment to reconstrucSp), 
+//  forming a sum of products in lexicographic order.
+//
+// SU[N-1][k] = sum ( SU[0][i0].SU[1][i1]...SU[N-2][iN-2] )*
+//         {i0...iN-2!=k}
+//
+///////////////////////////////////////////////////////////
+inline void unique_reconstructSU(LorentzColourMatrix &cm)
+{
+
+  std::vector<int> v(Nc);
+  std::iota(v.begin(), v.end(), 0); // {0,1,...,Nc-1}
+
+  for(int mu=0; mu<Nd; mu++) {
+    for(int k=0; k<Nc; k++) {
+      std::vector<int> c = v;
+      c.erase(c.begin()+k);     // {0,...,k-1,k+1,...Nc-1}
+      cm(mu)()(Nc-1,k) = 0;
+      // cycle through perms of c
+      do
+      {
+        std::vector<int> P = c;
+        P.emplace_back(k);
+        bool E = is_perm_even(P);
+        ComplexD prod(1,0);
+        for(int i=0;i<Nc-1;i++) {
+          prod = cm(mu)()(i,c[i]) * prod;
+        }
+        if(E) { cm(mu)()(Nc-1,k) += conjugate(prod); }
+        else  { cm(mu)()(Nc-1,k) -= conjugate(prod); }
+      }
+      while (std::next_permutation(c.begin(), c.end())); 
+    }
   }
 }
 
@@ -258,20 +323,20 @@ inline void reconstructSU(LorentzColourMatrix &cm)
 //      |-B* A*|
 //  where A and B are NxN matrices.
 //  see appendix A.2 of
-//  https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
+// https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
 ////////////////////////////////////////////////////////////////
 inline void reconstructSp(LorentzColourMatrix & cm) 
 {
-	assert( Nc%2==0 ); 
-	int N = Nc/2;
-	for(int mu=0;mu<Nd;mu++){
-		for(int i=0;i<N;i++){
-			for(int j=0;j<N;j++){
-				cm(mu)()(i+N,j) = -adj( cm(mu)()(i,j+N) ); //B to -B*
-				cm(mu)()(i+N,j+N) = adj( cm(mu)()(i,j) );	//A to A*
-			}
-		}
-	}
+  assert( Nc%2==0 ); 
+  int N = Nc/2;
+  for(int mu=0;mu<Nd;mu++){
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+        cm(mu)()(i+N,j) = -adj( cm(mu)()(i,j+N) ); //B to -B*
+        cm(mu)()(i+N,j+N) = adj( cm(mu)()(i,j) );	//A to A*
+      }
+    }
+  }
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Some data types for intermediate storage
@@ -401,19 +466,39 @@ struct Gauge3x2unmunger{
   }
 };
 
+template<class fobj,class sobj, bool unique_su>
+struct GaugeSUmunger;
+// two specialisations for two ways to reconstruct
+// NcxNc matrix from Nc-1xNc matrix
+
 template<class fobj,class sobj>
-struct GaugeSUmunger{
+struct GaugeSUmunger<fobj,sobj,false>{
   void operator() (fobj &in,sobj &out){
     for(int mu=0;mu<Nd;mu++){
       for(int i=0;i<Nc-1;i++){
-	      for(int j=0;j<Nc;j++){
-	        out(mu)()(i,j) = in(mu)(i)(j);
-	      }
+        for(int j=0;j<Nc;j++){
+          out(mu)()(i,j) = in(mu)(i)(j);
+        }
       }
     }
-    reconstructSU(out);
+  reconstructSU(out);
   }
 };
+
+template<class fobj,class sobj>
+struct GaugeSUmunger<fobj,sobj,true>{
+  void operator() (fobj &in,sobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc-1;i++){
+        for(int j=0;j<Nc;j++){
+          out(mu)()(i,j) = in(mu)(i)(j);
+        }
+      }
+    }
+    unique_reconstructSU(out);
+  }
+};
+
 
 template<class fobj,class sobj>
 struct GaugeSUunmunger{
