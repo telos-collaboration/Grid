@@ -2104,7 +2104,7 @@ These are specialised to SciDAC writers, introducing facilities for generating t
     void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord);
   };
 
-They are also specialised to ILDG format writers, available and defined only for Gauge configurations. Following the publication of Rev. 1.2 of the ILDG Binary File Format by the ILDG Metadata Working Group the ILDG format writer and reader have been updated to be able to read and write SU(2/3) and Sp(2N) lattice configurations in reduced formats.::
+They are also specialised to ILDG format writers, available and defined only for Gauge configurations. Following the publication of Rev. 1.2 of the ILDG Binary File Format by the ILDG Metadata Working Group the `IldgWriter` and `IldgReader` have been updated to be able to read and write SU(N) and Sp(2N) lattice configurations in reduced formats.::
 
   class IldgWriter : public ScidacWriter {
 
@@ -2115,12 +2115,12 @@ They are also specialised to ILDG format writers, available and defined only for
 
   class IldgReader : public GridLimeReader {
 
-    template <class vobj, class stats = PeriodicGaugeStatistics>
+    template <bool unique_su = false, class stats = PeriodicGaugeStatistics, class vobj>
     void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_);
 
   };
 
-The template parameters *group_name*, *MatrixFormat*, *FloatingPointFormat* specify the format the lattices are to be written to disk with. At present there are two options for the group, SU and Sp, two options for the matrix format, reduced or not reduced, and two options for the floating point format, 32 bit and 64 bit precision. Reduced format Sp gauge fields take up half as much memory as the non-reduced fields while SU(3) fields take up 2/3 as much memory as their non-reduced counterparts.
+`writeConfiguration`'s template parameters; *group_name*, *MatrixFormat*, and *FloatingPointFormat* specify the format the lattices are to be written to disk with. At present there are two options for the group, SU and Sp, two options for the matrix format, reduced and not reduced, and two options for the floating point format, 32 bit and 64 bit precision. Reduced format Sp gauge fields take up half as much memory as non-reduced fields while SU(N) fields take up N-1/N as much memory as their non-reduced counterparts. When reading reduced format lattices from disk there are multiple ways the full SU(N) field can be recovered. The `unique_su` template parameter of `readConfiguration` controls which of two alternative functions is used. Set `unique_su=true` if you want `Grid` to follow the prescription laid out in the ILDG Binary File Format specification when reconstructing reduced format lattices.
 
 **Implementation detail**
 
