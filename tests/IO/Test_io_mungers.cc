@@ -29,13 +29,14 @@ Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
 
 // tests to check the various (un)munger classes 
 // and functions in parallelIO/Metadata.h
 bool check_reconstruct3();
 bool check_reconstructSU();
+bool check_is_perm_even();
+bool check_unique_reconstructSU();
 bool checkGauge3x2mungers();
 bool checkGaugeSUmungers();
 bool check_reconstructSp();
@@ -172,6 +173,65 @@ bool check_reconstructSU() {
 
 }
 
+bool check_is_perm_even() {
+
+  std::vector<int> v = {0,1,2,3};
+  int count = 0;
+
+  // swap two elements and check if parity flipped.
+  for(auto& e: v) {
+    for(auto& d: v) {
+      if(e!=d) {
+        if(count%2==0) { assert( is_perm_even(v)==true ); }
+        else { assert( is_perm_even(v)==false ); }
+        std::swap(e, d);
+        count += 1;
+      }
+    }
+  }      
+ 
+  return true;
+
+}
+
+bool check_unique_reconstructSU() {
+
+  ColourMatrixD SUN_xfield, SUN_yfield, SUN_zfield, SUN_tfield;
+
+  mock_SU_field(SUN_xfield, std::vector<int>({2}));
+  mock_SU_field(SUN_yfield, std::vector<int>({40}));
+  mock_SU_field(SUN_zfield, std::vector<int>({28}));
+  mock_SU_field(SUN_tfield, std::vector<int>({25}));
+
+  //set last row equal to zero
+  for(int j=0;j<Nc;j++) {
+    SUN_xfield()()(Nc-1,j) = 0.0;
+    SUN_yfield()()(Nc-1,j) = 0.0;
+    SUN_zfield()()(Nc-1,j) = 0.0;
+    SUN_tfield()()(Nc-1,j) = 0.0;
+  }
+
+  LorentzColourMatrixD scalar = Zero();
+
+  pokeLorentz(scalar, SUN_xfield, 0);
+  pokeLorentz(scalar, SUN_yfield, 1);
+  pokeLorentz(scalar, SUN_zfield, 2);
+  pokeLorentz(scalar, SUN_tfield, 3);
+
+  unique_reconstructSU(scalar);
+
+  // check result is unitary and det==1
+  for(int mu=0;mu<Nd;mu++) {
+    auto new_cm = peekIndex<LorentzIndex>(scalar, mu);
+    auto det = Determinant(new_cm);
+    assert( abs( norm2(det)-1.0 ) < 1e-12 );
+    assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-12 );
+  }
+
+  return true;
+
+}
+
 bool checkGauge3x2mungers() {
 
   ColourMatrixD SU3_xfield, SU3_yfield, SU3_zfield, SU3_tfield;
@@ -205,6 +265,7 @@ bool checkGauge3x2mungers() {
 
 }
 
+template<bool unique_su>
 bool checkGaugeSUmungers() {
 
   ColourMatrixD SUN_xfield, SUN_yfield, SUN_zfield, SUN_tfield;
@@ -227,9 +288,9 @@ bool checkGaugeSUmungers() {
   unmunger(scalar,scalar_rdc);
 
   // reconstruct full field. GaugeSUmunger<in_type,out_type>
-  GaugeSUmunger<LorentzColour2x3D,LorentzColourMatrixD> munger;
+  GaugeSUmunger<LorentzColour2x3D,LorentzColourMatrixD,unique_su> munger;
   LorentzColourMatrixD scalar_recon;
-  munger(scalar_rdc,scalar_recon);
+  munger(scalar_rdc, scalar_recon);
   
   // round-trip test
   assert(norm2(scalar_recon-scalar)<1e-12);
@@ -510,6 +571,10 @@ int main (int argc, char ** argv)
   
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
+  if( check_is_perm_even() ) {
+    std::cout << GridLogMessage << "is_perm_even: PASS" << std::endl;
+  }
+
   std::cout <<GridLogMessage<< "Testing SU(" << Nc << ") mungers..." << std::endl;
   if constexpr(Nc>1 && Nc<4) {  
     if( check_reconstruct3() ) {
@@ -524,8 +589,15 @@ int main (int argc, char ** argv)
   if( check_reconstructSU() ) {
     std::cout << GridLogMessage << "reconstructSU: PASS" << std::endl;
   }
-  if( checkGaugeSUmungers() ) {
-    std::cout << GridLogMessage << "GaugeSUmungers: PASS" << std::endl;
+  if( checkGaugeSUmungers<false>() ) {
+    std::cout << GridLogMessage << "(unique_su=false) GaugeSUmungers: PASS" << std::endl;
+  }
+
+  if( check_unique_reconstructSU() ) {
+    std::cout << GridLogMessage << "unique_reconstructSU: PASS" << std::endl;
+  }
+  if( checkGaugeSUmungers<true>() ) {
+    std::cout << GridLogMessage << "(unique_su=true) GaugeSUmungers: PASS" << std::endl;
   }
 
   if constexpr(Nc>2 && Nc%2==0) {
