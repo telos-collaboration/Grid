@@ -29,13 +29,11 @@ Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
     /*  END LEGAL */
 #include <Grid/Grid.h>
 
-using namespace std;
 using namespace Grid;
 
 // Unit tests to check the IldgWriter class.
 
 void checkWriteLimeIldgLFN(std::string &test_string);
-void checkWriteConfiguration(LatticeGaugeField &Umu);
 
 // write a lime record and then read it back and check it matches.
 void checkWriteLimeIldgLFN(std::string &test_string) {
