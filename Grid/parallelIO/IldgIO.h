@@ -870,9 +870,9 @@ class IldgReader : public GridLimeReader {
 
     if(doc.child("ildgFormat").child("rows")) {
       std::string rows = doc.child("ildgFormat").child("rows").child_value();
-      std::cout << GridLogMessage << "rows element found in ildg-format and is " << rows << " so this lattice might be ildg 1.2 compliant." << std::endl;
+      std::cout << GridLogMessage << "<rows/> element present = " << rows << ". So this lattice might be ildg 1.2 compliant." << std::endl;
     } else {
-      std::cout << GridLogMessage << "rows element is not present in ildg-format - adding it after </field>." << std::endl;
+      std::cout << GridLogMessage << "<rows/> element not present - adding it after <field>." << std::endl;
       pugi::xml_node ildgfmt = doc.child("ildgFormat");
       const std::string stNC = std::to_string(Nc);
       ildgfmt.insert_child_after("rows", ildgfmt.child("field")).text().set(stNC.c_str());
