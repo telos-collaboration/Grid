@@ -447,9 +447,9 @@ class GridLimeWriter : public BinaryIO
       fflush(File);
     }
     
-    //  std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
-    //  std::cout << "W Gsites "           <<field.Grid()->_gsites<<std::endl;
-    //  std::cout << "W Payload expected " <<PayloadSize<<std::endl;
+    //    std::cout << "W sizeof(sobj)"      <<sizeof(sobj)<<std::endl;
+    //    std::cout << "W Gsites "           <<field.Grid()->_gsites<<std::endl;
+    //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
 
     ////////////////////////////////////////////////
     // Check all nodes agree on file position
@@ -465,8 +465,8 @@ class GridLimeWriter : public BinaryIO
     ///////////////////////////////////////////
     std::string format = getFormatString<sobj>();
 
-	  GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt> unmunger;
-	
+    GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt> unmunger;
+
     BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, unmunger, offset1, format, nersc_csum, scidac_csuma, scidac_csumb, control);
 
     ///////////////////////////////////////////
@@ -659,38 +659,38 @@ class IldgWriter : public ScidacWriter {
     ildgFormat ildgfmt ;
     const std::string stNC = std::to_string( Nc ) ;
 
-	  // use the gauge group to populate the 'field' element of ildg header	
+    // use the gauge group to populate the 'field' element of ildg header
     if constexpr ( is_su<group_name>::value ) {
-		  std::cout << GridLogMessage << "writing SU(" << stNC << ") field" << std::endl;
-		  ildgfmt.field = std::string("su"+stNC+"gauge");
-	  } else if constexpr ( is_sp<group_name>::value ) {
-		  std::cout << GridLogMessage << "writing Sp(" << stNC << ") field" << std::endl;
-		  ildgfmt.field = std::string("sp"+stNC+"gauge");
-	  } else {
-		  static_assert(1, "Unrecognised group; unable to determine field tag");
-	  }
+      std::cout << GridLogMessage << "writing SU(" << stNC << ") field" << std::endl;
+      ildgfmt.field = std::string("su"+stNC+"gauge");
+    } else if constexpr ( is_sp<group_name>::value ) {
+      std::cout << GridLogMessage << "writing Sp(" << stNC << ") field" << std::endl;
+      ildgfmt.field = std::string("sp"+stNC+"gauge");
+    } else {
+      static_assert(1, "Unrecognised group; unable to determine field tag");
+    }
 
-	  // populate 'rows' element of ildg header
+    // populate 'rows' element of ildg header
     if constexpr( matrix_fmt==MatrixFormat::REDUCED && is_su<group_name>::value ) {
       ildgfmt.rows = Nc-1 ; 
     } else if constexpr( matrix_fmt==MatrixFormat::REDUCED && is_sp<group_name>::value ) {
       ildgfmt.rows = Nc/2 ; 
     } else if constexpr( matrix_fmt==MatrixFormat::FULL ) {
-	 	  ildgfmt.rows = Nc;
-	  } else {
-		  static_assert(1, "Unknown MatrixFormat specified");
-	  }
+      ildgfmt.rows = Nc;
+    } else {
+      static_assert(1, "Unknown MatrixFormat specified");
+    }
 
-    // set fmt string for single/double precision	
-	  if constexpr( fp_fmt == FloatingPointFormat::IEEE32BIG ) {
-		  header.floating_point = std::string("IEEE32BIG");
+    // set fmt string for single/double precision
+    if constexpr( fp_fmt == FloatingPointFormat::IEEE32BIG ) {
+      header.floating_point = std::string("IEEE32BIG");
       ildgfmt.precision = 32;
-	  } else if constexpr ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
-		  header.floating_point = std::string("IEEE64BIG");
+    } else if constexpr ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
+      header.floating_point = std::string("IEEE64BIG");
       ildgfmt.precision = 64;
-	  } else {
-		  static_assert(1, "Unknown FloatingPointFormat specified");
-	  }
+    } else {
+      static_assert(1, "Unknown FloatingPointFormat specified");
+    }
 
     ildgfmt.version = 1.2; 
     ildgfmt.lx = header.dimension[0];
