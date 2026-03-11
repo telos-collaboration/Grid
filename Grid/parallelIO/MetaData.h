@@ -576,18 +576,17 @@ struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, fp_fmt>
 template<class vobj, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
 {
-	using in_type  = typename vobj::scalar_object; 
+  using in_type  = typename vobj::scalar_object; 
   using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
   using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColour2x3D,LorentzColour2x3F>>;
 
-	BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
-	//Gauge3x2unmunger<out_type, tmp_type> gauge_unmunger;
-	GaugeSUunmunger<out_type, tmp_type> gauge_unmunger;
+  BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
+  GaugeSUunmunger<out_type, tmp_type> gauge_unmunger;
 
-	void operator() (in_type &in, out_type &out){
-	  tmp_type tmp;
-  	binary_unmunger(in, tmp);
-	  gauge_unmunger(tmp,out);
+  void operator() (in_type &in, out_type &out){
+    tmp_type tmp;
+    binary_unmunger(in, tmp);
+    gauge_unmunger(tmp,out);
   }
 };
 
@@ -599,14 +598,14 @@ struct GaugeUnMunger<vobj, GroupName::Sp, MatrixFormat::REDUCED, fp_fmt>
   using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
   using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourNx2ND,LorentzColourNx2NF>>;
 
-	BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
-	GaugeSpunmunger<out_type, tmp_type> gauge_unmunger;
+  BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
+  GaugeSpunmunger<out_type, tmp_type> gauge_unmunger;
 
-	void operator() (in_type &in, out_type &out){
-  	tmp_type tmp;
-  	binary_unmunger(in, tmp);
-	  gauge_unmunger(tmp, out);
-	}
+  void operator() (in_type &in, out_type &out){
+    tmp_type tmp;
+    binary_unmunger(in, tmp);
+    gauge_unmunger(tmp, out);
+  }
 };
 
 
