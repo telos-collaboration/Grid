@@ -49,9 +49,9 @@ LatticeGaugeField generateHotFieldConfiguration( GridCartesian &Grid, std::vecto
 
   LatticeGaugeField Umu(&Grid);
 
-  if constexpr( std::is_same_v<gaugeGroup, GroupName::SU> == true ) {
+  if constexpr( std::is_same_v<gaugeGroup, GroupName::SU> ) {
     SU<Nc>::HotConfiguration(pRNGa,Umu);
-  } else if constexpr ( std::is_same_v<gaugeGroup, GroupName::Sp> == true ) {
+  } else if constexpr ( std::is_same_v<gaugeGroup, GroupName::Sp> ) {
     Sp<Nc>::HotConfiguration(pRNGa,Umu);
   } else { static_assert(true, "Grid does not recognise the gauge group"); }
 
