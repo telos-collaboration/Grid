@@ -829,8 +829,8 @@ class IldgReader : public GridLimeReader {
     // from its ildg-format header. if matrix_fmt==MatrixFormat::REDUCED 
     // then Grid will reconstruct the full matrix using the appropriate munger.
     MatrixFormat matrix_fmt;
-    bool is_grp_su;
-    bool is_grp_sp;
+    bool is_grp_su = false;
+    bool is_grp_sp = false;
     // Binary format
     std::string format;
     FloatingPointFormat fp_fmt;
@@ -856,7 +856,7 @@ class IldgReader : public GridLimeReader {
 	// Copy out the string
 	std::vector<char> xmlc(nbytes+1,'\0');
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
-	//  std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
+	//	std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
 
 	//////////////////////////////////
 	// ILDG format record
@@ -864,24 +864,27 @@ class IldgReader : public GridLimeReader {
 	std::string xmlstring(&xmlc[0]);
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
-    // if no rows element in ildg-format insert such an element with value = Nc 
-    pugi::xml_document doc;
-    doc.load_string(xmlstring.c_str());
+	  // 'older' format ildg lattices don't have a <rows/> element in their header.
+	  // Grid's XML parsing doesn't support optional parameters with default values. 
+	  // Rather than rewrite that, here we explicitly add the <rows/> element with default
+	  // value = Nc to the ildg header if it is missing, before passing it to XmlReader."
+	  pugi::xml_document doc;
+	  doc.load_string(xmlstring.c_str());
 
-    if(doc.child("ildgFormat").child("rows")) {
-      std::string rows = doc.child("ildgFormat").child("rows").child_value();
-      std::cout << GridLogMessage << "<rows/> element present = " << rows << ". So this lattice might be ildg 1.2 compliant." << std::endl;
-    } else {
-      std::cout << GridLogMessage << "<rows/> element not present - adding it after <field>." << std::endl;
-      pugi::xml_node ildgfmt = doc.child("ildgFormat");
-      const std::string stNC = std::to_string(Nc);
-      ildgfmt.insert_child_after("rows", ildgfmt.child("field")).text().set(stNC.c_str());
+	  if(doc.child("ildgFormat").child("rows")) {
+	    std::string rows = doc.child("ildgFormat").child("rows").child_value();
+	    std::cout << GridLogMessage << "<rows/> element present = " << rows << ". So this lattice might be ildg 1.2 compliant." << std::endl;
+	  } else {
+	    std::cout << GridLogMessage << "<rows/> element not present - adding it after <field>." << std::endl;
+	    pugi::xml_node ildgfmt = doc.child("ildgFormat");
+	    const std::string stNC = std::to_string(Nc);
+	    ildgfmt.insert_child_after("rows", ildgfmt.child("field")).text().set(stNC.c_str());
 
-      // write result back into xmlstring
-      std::ostringstream ss;
-      doc.save(ss);
-      xmlstring = ss.str();
-    }
+	    // write result back into xmlstring
+	    std::ostringstream ss;
+	    doc.save(ss);
+	    xmlstring = ss.str();
+	  }
 
 	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"ildgFormat",ildgFormat_);
@@ -892,19 +895,19 @@ class IldgReader : public GridLimeReader {
 	  // set vars to tell Grid if it needs to reconstruct the full field.
 	  std::cout << GridLogMessage << "ildgFormat_.rows is " << ildgFormat_.rows << std::endl;
 	  matrix_fmt = (ildgFormat_.rows < Nc) ? MatrixFormat::REDUCED : MatrixFormat::FULL;
-	  is_grp_su = (!strncmp(ildgFormat_.field.c_str(),"su",2)) ? true : false;
-	  is_grp_sp = (!strncmp(ildgFormat_.field.c_str(),"sp",2)) ? true : false;
+	  if( !strncmp(ildgFormat_.field.c_str(),"su",2) ) { is_grp_su = true; }
+	  if( !strncmp(ildgFormat_.field.c_str(),"sp",2) ) { is_grp_sp = true; }
     
-    // check rows and Nc are related in the way we expect for each gauge group.
-    if (matrix_fmt==MatrixFormat::REDUCED && is_grp_su) {
-      assert( ildgFormat_.rows == Nc-1 );
-    }
-    if (matrix_fmt==MatrixFormat::REDUCED && is_grp_sp) {
-      assert( ildgFormat_.rows == Nc/2 );
-    }
-    if (matrix_fmt==MatrixFormat::FULL) {
-      assert( ildgFormat_.rows == Nc );
-    }
+	  // check rows and Nc are related in the way we expect for each gauge group.
+	  if (matrix_fmt==MatrixFormat::REDUCED && is_grp_su) {
+	    assert( ildgFormat_.rows == Nc-1 );
+	  }
+	  if (matrix_fmt==MatrixFormat::REDUCED && is_grp_sp) {
+	    assert( ildgFormat_.rows == Nc/2 );
+	  }
+	  if (matrix_fmt==MatrixFormat::FULL) {
+	    assert( ildgFormat_.rows == Nc );
+	  }
 
 	  assert( ildgFormat_.lx == dims[0]);
 	  assert( ildgFormat_.ly == dims[1]);
@@ -963,11 +966,10 @@ class IldgReader : public GridLimeReader {
 	//	std::cout << GridLogMessage << "ILDG Binary record found : "  ILDG_BINARY_DATA << std::endl;
 
 	uint64_t offset= ftello(File);
-  
-  readLatticeBinaryObject<unique_su>(Umu, filename, fp_fmt, matrix_fmt, is_grp_su, is_grp_sp, offset, nersc_csum, scidac_csuma, scidac_csumb); 
+
+	readLatticeBinaryObject<unique_su>(Umu, filename, fp_fmt, matrix_fmt, is_grp_su, is_grp_sp, offset, nersc_csum, scidac_csuma, scidac_csumb); 
 
 	found_ildgBinary = 1;
-
       }
 
     }
