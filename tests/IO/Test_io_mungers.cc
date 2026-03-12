@@ -33,17 +33,17 @@ using namespace Grid;
 
 // tests to check the various (un)munger classes 
 // and functions in parallelIO/Metadata.h
-bool check_reconstruct3();
-bool check_reconstructSU();
-bool check_is_perm_even();
-bool check_unique_reconstructSU();
-bool checkGauge3x2mungers();
-bool checkGaugeSUmungers();
-bool check_reconstructSp();
-bool checkGaugeSpmungers();
-bool checkBinarySimpleMungers();
-bool checkGaugeSimpleMungers();
-bool checkGaugeDoubleStoredMungers();
+void check_reconstruct3();
+void check_reconstructSU();
+void check_is_perm_even();
+void check_unique_reconstructSU();
+void checkGauge3x2mungers();
+void checkGaugeSUmungers();
+void check_reconstructSp();
+void checkGaugeSpmungers();
+void checkBinarySimpleMungers();
+void checkGaugeSimpleMungers();
+void checkGaugeDoubleStoredMungers();
 
 void mock_SU_field();
 void mock_Sp_field();
@@ -97,7 +97,7 @@ void mock_Sp_field( ColourMatrixD &cm, std::vector<int> seed ) {
 }
 ////////////////////////////////////////////
 
-bool check_reconstruct3() {
+void check_reconstruct3() {
 
   ColourMatrixD SU3_xfield, SU3_yfield, SU3_zfield, SU3_tfield;
 
@@ -131,11 +131,9 @@ bool check_reconstruct3() {
     assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-12 );
   }
 
-  return true;
-
 }
 
-bool check_reconstructSU() {
+void check_reconstructSU() {
 
   ColourMatrixD SUN_xfield, SUN_yfield, SUN_zfield, SUN_tfield;
 
@@ -169,11 +167,9 @@ bool check_reconstructSU() {
     assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-12 );
   }
 
-  return true;
-
 }
 
-bool check_is_perm_even() {
+void check_is_perm_even() {
 
   std::vector<int> v = {0,1,2,3};
   int count = 0;
@@ -189,12 +185,10 @@ bool check_is_perm_even() {
       }
     }
   }      
- 
-  return true;
 
 }
 
-bool check_unique_reconstructSU() {
+void check_unique_reconstructSU() {
 
   ColourMatrixD SUN_xfield, SUN_yfield, SUN_zfield, SUN_tfield;
 
@@ -228,11 +222,9 @@ bool check_unique_reconstructSU() {
     assert( norm2( new_cm*adj(new_cm)-1.0 ) < 1e-12 );
   }
 
-  return true;
-
 }
 
-bool checkGauge3x2mungers() {
+void checkGauge3x2mungers() {
 
   ColourMatrixD SU3_xfield, SU3_yfield, SU3_zfield, SU3_tfield;
 
@@ -261,12 +253,10 @@ bool checkGauge3x2mungers() {
   // round-trip test
   assert(norm2(scalar_recon-scalar)<1e-10);
 
-  return true;
-
 }
 
 template<bool unique_su>
-bool checkGaugeSUmungers() {
+void checkGaugeSUmungers() {
 
   ColourMatrixD SUN_xfield, SUN_yfield, SUN_zfield, SUN_tfield;
 
@@ -295,12 +285,10 @@ bool checkGaugeSUmungers() {
   // round-trip test
   assert(norm2(scalar_recon-scalar)<1e-12);
 
-  return true;
-
 }
 
 
-bool check_reconstructSp() {
+void check_reconstructSp() {
 
   ColourMatrixD Sp_xfield, Sp_yfield, Sp_zfield, Sp_tfield;
   Sp_xfield = Sp_yfield = Sp_zfield = Sp_tfield = Zero();
@@ -332,11 +320,9 @@ bool check_reconstructSp() {
     }
   }
 
-  return true;
-
 }
 
-bool checkGaugeSpmungers() {
+void checkGaugeSpmungers() {
 
   ColourMatrixD Sp_xfield, Sp_yfield, Sp_zfield, Sp_tfield;
   Sp_xfield = Sp_yfield = Sp_zfield = Sp_tfield = Zero();
@@ -368,12 +354,10 @@ bool checkGaugeSpmungers() {
   // round-trip test
   assert(scalar==scalar_recon);
 
-  return true;
-
 }
 
 
-bool checkBinarySimpleMungers() {
+void checkBinarySimpleMungers() {
 
   LorentzColourMatrixF in_scalar_objectF;  // single precision
   LorentzColourMatrixF out_scalar_objectF = Zero();  
@@ -432,12 +416,10 @@ bool checkBinarySimpleMungers() {
   // lose exactness when going from double-->single precision
   assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
-  return true;
-
 }
 
 // these are used in NerscIO.h
-bool checkGaugeSimpleMungers() {
+void checkGaugeSimpleMungers() {
 
   LorentzColourMatrixF in_scalar_objectF;  // single precision
   LorentzColourMatrixF out_scalar_objectF = Zero(); 
@@ -496,11 +478,9 @@ bool checkGaugeSimpleMungers() {
   // lose exactness when going from double-->single precision
   assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
-  return true;
-
 }
 
-bool checkGaugeDoubleStoredMungers() {
+void checkGaugeDoubleStoredMungers() {
 
   DoubleStoredColourMatrixF in_scalar_objectF;  // single precision
   DoubleStoredColourMatrixF out_scalar_objectF = Zero(); 
@@ -559,8 +539,6 @@ bool checkGaugeDoubleStoredMungers() {
   // lose exactness when going from double-->single precision
   assert(norm2( in_scalar_objectD - out_scalar_objectD ) < 1e-10);
 
-  return true;
-
 }
 
 
@@ -571,62 +549,52 @@ int main (int argc, char ** argv)
   
   std::cout <<GridLogMessage<< " main "<<std::endl;
 
-  if( check_is_perm_even() ) {
-    std::cout << GridLogMessage << "is_perm_even: PASS" << std::endl;
-  }
+  std::cout << GridLogMessage << "is_perm_even: PASS" << std::endl;
+	check_is_perm_even();
 
   std::cout <<GridLogMessage<< "Testing SU(" << Nc << ") mungers..." << std::endl;
   if constexpr(Nc>1 && Nc<4) {  
-    if( check_reconstruct3() ) {
-      std::cout << GridLogMessage << "reconstruct3: PASS" << std::endl;
-    } 
+    check_reconstruct3();
+    std::cout << GridLogMessage << "reconstruct3: PASS" << std::endl;
     
-    if( checkGauge3x2mungers() ) {
-      std::cout << GridLogMessage << "Gauge3x2mungers: PASS" << std::endl;
-    }
+    checkGauge3x2mungers();
+    std::cout << GridLogMessage << "Gauge3x2mungers: PASS" << std::endl;
   }
 
-  if( check_reconstructSU() ) {
-    std::cout << GridLogMessage << "reconstructSU: PASS" << std::endl;
-  }
-  if( checkGaugeSUmungers<false>() ) {
-    std::cout << GridLogMessage << "(unique_su=false) GaugeSUmungers: PASS" << std::endl;
-  }
-
-  if( check_unique_reconstructSU() ) {
-    std::cout << GridLogMessage << "unique_reconstructSU: PASS" << std::endl;
-  }
-  if( checkGaugeSUmungers<true>() ) {
-    std::cout << GridLogMessage << "(unique_su=true) GaugeSUmungers: PASS" << std::endl;
-  }
+  check_reconstructSU();
+  std::cout << GridLogMessage << "reconstructSU: PASS" << std::endl;
+  
+  checkGaugeSUmungers<false>();
+  std::cout << GridLogMessage << "(unique_su=false) GaugeSUmungers: PASS" << std::endl;
+  
+  check_unique_reconstructSU();
+  std::cout << GridLogMessage << "unique_reconstructSU: PASS" << std::endl;
+  
+  checkGaugeSUmungers<true>();
+  std::cout << GridLogMessage << "(unique_su=true) GaugeSUmungers: PASS" << std::endl;
 
   if constexpr(Nc>2 && Nc%2==0) {
     std::cout <<GridLogMessage<< "Testing Sp(" << Nc << ") mungers..." << std::endl;
 
-    if( check_reconstructSp() ) {
-      std::cout << GridLogMessage << "reconstructSp: PASS" << std::endl;
-    }
-
-    if ( checkGaugeSpmungers() ) {
-      std::cout << GridLogMessage << "GaugeSpmungers: PASS" << std::endl;
-    }
-
+    check_reconstructSp();
+    std::cout << GridLogMessage << "reconstructSp: PASS" << std::endl;
+    
+    checkGaugeSpmungers();
+    std::cout << GridLogMessage << "GaugeSpmungers: PASS" << std::endl;
   }
 
   std::cout << GridLogMessage << "Testing BinarySimple mungers..." << std::endl;
-  if( checkBinarySimpleMungers() ) {
-    std::cout << GridLogMessage << "BinarySimpleMungers: PASS" << std::endl;
-  }
+  checkBinarySimpleMungers();
+  std::cout << GridLogMessage << "BinarySimpleMungers: PASS" << std::endl;
+  
 
   std::cout << GridLogMessage << "Testing GaugeSimple mungers..." << std::endl;
-  if( checkGaugeSimpleMungers() ) {
-    std::cout << GridLogMessage << "GaugeSimpleMungers: PASS" << std::endl;
-  }
-
+  checkGaugeSimpleMungers();
+  std::cout << GridLogMessage << "GaugeSimpleMungers: PASS" << std::endl;
+  
   std::cout << GridLogMessage << "Testing GaugeDoubleStored mungers..." << std::endl;
-  if( checkGaugeDoubleStoredMungers() ) {
-    std::cout << GridLogMessage << "GaugeDoubleStoredMungers: PASS" << std::endl;
-  }
+  checkGaugeDoubleStoredMungers();
+  std::cout << GridLogMessage << "GaugeDoubleStoredMungers: PASS" << std::endl;
 
   Grid_finalize();
 #endif
