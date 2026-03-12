@@ -220,16 +220,16 @@ inline void reconstruct3(LorentzColourMatrix & cm)
 // the elements of the final row of an SU(N) matrix
 // can be obtained from the determinants of the N N-1 by N-1 matrices
 // formed by deleting each column and the Nth row of the SU(N) matrix.
-// 1) create a ColourMatrixNm object to store the N-1 dim matrix.
+// 1) create a ColourSubMatrix object to store the N-1 dim matrix.
 // 2) peek the colour matrix in a particular direction. 
-// 3) fill the ColourMatrixNm object from the peeked matrix.
+// 3) fill the ColourSubMatrix object from the peeked matrix.
 // 4) take the Determinant and fill the corresponding element
 // 5) repeat for each Lorentz index 
 inline void reconstructSU(LorentzColourMatrix &cm)
 {
-  using ColourMatrixNm = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
+  using ColourSubMatrix = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
 
-  ColourMatrixNm Su; // for the Nc-1 by Nc-1 matrix
+  ColourSubMatrix Su; // for the Nc-1 by Nc-1 matrix
   ColourMatrix SU;   // for the Nc-1 by N matrix read from disk
 
   for(int mu=0; mu<Nd; mu++) {
@@ -248,7 +248,10 @@ inline void reconstructSU(LorentzColourMatrix &cm)
   }
 }
 
-
+// this function determines if a sequence of integers {i0...ik}
+// is an even or odd parity permutation. even/odd if the number of 
+// inversions needed to get back to the lexicographic 1st sequence is
+// even or odd. ex: {1,2,0} --> {1,0,2} --> {0,1,2} implies {1,2,0} is even. 
 bool is_perm_even(std::vector<int> &v) {
 
     int n = v.size();
@@ -274,42 +277,42 @@ bool is_perm_even(std::vector<int> &v) {
     }
 }
 
-
-///////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////
 //
 //  this function follows the prescription laid out by the
-//  ildg spec (linked in the comment to reconstrucSp), 
-//  forming a sum of products in lexicographic order.
+//  ildg spec, forming a sum of products in lexicographic order.
 //
 // SU[N-1][k] = sum ( SU[0][i0].SU[1][i1]...SU[N-2][iN-2] )*
 //         {i0...iN-2!=k}
 //
-///////////////////////////////////////////////////////////
+// see appendix A.2 of
+// https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
+/////////////////////////////////////////////////////////////
 inline void unique_reconstructSU(LorentzColourMatrix &cm)
 {
 
-  std::vector<int> v(Nc);
-  std::iota(v.begin(), v.end(), 0); // {0,1,...,Nc-1}
+  std::vector<int> indices(Nc);
+  std::iota(indices.begin(), indices.end(), 0); // {0,1,...,Nc-1}
 
   for(int mu=0; mu<Nd; mu++) {
     for(int k=0; k<Nc; k++) {
-      std::vector<int> c = v;
-      c.erase(c.begin()+k);     // {0,...,k-1,k+1,...Nc-1}
+      std::vector<int> cols = indices;
+      cols.erase(cols.begin()+k);     // {0,...,k-1,k+1,...Nc-1}
       cm(mu)()(Nc-1,k) = 0;
-      // cycle through perms of c
+			// construct sum of products
+      // as we cycle through permutations of cols
       do
       {
-        std::vector<int> P = c;
-        P.emplace_back(k);
-        bool E = is_perm_even(P);
+        std::vector<int> perm = cols;
+        perm.emplace_back(k);
         ComplexD prod(1,0);
         for(int i=0;i<Nc-1;i++) {
-          prod *= cm(mu)()(i,c[i]) ;
+          prod *= cm(mu)()(i,cols[i]) ;
         }
-        if(E) { cm(mu)()(Nc-1,k) += conjugate(prod); }
-        else  { cm(mu)()(Nc-1,k) -= conjugate(prod); }
+        if( is_perm_even(perm) ) { cm(mu)()(Nc-1,k) += conjugate(prod); }
+        else  									 { cm(mu)()(Nc-1,k) -= conjugate(prod); }
       }
-      while (std::next_permutation(c.begin(), c.end())); 
+      while (std::next_permutation(cols.begin(), cols.end())); 
     }
   }
 }
@@ -469,7 +472,7 @@ struct Gauge3x2unmunger{
 template<class fobj,class sobj, bool unique_su>
 struct GaugeSUmunger;
 // two specialisations for two ways to reconstruct
-// NcxNc matrix from Nc-1xNc matrix
+// NcxNc matrix from (Nc-1)xNc matrix
 
 template<class fobj,class sobj>
 struct GaugeSUmunger<fobj,sobj,false>{
