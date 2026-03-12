@@ -897,6 +897,8 @@ class IldgReader : public GridLimeReader {
 	  matrix_fmt = (ildgFormat_.rows < Nc) ? MatrixFormat::REDUCED : MatrixFormat::FULL;
 	  if( !strncmp(ildgFormat_.field.c_str(),"su",2) ) { is_grp_su = true; }
 	  if( !strncmp(ildgFormat_.field.c_str(),"sp",2) ) { is_grp_sp = true; }
+	  // check if field element corresponds to either su or sp
+	  assert( is_grp_su || is_grp_sp );
     
 	  // check rows and Nc are related in the way we expect for each gauge group.
 	  if (matrix_fmt==MatrixFormat::REDUCED && is_grp_su) {
