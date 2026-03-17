@@ -65,7 +65,10 @@ public:
                 << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64"
                 << std::endl;
 
-      exit(1);
+    if (!(Params.group=="su" || Params.group=="sp")) {
+      std::cout << GridLogError << "Unrecognized file format " << Params.group << std::endl;
+    }
+       exit(1);
     }
   }
 
@@ -86,10 +89,41 @@ public:
 		<< scidac_csumb
 		<< std::dec << std::endl;
 
-      
+
       IldgWriter _IldgWriter(grid->IsBoss());
       _IldgWriter.open(config);
-      _IldgWriter.writeConfiguration<GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+
+      if(Params.format=="IEEE64BIG") {
+        if(Params.group=="su" && Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else if (Params.group=="su" && !Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else if (Params.group=="sp" && Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else if (Params.group=="sp" && !Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else { assert(0); }
+      }
+      else if (Params.format=="IEEE32BIG") {
+         if(Params.group=="su" && Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else if (Params.group=="su" && !Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else if (Params.group=="sp" && Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else if (Params.group=="sp" && !Params.reduced_matrix) {
+          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
+        }
+        else { assert(0); }
+      }
+
       _IldgWriter.close();
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
@@ -123,15 +157,18 @@ public:
     this->check_filename(rng);
     this->check_filename(config);
 
-    
-
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     BinaryIO::readRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
 
     FieldMetaData header;
     IldgReader _IldgReader;
     _IldgReader.open(config);
-    _IldgReader.readConfiguration<GaugeStats>(U,header);  // format from the header
+
+    if(Params.unique_su) {
+    _IldgReader.readConfiguration<true, GaugeStats>(U,header);// format from the header
+    }
+    else { _IldgReader.readConfiguration<false, GaugeStats>(U,header); }
+
     _IldgReader.close();
 
     std::cout << GridLogMessage << "Read ILDG Configuration from " << config

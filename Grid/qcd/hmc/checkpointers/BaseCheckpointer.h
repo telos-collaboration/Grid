@@ -39,15 +39,20 @@ public:
 				  std::string, rng_prefix, 
 				  int, saveInterval, 
 				  bool, saveSmeared, 
-				  std::string, format, );
+				  std::string, format, 
+				  std::string, group, 
+				  bool, reduced_matrix, 
+				  bool, unique_su, ); 
 
-  CheckpointerParameters(std::string cf = "cfg", std::string sf="cfg_smr" , std::string rn = "rng",
-			 int savemodulo = 1, const std::string &f = "IEEE64BIG")
+  CheckpointerParameters(std::string cf = "cfg", std::string sf="cfg_smr" , std::string rn = "rng", int savemodulo = 1, const std::string& f = "IEEE64BIG", std::string grp = "su", bool rdc_mat = true, bool unq_su = false)
     : config_prefix(cf),
       smeared_prefix(sf),
       rng_prefix(rn),
       saveInterval(savemodulo),
-      format(f){};
+      format(f),
+      group(grp),
+      reduced_matrix(rdc_mat),
+      unique_su(unq_su) {};
 
 
   template <class ReaderClass >
