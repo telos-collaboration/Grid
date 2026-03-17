@@ -632,7 +632,7 @@ class IldgWriter : public ScidacWriter {
   // Don't require scidac records EXCEPT checksum
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class group_name = GroupName::SU, MatrixFormat matrix_fmt = MatrixFormat::FULL, FloatingPointFormat fp_fmt = FloatingPointFormat::IEEE64BIG, class stats = PeriodicGaugeStatistics, class vobj>
+  template <class stats = PeriodicGaugeStatistics, class group_name = GroupName::SU, MatrixFormat matrix_fmt = MatrixFormat::FULL, FloatingPointFormat fp_fmt = FloatingPointFormat::IEEE64BIG, class vobj>
   void writeConfiguration(Lattice<vobj> &Umu, int sequence, std::string LFN, std::string description) 
   {
     GridBase * grid = Umu.Grid();
@@ -797,7 +797,7 @@ class IldgReader : public GridLimeReader {
   // Else use ILDG MetaData object if present.
   // Else use SciDAC MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <bool unique_su = false, class stats = PeriodicGaugeStatistics, class vobj>
+  template <class stats = PeriodicGaugeStatistics, bool unique_su = false, class vobj>
   void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_) {
 
     GridBase *grid = Umu.Grid();
@@ -828,9 +828,9 @@ class IldgReader : public GridLimeReader {
     // these variables store information about the lattice that is read
     // from its ildg-format header. if matrix_fmt==MatrixFormat::REDUCED 
     // then Grid will reconstruct the full matrix using the appropriate munger.
-    MatrixFormat matrix_fmt;
     bool is_grp_su = false;
     bool is_grp_sp = false;
+    MatrixFormat matrix_fmt;
     // Binary format
     std::string format;
     FloatingPointFormat fp_fmt;
