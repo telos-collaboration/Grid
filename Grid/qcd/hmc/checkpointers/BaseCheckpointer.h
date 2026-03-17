@@ -44,11 +44,12 @@ public:
 				  bool, reduced_matrix, 
 				  bool, unique_su, ); 
 
-  CheckpointerParameters(std::string cf = "cfg", std::string sf="cfg_smr" , std::string rn = "rng", int savemodulo = 1, const std::string& f = "IEEE64BIG", std::string grp = "su", bool rdc_mat = true, bool unq_su = false)
+  CheckpointerParameters(std::string cf = "cfg", std::string sf="cfg_smr" , std::string rn = "rng", int savemodulo = 1, bool save_smr = false, const std::string& f = "IEEE64BIG", std::string grp = "su", bool rdc_mat = false, bool unq_su = false)
     : config_prefix(cf),
       smeared_prefix(sf),
       rng_prefix(rn),
       saveInterval(savemodulo),
+      saveSmeared(save_smr),
       format(f),
       group(grp),
       reduced_matrix(rdc_mat),
