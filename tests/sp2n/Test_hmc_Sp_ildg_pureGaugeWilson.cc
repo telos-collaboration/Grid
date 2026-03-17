@@ -48,18 +48,18 @@ int main(int argc, char **argv)
   CPparams.rng_prefix = "ckpoint/rng";
   CPparams.smeared_prefix = "ckpoint/smr";
   CPparams.saveInterval = 5;
-  CPparams.format = "IEEE64BIG";
+  CPparams.format = "IEEE32BIG";
+  //CPparams.saveSmeared = false;
 
   // Ildg specific parameters
   CPparams.group = "sp";
   CPparams.reduced_matrix = true;
-  CPparams.unique_su = false;
   
   TheHMC.Resources.LoadILDGCheckpointer(CPparams);
 
   RNGModuleParameters RNGpar;
-  RNGpar.serial_seeds = "12 22 32 42 52";
-  RNGpar.parallel_seeds = "76 77 87 79 70";
+  RNGpar.serial_seeds = "55 1 37 3 97 8";
+  RNGpar.parallel_seeds = "4 8 15 16 23 42";
   TheHMC.Resources.SetRNGSeeds(RNGpar);
 
   // Construct observables
@@ -72,8 +72,6 @@ int main(int argc, char **argv)
   TopParams.do_smearing = true;
   TopParams.Smearing.init_step_size = 0.01;
   TopParams.Smearing.tolerance = 1e-5;
-  //TopParams.Smearing.steps = 200;
-  //TopParams.Smearing.step_size = 0.01;
   TopParams.Smearing.meas_interval = 50;
   TopParams.Smearing.maxTau = 2.0; 
   TheHMC.Resources.AddObservable<QObs>(TopParams);
@@ -89,7 +87,6 @@ int main(int argc, char **argv)
   
   ActionLevel<HMCWrapper::Field> Level1(1);
   Level1.push_back(&Waction);
-  //Level1.push_back(WGMod.getPtr());
   TheHMC.TheAction.push_back(Level1);
   /////////////////////////////////////////////////////////////
 
@@ -98,7 +95,7 @@ int main(int argc, char **argv)
   TheHMC.Parameters.MD.trajL   = 1.0;
 
   TheHMC.ReadCommandLine(argc, argv); // these can be parameters from file
-  TheHMC.Run();  // no smearing
+  TheHMC.Run();  
 
   Grid_finalize();
 
