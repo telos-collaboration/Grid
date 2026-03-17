@@ -64,11 +64,12 @@ public:
       std::cout << GridLogError
                 << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64"
                 << std::endl;
-
-    if (!(Params.group=="su" || Params.group=="sp")) {
-      std::cout << GridLogError << "Unrecognized file format " << Params.group << std::endl;
     }
-       exit(1);
+
+    if ( !((Params.group == std::string("su")) || (Params.group == std::string("sp"))) ) {
+      std::cout << GridLogError << "Unrecognized gauge group " << Params.group << std::endl;
+      std::cout << GridLogError << "Allowed: su | sp" << std::endl;
+      exit(1);
     }
   }
 
