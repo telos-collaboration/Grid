@@ -76,12 +76,14 @@ void writeReadIldgConfiguration( LatticeGaugeField &Umu, GridCartesian &Grid, st
     return;
   } 
 
+  using stats = PeriodicGaugeStatistics;
+
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::cout <<GridLogMessage<<"*** Writing out ILDG cfg ***"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   IldgWriter _IldgWriter(Grid.IsBoss());
   _IldgWriter.open(file);
-  _IldgWriter.writeConfiguration<gaugeGroup, matrix_fmt, fp_fmt>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
+  _IldgWriter.writeConfiguration<stats, gaugeGroup, matrix_fmt, fp_fmt>(Umu,4000,std::string("dummy_ildg_LFN"),std::string("dummy_config"));
   _IldgWriter.close();
 
   LatticeGaugeField Umu_saved(&Grid);
@@ -93,7 +95,7 @@ void writeReadIldgConfiguration( LatticeGaugeField &Umu, GridCartesian &Grid, st
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   IldgReader _IldgReader;
   _IldgReader.open(file);
-  _IldgReader.readConfiguration<unique_su>(Umu_saved, header);
+  _IldgReader.readConfiguration<stats, unique_su>(Umu_saved, header);
   _IldgReader.close();
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2((Umu_saved-Umu))<<std::endl;
 }
