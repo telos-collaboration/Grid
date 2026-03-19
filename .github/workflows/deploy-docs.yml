@@ -45,7 +45,7 @@ jobs:
       - name: Build Doxygen
         run: |
           ./bootstrap.sh
-          ./configure --enable-doxygen-doc
+          ./configure --without-mpfr --enable-doxygen-doc
           make doxygen-doc
 
       - name: Assemble site
