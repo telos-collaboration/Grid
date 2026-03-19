@@ -1,4 +1,5 @@
 # additional include paths necessary to compile the C++ library
+AUTOMAKE_OPTIONS = foreign
 SUBDIRS = Grid  benchmarks tests examples HMC
 
 include $(top_srcdir)/doxygen.inc

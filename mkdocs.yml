@@ -16,5 +16,6 @@ plugins:
 nav:
   - Home: README.md
   - Licence: LICENCE.md
+  - dev: dev/index.md
   
 theme: readthedocs

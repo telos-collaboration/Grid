@@ -42,19 +42,17 @@ jobs:
       - name: Build User Docs
         run: mkdocs build
 
-#      - name: Build Doxygen
-#        working-directory: doxygen
-#        run: |
-#          ./bootstrap
-#         ./configure --enable-doxygen-doc
-#         make doxygen-doc
+      - name: Build Doxygen
+        run: |
+          ./bootstrap.sh
+          ./configure --enable-doxygen-doc
+          make doxygen-doc
 
-#      - name: Assemble site
-#        run: |
-#          mkdir -p site/dev
-#          cp -r doxygen-doc/html/. site/dev/
-#          # Prevent GitHub Pages from processing output through Jekyll
-#          touch site/.nojekyll
+      - name: Assemble site
+        run: |
+          cp -r doxygen-doc/html/. site/dev/
+          # Prevent GitHub Pages from processing output through Jekyll
+          touch site/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
