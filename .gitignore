@@ -1,6 +1,7 @@
 # Doxygen stuff
 html/*
 latex/*
+doxygen-doc/*
 
 # Compiled Object files #
 #########################
