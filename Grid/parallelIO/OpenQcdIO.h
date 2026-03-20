@@ -26,6 +26,10 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+/*! \file OpenQcdIO.h
+ *  \brief defines classes and functions for reading/writing OpenQcd format lattices.
+ *  \details
+ */
 #pragma once
 
 NAMESPACE_BEGIN(Grid);

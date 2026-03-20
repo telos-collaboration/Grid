@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_nersc_io.cc
+    Source file: ./tests/Test_ildg_read.cc
 
     Copyright (C) 2015
 
@@ -27,6 +27,9 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+/*! \file Test_ildg_read.cc
+ *  \brief tests whether IldgReader can read an ildg-format lattice correctly. 
+ */
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -52,6 +55,7 @@ int main (int argc, char ** argv)
   std::vector<LatticeColourMatrix> U(4,&Fine);
   
   FieldMetaData header;
+  /*! \remark this test requires a file ildg.file to already be present in the pwd */
   std::string file("./ildg.file");
   IldgReader IR;
   IR.open(file);
