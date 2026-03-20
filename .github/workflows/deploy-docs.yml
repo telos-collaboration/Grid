@@ -2,7 +2,7 @@ name: Deploy Documentation
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     branches: ["**"]
@@ -25,9 +25,6 @@ jobs:
     steps:
       - name: Checkout (with submodules)
         uses: actions/checkout@v5
-
-#      - name: Install Doxygen and Graphviz
-#        run: sudo apt-get install -y doxygen graphviz
 
       - name: Install Doxygen and Graphviz
         uses: ssciwr/doxygen-install@v2.0.1
