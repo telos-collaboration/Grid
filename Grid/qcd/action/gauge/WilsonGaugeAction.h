@@ -33,14 +33,28 @@ directory
 #ifndef QCD_WILSON_GAUGE_ACTION_H
 #define QCD_WILSON_GAUGE_ACTION_H
 
+/*! \file
+ *
+ */
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
 ////////////////////////////////////////////////////////////////////////
 // Wilson Gauge Action .. should I template the Nc etc..
 ////////////////////////////////////////////////////////////////////////
 template <class Gimpl>
-class WilsonGaugeAction : public Action<typename Gimpl::GaugeField> {
-public:  
+class WilsonGaugeAction : public Action<typename Gimpl::GaugeField>
+/*! @brief The Wilson gauge action,
+ * as introduced in Wilson, Phys. Rev. D 10, 2445.
+ * See for example Gattringer and Lang, Eq. (3.4).
+ *
+ * Expects a single parameter encoding the gauge coupling.
+ * @param Gimpl: The gauge implementation.
+ */
+{
+public:
+  /*! @brief All attributes of the gauge implementation are available from the action */
   INHERIT_GIMPL_TYPES(Gimpl);
 
   using Action<GaugeField>::S;
@@ -48,7 +62,11 @@ public:
   using Action<GaugeField>::deriv;
   using Action<GaugeField>::refresh;
   
-  /////////////////////////// constructors
+  /*! @brief Construct a Wilson gauge action.
+   * @param beta_: The inverse coupling \f$\beta\f$,
+   * Note that this is defined as \f$6 / g^2\f$ for all ``Nc``,
+   * **not** \f$2N_c / g^2\f$ as in Gattringer and Lang Eg. (3.93).
+   */
   explicit WilsonGaugeAction(RealD beta_):beta(beta_){};
 
   virtual std::string action_name() {return "WilsonGaugeAction";}
@@ -59,8 +77,11 @@ public:
     return sstream.str();
   }
 
+  /*! @brief Gauge fields do not have pseudofermions, so this is a no-op */
   virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};  // noop as no pseudoferms
 
+  /*! @brief The Wilson gauge action itself; see Gattringer and Lang Eq. (3.4)
+   * @param U: The gauge field on which to compute the action. */
   virtual RealD S(const GaugeField &U) {
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
     RealD vol = U.Grid()->gSites();
@@ -68,6 +89,10 @@ public:
     return action;
   };
 
+  /*! @brief The derivative of the Wilson gauge action
+   * @param U: The gauge field on which to compute the derivative
+   * @param dSdU: Output field into which to write the derivative
+   */
   virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
     // not optimal implementation FIXME
     // extend Ta to include Lorentz indexes
@@ -91,8 +116,10 @@ public:
   }
 
 private:
-  RealD beta;  
+  RealD beta;  ///< @brief The gauge coupling \f$6 / g^2\f$
  };
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
+/// \endcond
 #endif
