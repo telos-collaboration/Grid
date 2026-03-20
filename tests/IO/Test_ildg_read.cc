@@ -36,9 +36,6 @@ using namespace std;
 using namespace Grid;
  ;
 
-/*! \page Test_ildg_read.cc Reading ILDG Lattices
- *  \include Test_ildg_io.cc
- */
 int main (int argc, char ** argv)
 {
 #ifdef HAVE_LIME
