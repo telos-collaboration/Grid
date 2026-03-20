@@ -1,11 +1,17 @@
 #!/bin/sh
 
+## Generate instantiations of fermion types used in Grid.
+## See also README.md
+
+## Implementations to instantiate staggered fermions for
 STAG_IMPL_LIST=" \
 	   StaggeredImplF \
 	   StaggeredImplD  "
 
+## Implementations to instantiate five-dimensional staggered fermions for
 STAG5_IMPL_LIST=""
 
+## Implementations to instantiate Wilson fermions for
 WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD \
@@ -25,11 +31,12 @@ WILSON_IMPL_LIST=" \
 	   GparityWilsonImplF \
 	   GparityWilsonImplD "
 
+## Implementations to instantiate compact Wilson fermions for
 COMPACT_WILSON_IMPL_LIST=" \
 	   WilsonImplF \
 	   WilsonImplD "
 
-
+## Implementations to instantiate domain wall fermions for
 DWF_IMPL_LIST=" \
            SpWilsonImplF \
            SpWilsonImplD \
@@ -39,10 +46,12 @@ DWF_IMPL_LIST=" \
            ZWilsonImplF \
            ZWilsonImplD2 "
 
+## Implementations to instantiate G-parity domain wall fermions for
 GDWF_IMPL_LIST=" \
 	   GparityWilsonImplF \
 	   GparityWilsonImplD "
 
+## All implementations to generate
 IMPL_LIST="$STAG_IMPL_LIST  $WILSON_IMPL_LIST $DWF_IMPL_LIST $GDWF_IMPL_LIST"
 
 for impl in $IMPL_LIST
@@ -55,6 +64,7 @@ EOF
 
 done
 
+## Wilson fermion instantiations to generate
 CC_LIST="WilsonCloverFermionInstantiation WilsonFermionInstantiation WilsonKernelsInstantiation WilsonTMFermionInstantiation"
 
 for impl in $WILSON_IMPL_LIST
@@ -65,6 +75,7 @@ do
 done
 done
 
+## Compact Wilson clover instantiations to generate
 CC_LIST="CompactWilsonCloverFermionInstantiation CompactWilsonCloverFermion5DInstantiation"
 
 for impl in $COMPACT_WILSON_IMPL_LIST
@@ -75,6 +86,7 @@ do
 done
 done
 
+## Domain wall fermion instantiations to generate
 CC_LIST=" \
   CayleyFermion5DInstantiation \
   ContinuedFractionFermion5DInstantiation \
@@ -98,7 +110,7 @@ do
   ln -f -s ../WilsonKernelsInstantiationGparity.cc.master $impl/WilsonKernelsInstantiation$impl.cc
 done
 
-
+## Staggered fermion instantiations to generate
 CC_LIST=" \
   ImprovedStaggeredFermion5DInstantiation \
   ImprovedStaggeredFermionInstantiation \
@@ -113,6 +125,7 @@ do
 done
 done
 
+## Five-dimensional staggered fermion instantiations to **not** generate
 CC_LIST=" \
   ImprovedStaggeredFermion5DInstantiation \
   StaggeredKernelsInstantiation "
