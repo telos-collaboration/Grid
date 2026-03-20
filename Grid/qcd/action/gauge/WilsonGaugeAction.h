@@ -54,7 +54,9 @@ class WilsonGaugeAction : public Action<typename Gimpl::GaugeField>
  */
 {
 public:
-  /*! @brief All attributes of the gauge implementation are available from the action */
+  /*! @brief All attributes of the gauge implementation are available from the action.
+   * See GaugeImplTypes.h
+   */
   INHERIT_GIMPL_TYPES(Gimpl);
 
   using Action<GaugeField>::S;
