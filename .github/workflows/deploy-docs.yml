@@ -26,8 +26,14 @@ jobs:
       - name: Checkout (with submodules)
         uses: actions/checkout@v5
 
+#      - name: Install Doxygen and Graphviz
+#        run: sudo apt-get install -y doxygen graphviz
+
       - name: Install Doxygen and Graphviz
-        run: sudo apt-get install -y doxygen graphviz
+        uses: ssciwr/doxygen-install@v2.0.1
+        with:
+          version: "latest"
+
 
       - name: Set up Python
         uses: actions/setup-python@v5
