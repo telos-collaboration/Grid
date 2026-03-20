@@ -64,12 +64,10 @@ const int GRID_IO_FIELD      = 0; // hardcode lift from QIO compat
 const int GRID_IO_GLOBAL     = 1; // hardcode lift from QIO compat
 ////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////////
-// QIO uses mandatory "private" records fixed format
-// Private is in principle "opaque" however it can't be changed now because that would break existing 
-// file compatability, so should be correct to assume the undocumented but defacto file structure.
-/////////////////////////////////////////////////////////////////////////////////
-
+/*!
+ * \remarks QIO uses mandatory "private" records fixed format
+ * private is in principle "opaque" however it can't be changed now because that would break existing file compatability, so should be correct to assume the undocumented but defacto file structure.
+ */
 struct emptyUserRecord : Serializable { 
   GRID_SERIALIZABLE_CLASS_MEMBERS(emptyUserRecord,int,dummy);
   emptyUserRecord() { dummy=0; };

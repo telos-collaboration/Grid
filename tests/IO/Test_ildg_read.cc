@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_ildg_read.cc
+    Source file: ./tests/IO/Test_ildg_read.cc
 
     Copyright (C) 2015
 
@@ -36,7 +36,9 @@ using namespace std;
 using namespace Grid;
  ;
 
-
+/*! \page Test_ildg_read.cc Reading ILDG Lattices
+ *  \include Test_ildg_io.cc
+ */
 int main (int argc, char ** argv)
 {
 #ifdef HAVE_LIME
