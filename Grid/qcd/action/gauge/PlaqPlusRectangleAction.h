@@ -42,10 +42,15 @@ template<class Gimpl>
 class PlaqPlusRectangleAction : public Action<typename Gimpl::GaugeField>
 /*! @brief Plaquette plus rectangle actions
  *
- * The simplest way to add additional contributions to a gauge action
- * is in addition to the elementary plaquette used in the WilsonGaugeAction,
- * to additionally incorporate the next-smallest element,
- * the product of two adjacent plaquettes forming a rectangle in a common plane.
+ * The simplest gauge action,
+ * WilsonGaugeAction,
+ * is comprised only of elementary plaquettes,
+ * the product of links around the elementary \f$1\times1\f$ square.
+ *
+ * This class implements the next-simplest possible contribution,
+ * the product of links around the smallest rectangle;
+ * that is,
+ * the \f$1\times2\f$ planar rectangle formed of six links.
  *
  * This may be added with different coefficients for the two contributions,
  * called \f$b\f$ and \f$c\f$ here
