@@ -1,0 +1,10 @@
+/*! \page Test_ildg_read.cc Reading ILDG Lattices
+ *  \dontinclude{lineno} Test_ildg_read.cc
+ *  \skip HAVE_LIME
+ *  \until GridCartesian
+ *  We create an an instance of an \c IldgReader and pass it the filename of the
+ *  lattice we wish to read.
+ *  \skip IldgReader
+ *  \until close()
+ */
+
