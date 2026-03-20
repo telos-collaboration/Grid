@@ -38,10 +38,12 @@ rm -r */  # Note the trailing /; we only want to remove subdirectories
 ./generate_instantiations.sh
 ```
 
-If you require a type of fermion in your code that is not in the set instantiate here,
+If you require a type of fermion in your code
+that is not in the set instantiated here,
 you have two options:
 
 1. Follow the instructions above to expand the set,
+   optionally add `typedef`s to Fermion.h,
    then rebuild Grid.
 2. Explicitly instantiate the requisite fermion in your own code,
    using the same structure used here.
