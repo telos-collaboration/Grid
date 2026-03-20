@@ -29,43 +29,98 @@ directory
 #ifndef GRID_QCD_GAUGE_H
 #define GRID_QCD_GAUGE_H
 
+/*! \dir
+ * This directory contains implementations of a variety of discretisations of a non-Abelian gauge field.
+ * To get started,
+ * see Gauge.h.
+ */
+
+/*! \file
+ * # Lattice gauge fields
+ *
+ * This header `#include`s all relevant headers for gauge actions.
+ */
+
 #include <Grid/qcd/action/gauge/GaugeImplementations.h>
 #include <Grid/qcd/utils/WilsonLoops.h>
 #include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
 #include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
+/*! \name Wilson gauge action
+* See WilsonGaugeAction.h for more details. */
+/*! @{ */
+/*! \typedef Wilson gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision */
 typedef WilsonGaugeAction<PeriodicGimplR>          WilsonGaugeActionR;
+/*! \typedef Single-precision Wilson gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef WilsonGaugeAction<PeriodicGimplF>          WilsonGaugeActionF;
+/*! \typedef Double-precision Wilson gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef WilsonGaugeAction<PeriodicGimplD>          WilsonGaugeActionD;
+/*! \typedef Wilson gauge action for \f$Sp(2n)\f$, in default precision */
 typedef WilsonGaugeAction<SpPeriodicGimplR>        SpWilsonGaugeActionR;
+/*! \typedef Single-precision Wilson gauge action for \f$Sp(2n)\f$ */
 typedef WilsonGaugeAction<SpPeriodicGimplF>        SpWilsonGaugeActionF;
+/*! \typedef Double-precision Wilson gauge action for \f$Sp(2n)\f$ */
 typedef WilsonGaugeAction<SpPeriodicGimplD>        SpWilsonGaugeActionD;
+/*! @} */
+
+/*! \name Improved gauge actions
+ * See PlaqPlusRectangleAction.h for more details. */
+/*! @{ */
+/*! \typedef General plaquette plus rectangle gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision */
 typedef PlaqPlusRectangleAction<PeriodicGimplR>    PlaqPlusRectangleActionR;
+/*! \typedef Single-precision, general plaquette plus rectangle gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef PlaqPlusRectangleAction<PeriodicGimplF>    PlaqPlusRectangleActionF;
+/*! \typedef Double-precision, general plaquette plus rectangle gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef PlaqPlusRectangleAction<PeriodicGimplD>    PlaqPlusRectangleActionD;
+/*! \typedef Iwasaki gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision */
 typedef IwasakiGaugeAction<PeriodicGimplR>         IwasakiGaugeActionR;
+/*! \typedef Single-precision Iwasaki gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef IwasakiGaugeAction<PeriodicGimplF>         IwasakiGaugeActionF;
+/*! \typedef Double-precision Iwasaki gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef IwasakiGaugeAction<PeriodicGimplD>         IwasakiGaugeActionD;
+/*! \typedef Symanzik gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision */
 typedef SymanzikGaugeAction<PeriodicGimplR>        SymanzikGaugeActionR;
+/*! \typedef Single-precision Symanzik gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef SymanzikGaugeAction<PeriodicGimplF>        SymanzikGaugeActionF;
+/*! \typedef Double-precision Symanzik gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$ */
 typedef SymanzikGaugeAction<PeriodicGimplD>        SymanzikGaugeActionD;
+/*! @} */
 
-
+/*! \name Gauge actions with conjugated boundary conditions */
+/*! @{ */
+/*! \typedef Wilson gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision, with conjugated boundary conditions */
 typedef WilsonGaugeAction<ConjugateGimplR>          ConjugateWilsonGaugeActionR;
+/*! \typedef Single-precision Wilson gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
 typedef WilsonGaugeAction<ConjugateGimplF>          ConjugateWilsonGaugeActionF;
+/*! \typedef Double-precision Wilson gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
 typedef WilsonGaugeAction<ConjugateGimplD>          ConjugateWilsonGaugeActionD;
-typedef PlaqPlusRectangleAction<ConjugateGimplR>    ConjugatePlaqPlusRectangleActionR;
-typedef PlaqPlusRectangleAction<ConjugateGimplF>    ConjugatePlaqPlusRectangleActionF;
-typedef PlaqPlusRectangleAction<ConjugateGimplD>    ConjugatePlaqPlusRectangleActionD;
-typedef IwasakiGaugeAction<ConjugateGimplR>         ConjugateIwasakiGaugeActionR;
-typedef IwasakiGaugeAction<ConjugateGimplF>         ConjugateIwasakiGaugeActionF;
-typedef IwasakiGaugeAction<ConjugateGimplD>         ConjugateIwasakiGaugeActionD;
-typedef SymanzikGaugeAction<ConjugateGimplR>        ConjugateSymanzikGaugeActionR;
-typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeActionF;
-typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;
 
+/*! \typedef General plaquette plus rectangle gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision, with conjugated boundary conditions */
+typedef PlaqPlusRectangleAction<ConjugateGimplR>    ConjugatePlaqPlusRectangleActionR;
+/*! \typedef Single-precision, general plaquette plus rectangle gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
+typedef PlaqPlusRectangleAction<ConjugateGimplF>    ConjugatePlaqPlusRectangleActionF;
+/*! \typedef Double-precision, general plaquette plus rectangle gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
+typedef PlaqPlusRectangleAction<ConjugateGimplD>    ConjugatePlaqPlusRectangleActionD;
+/*! \typedef Iwasaki gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision, with conjugated boundary conditions */
+typedef IwasakiGaugeAction<ConjugateGimplR>         ConjugateIwasakiGaugeActionR;
+/*! \typedef Single-precision Iwasaki gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
+typedef IwasakiGaugeAction<ConjugateGimplF>         ConjugateIwasakiGaugeActionF;
+/*! \typedef Double-precision Iwasaki gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
+typedef IwasakiGaugeAction<ConjugateGimplD>         ConjugateIwasakiGaugeActionD;
+/*! \typedef Symanzik gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, in default precision, with conjugated boundary conditions */
+typedef SymanzikGaugeAction<ConjugateGimplR>        ConjugateSymanzikGaugeActionR;
+/*! \typedef Single-precision Symanzik gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
+typedef SymanzikGaugeAction<ConjugateGimplF>        ConjugateSymanzikGaugeActionF;
+/*! \typedef Double-precision Symanzik gauge action for \f$SU(N)\f$ or \f$Sp(2n)\f$, with conjugated boundary conditions */
+typedef SymanzikGaugeAction<ConjugateGimplD>        ConjugateSymanzikGaugeActionD;
+/*! @} */
+
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
+/// \endcond
 
 #endif
