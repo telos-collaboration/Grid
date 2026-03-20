@@ -80,7 +80,7 @@ public:
   }
 
   /*! @brief Gauge fields do not have pseudofermions, so this is a no-op */
-  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};  // noop as no pseudoferms
+  virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};
 
   /*! @brief The Wilson gauge action itself; see Gattringer and Lang Eq. (3.4)
    * @param U: The gauge field on which to compute the action. */
