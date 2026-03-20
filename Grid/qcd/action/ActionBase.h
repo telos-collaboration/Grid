@@ -161,8 +161,7 @@ public:
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;
   /*! @} */
 
-  /*! \name Methods working on smeared configuration containers
-   * Virtual smeared interface through configuration container.
+  /*! \name Methods working on smart configuration containers
    *
    * If ``is_smeared``, then these methods work on the smeared field;
    * otherwise, they work on the unsmeared field.
