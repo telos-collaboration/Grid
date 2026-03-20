@@ -40,8 +40,8 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
  * one should use instances of the relevant ``Action`` types for each term contributing to the action.
  * For example,
  * for 2+1 flavour QCD,
- * one would need one gauge action instance (e.g. ``WilsonGaugeAction``),
- * one a two-flavour pseudofermion action (e.g. ``TwoFlavourPseudoFermionAction``)
+ * one would need a gauge action instance (e.g. ``WilsonGaugeAction``),
+ * a two-flavour pseudofermion action (e.g. ``TwoFlavourPseudoFermionAction``)
  * for a given fermion action (e.g. ``MobiusFermionD``),
  * and a one-flavour pseudofermion action (e.g. ``OneFlavourRationalPseudoFermionAction``)
  * for the same fermion action.
