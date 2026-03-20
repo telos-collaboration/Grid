@@ -41,27 +41,27 @@ using namespace Grid;
  *  This test demonstrates how to use the IldgReader and IldgWriter classes provided by Grid and defined in parallelIO/IldgIO.h
  *  \subsection subsec1 Setting up Grid
  *  Note that the LIME library is required when using the Ildg classes in %Grid. If you don't have it <a href="https://usqcd-software.github.io/c-lime/">install it</a> and let %Grid know its location with at configure time with the \code{.sh}../configure --with-lime=<path-to-lime>\endcode flag. 
- *  \snippet this setup
+ *  \snippet{lineno} this setup
  *  \subsection sec2 Grid layout
  *  Some boilerplate code to setup a basic Grid using the defaults and a smaller lattice.
- *  \snippet this grid
+ *  \snippet{lineno} this grid
  *  this is some interleaved text
- *  \snippet this gen_field 
+ *  \snippet{lineno} this gen_field 
  *  setup random number generators for generating SU fields 
- *  \snippet this umu
+ *  \snippet{lineno} this umu
  *  generate SU field using pRNGa and write into Umu
  *  \subsection sec3 ILDG I/O
  *  create an instance of the IldgWriter object to write lattice into a file %ckpoint_ildg.4000 
- *  \snippet this ildg_write
+ *  \snippet{lineno} this ildg_write
  *  we store the lattice for later comparison. 
- *  \snippet this umu_save
- *  \snippet this ildg_read
+ *  \snippet{lineno} this umu_save
+ *  \snippet{lineno} this ildg_read
  *  finally we need to compare the two lattices by computing the norm of the difference.
- *  \snippet this umu_diff
- *  \snippet this check_norm
+ *  \snippet{lineno} this umu_diff
+ *  \snippet{lineno} this check_norm
  *  \subsection sec4 Scidac I/O
- *  \snippet this scidac_write
- *  \snippet this scidac_read
+ *  \snippet{lineno} this scidac_write
+ *  \snippet{lineno} this scidac_read
  */
 int main (int argc, char ** argv)
 {//! [setup]
