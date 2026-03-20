@@ -165,7 +165,7 @@ public:
 
 template<class Gimpl>
 class IwasakiGaugeAction : public RBCGaugeAction<Gimpl>
-  /*! @brief the Iwasaki gauge action, model IM11 in arXiv:1111.7054.
+  /*! @brief The Iwasaki gauge action, model IM11 in arXiv:1111.7054.
    *
    * Iwasaki introduced this action as one of a number of candidates
    * in a 1983 report,
