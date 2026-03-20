@@ -8,7 +8,7 @@ If the set of instantiations to build is expanded,
 this script must be edited,
 and then run manually from this directory as
 
-``` shell
+```
 ./generate_instantiations.sh
 ```
 
@@ -16,7 +16,7 @@ If instantiations are removed from the list,
 then all subdirectories should be removed
 before running the script:
 
-``` shell
+```
 rm -r */  # Note the /; we only want to remove subdirectories
 ./generate_instantiations.sh
 ```
