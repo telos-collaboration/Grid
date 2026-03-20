@@ -60,7 +60,8 @@ Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
  * - Scalar.h
  * - Photon.h
  *
- * \todo These need to move to another header since this file was renamed Fermion.h.
+ * \todo The files Scalar.h and Photon.h should move to another header,
+ * since they are currently included in a file that has since been renamed Fermion.h.
  */
 
 ////////////////////////////////////////////
@@ -151,7 +152,7 @@ NAMESPACE_BEGIN(Grid);
 /*!
  * Doubled, double-precision, Wilson fermion in fundamental representation.
  *
- * \todo Better understand what "doubled" means in this context;
+ * \todo Better understand what "doubled" means in this context of e.g. `WilsonImplD2`;
  * but see Grid/simd/Grid_doubled_vector.h.
  */
 typedef WilsonFermion<WilsonImplD2> WilsonFermionD2;
