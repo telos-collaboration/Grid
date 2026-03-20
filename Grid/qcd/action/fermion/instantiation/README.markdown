@@ -17,7 +17,7 @@ then all subdirectories should be removed
 before running the script:
 
 ```
-rm -r */  # Note the /; we only want to remove subdirectories
+rm -r */  # Note the trailing /; we only want to remove subdirectories
 ./generate_instantiations.sh
 ```
 
