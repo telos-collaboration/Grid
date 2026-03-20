@@ -46,7 +46,7 @@ NAMESPACE_BEGIN(Grid);
 
 template< class Field >
 class ConfigurationBase
-/*! Base class for "smart configuration",
+/*! @brief Base class for "smart configuration",
  * a container for a gauge configuration holding unsmeared and smeared versions */
 {
 public:
@@ -60,7 +60,7 @@ public:
 
 template <class GaugeField >
 class Action
-/*! Base class for all actions. */
+/*! @brief Base class for all actions. */
 {
 public:
   bool is_smeared = false;  ///< @brief Is the action computed on a smeared gauge field
@@ -220,7 +220,7 @@ public:
 
 template <class GaugeField >
 class EmptyAction : public Action <GaugeField>
-/*! A trivial action, which may be used as a placeholder. */
+/*! @brief A trivial action, which may be used as a placeholder. */
 {
   using Action<GaugeField>::refresh;
   using Action<GaugeField>::Sinitial;
