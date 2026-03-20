@@ -1,0 +1,21 @@
+site_name: Grid
+site_description: "documentation for Grid"
+repo_url: "https://github.com/telos-collaboration/Grid"
+repo_name: "telos-collaboration/Grid"
+edit_uri: edit/main/docs/
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+
+plugins:
+  - search
+  - literate-nav
+
+nav:
+  - Home: README.md
+  - Licence: LICENCE.md
+  - Doxygen documentation: dev/index.md
+  
+theme: readthedocs
