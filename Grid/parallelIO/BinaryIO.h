@@ -26,6 +26,12 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+
+/*! \file BinaryIO.h
+ *  \brief defines classes and functions to read and write binary lattice data.
+ */
+
+
 #pragma once
 
 #if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3) || defined(GRID_COMMS_MPIT) 
@@ -162,7 +168,7 @@ class BinaryIO {
 
 	/* 
 	 * Scidac csum  is rather more heavyweight
-	 * FIXME -- 128^3 x 256 x 16 will overflow.
+	 * \todo 128^3 x 256 x 16 will overflow.
 	 */
 	
 	int64_t global_site;
@@ -193,7 +199,7 @@ class BinaryIO {
     }
   }
 
-  // Network is big endian
+  /*! \remark Network is big endian */
   static inline void htobe32_v(void *file_object,uint32_t bytes){ be32toh_v(file_object,bytes);} 
   static inline void htobe64_v(void *file_object,uint32_t bytes){ be64toh_v(file_object,bytes);} 
   static inline void htole32_v(void *file_object,uint32_t bytes){ le32toh_v(file_object,bytes);} 
@@ -207,7 +213,9 @@ class BinaryIO {
       f[i] = ntohl(f[i]);
     });
   }
-  // LE must Swap and switch to host
+  /*! 
+   *  \remark LE must Swap and switch to host 
+   */
   static inline void le32toh_v(void *file_object,uint64_t bytes)
   {
     uint32_t *fp = (uint32_t *)file_object;
@@ -232,7 +240,9 @@ class BinaryIO {
     });
   }
   
-  // LE must swap and switch;
+  /*! 
+   *  \remark LE must Swap and switch to host 
+   */
   static inline void le64toh_v(void *file_object,uint64_t bytes)
   {
     uint64_t *fp = (uint64_t *)file_object;
@@ -534,9 +544,19 @@ class BinaryIO {
     }
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Read a Lattice of object
-  //////////////////////////////////////////////////////////////////////////////////////
+  /*!
+   *  Read a Lattice of object
+   *  \tparam vobj 
+   *  \tparam munger
+   *  \param[in] Umu
+   *  \param[in] munge
+   *  \param[in] offset
+   *  \param[in] format
+   *  \param[in] nersc_csum
+   *  \param[in] scidac_csuma
+   *  \param[in] scidac_csumb
+   *  \param[in] control
+   */
   template<class vobj,class fobj,class munger>
   static inline void readLatticeObject(Lattice<vobj> &Umu,
 				       std::string file,
@@ -573,9 +593,9 @@ class BinaryIO {
     std::cout<<GridLogMessage<<"readLatticeObject: vectorize overhead "<<timer.Elapsed()  <<std::endl;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Write a Lattice of object
-  //////////////////////////////////////////////////////////////////////////////////////
+  /*!
+   *  Write a Lattice of object
+   */
   template<class vobj,class fobj,class munger>
     static inline void writeLatticeObject(Lattice<vobj> &Umu,
 					  std::string file,
