@@ -83,10 +83,10 @@ public:
     deriv_num=0;
   }
   /*! @brief Record statistics on the action and derivative.
-   * @param nrm: Absolute value of the action.
-   * @param max: Maximum value of the action.
-   * @param Fdt_nrm: Absolute value of the force integrated across this time step.
-   * @param Fdt_max: Maximum value of the force integrated across this time step.
+   * @param[in] nrm: Absolute value of the action.
+   * @param[in] max: Maximum value of the action.
+   * @param[in] Fdt_nrm: Absolute value of the force integrated across this time step.
+   * @param[in] Fdt_max: Maximum value of the force integrated across this time step.
    */
   void  deriv_log(RealD nrm, RealD max,RealD Fdt_nrm,RealD Fdt_max) {
     if ( max > deriv_max_sum ) {
@@ -132,14 +132,16 @@ public:
   // Heatbath?
   /////////////////////////////
   /*! @brief Refresh pseudofermion fields
-   * @param U: The gauge field
-   * @param sRNG: The serial random number generator to use
-   * @param pRNG: The parallel random number generator to use
+   * @param[in] U: The gauge field
+   * @param[in,out] sRNG: The serial random number generator to use
+   * @param[in,out] pRNG: The parallel random number generator to use
    */
   virtual void refresh(const GaugeField& U, GridSerialRNG &sRNG, GridParallelRNG& pRNG) = 0;
 
   /*! @brief Evaluate this action with the given gauge field
-   * @param U: The gauge field to evaluate the action of. */
+   * @param[in] U: The gauge field to evaluate the action of.
+   * @returns The value of the action \f$S[U]\f$
+   */
   virtual RealD S(const GaugeField& U) = 0;
 
   /*! @brief Get the action at the start of the trajectory.
@@ -147,7 +149,8 @@ public:
    * If the refresh computes the action,
    * it can be cached so that
    * the value at the start of a Monte Carlo trajectory can be used mid-trajectory.
-   * @param U: The gauge field.
+   * @param[in] U: The gauge field.
+   * @returns The value of the action \f$S[U]\f$, potentially as previously cached.
    */
   /* An alternative approach would be to have a refreshAndAction() function,
    * with the caller responsible for caching. */
@@ -155,8 +158,8 @@ public:
 
   /*! Evaluate the derivative of the action,
    * to be integrated in the molecular dynamics part of the HMC.
-   * @param U: The gauge field to compute the action's derivative on.
-   * @param dSdU: Array into which to output the resulting derivative.
+   * @param[in] U: The gauge field to compute the action's derivative on.
+   * @param[out] dSdU: Array into which to output the resulting derivative.
    */
   virtual void deriv(const GaugeField& U, GaugeField& dSdU) = 0;
   /*! @} */
@@ -168,9 +171,9 @@ public:
    */
   /*! @{ */
   /*! @brief Refresh pseudofermion fields
-   * @param U: The gauge field
-   * @param sRNG: The serial random number generator to use
-   * @param pRNG: The parallel random number generator to use
+   * @param[in] U: The gauge field
+   * @param[in,out] sRNG: The serial random number generator to use
+   * @param[in,out] pRNG: The parallel random number generator to use
    */
   virtual void refresh(ConfigurationBase<GaugeField> & U, GridSerialRNG &sRNG, GridParallelRNG& pRNG)
   {
@@ -178,7 +181,9 @@ public:
   }
 
   /*! @brief Evaluate this action with the given gauge field
-   * @param U: The gauge field to evaluate the action of. */
+   * @param[in] U: The gauge field to evaluate the action of.
+   * @returns The value of the action \f$S[U]\f$
+   */
   virtual RealD S(ConfigurationBase<GaugeField>& U)
   {
     return S(U.get_U(is_smeared));
@@ -188,7 +193,8 @@ public:
    * If the refresh computes the action,
    * it can be cached so that
    * the value at the start of a Monte Carlo trajectory can be used mid-trajectory.
-   * @param U: The gauge field.
+   * @param[in] U: The gauge field.
+   * @returns The value of the action \f$S[U]\f$, potentially as previously cached.
    */
   /* An alternative approach would be to have a refreshAndAction() function,
    * with the caller responsible for caching. */
@@ -198,8 +204,8 @@ public:
   }
   /*! Evaluate the derivative of the action,
    * to be integrated in the molecular dynamics part of the HMC.
-   * @param U: The gauge field to compute the action's derivative on.
-   * @param dSdU: Array into which to output the resulting derivative.
+   * @param[in] U: The gauge field to compute the action's derivative on.
+   * @param[out] dSdU: Array into which to output the resulting derivative.
    */
   virtual void deriv(ConfigurationBase<GaugeField>& U, GaugeField& dSdU)
   {

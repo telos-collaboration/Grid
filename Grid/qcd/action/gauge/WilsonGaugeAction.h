@@ -65,7 +65,7 @@ public:
   using Action<GaugeField>::refresh;
   
   /*! @brief Construct a Wilson gauge action.
-   * @param beta_: The inverse coupling \f$\beta\f$,
+   * @param[in] beta_: The inverse coupling \f$\beta\f$,
    * Note that this is defined as \f$6 / g^2\f$ for all ``Nc``,
    * **not** \f$2N_c / g^2\f$ as in Gattringer and Lang Eg. (3.93).
    */
@@ -83,7 +83,9 @@ public:
   virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};
 
   /*! @brief The Wilson gauge action itself; see Gattringer and Lang Eq. (3.4)
-   * @param U: The gauge field on which to compute the action. */
+   * @param[in] U: The gauge field on which to compute the action.
+   * @returns The value of the action \f$S[U]\f$
+   */
   virtual RealD S(const GaugeField &U) {
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
     RealD vol = U.Grid()->gSites();
@@ -92,8 +94,8 @@ public:
   };
 
   /*! @brief The derivative of the Wilson gauge action
-   * @param U: The gauge field on which to compute the derivative
-   * @param dSdU: Output field into which to write the derivative
+   * @param[in] U: The gauge field on which to compute the derivative
+   * @param[out] dSdU: Output field into which to write the derivative
    */
   virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
     // not optimal implementation FIXME

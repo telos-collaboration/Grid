@@ -77,8 +77,8 @@ private:
 public:
   /*! @brief Initialise the action with the relevant coefficients.
    *
-   * @param b: The coefficient of the elementary plaquette contribution
-   * @param c: The coefficient of the \f$1\times2\f$ rectangle contribution
+   * @param[in] b: The coefficient of the elementary plaquette contribution
+   * @param[in] c: The coefficient of the \f$1\times2\f$ rectangle contribution
    */
   PlaqPlusRectangleAction(RealD b,RealD c): c_plaq(b),c_rect(c){};
 
@@ -101,7 +101,9 @@ public:
    * the path ordered product of links around the \f$1\times1\f$ plaquette,
    * and \f$R[U]\f$ is the equivalent quantity for the \f$1\times2\f$ rectangle.
    *
-   * @param U: The gauge field on which to compute the action. */
+   * @param[in] U: The gauge field on which to compute the action.
+   * @returns The value of the action \f$S[U]\f$
+   */
   virtual RealD S(const GaugeField &U) {
     RealD vol = U.Grid()->gSites();
 
@@ -116,8 +118,8 @@ public:
 
   /*! @brief The derivative of any PlaqPlusRectangleGaugeAction subclass.
    *
-   * @param U: The gauge field on which to compute the derivative
-   * @param dSdU: Output field into which to write the derivative
+   * @param[in] U: The gauge field on which to compute the derivative
+   * @param[out] dSdU: Output field into which to write the derivative
    */
   virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
     //extend Ta to include Lorentz indexes
