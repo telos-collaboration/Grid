@@ -10,7 +10,14 @@ if you need to add new instantiations
 (or remove them),
 you need to run it by hand.
 The results of running this script should be committed to the repository;
-the subdirectories in this directory are the results of a previousrun.
+the subdirectories in this directory are the results of a previous run.
+
+You should not need to touch the files in this directory
+unless you need to modify the set of instantiations built into Grid
+(for example,
+enabling a new representation or gauge group for a given type of fermion).
+If you do need to do this,
+then the information below may be useful.
 
 ## Making changes
 
