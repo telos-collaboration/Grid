@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/parallelIO/NerscIO.h
+    Source file: ./lib/parallelIO/Metadata.h
 
     Copyright (C) 2015
 
@@ -27,6 +27,10 @@
 *************************************************************************************/
 /*  END LEGAL */
 
+/*! \file Metadata.h
+ *  \brief Here Grid defines mungers for writing and reading lattice objects to and from disk.
+ *  \defgroup mungers IO Mungers
+ */
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -38,9 +42,10 @@
 
 NAMESPACE_BEGIN(Grid);
 
-///////////////////////////////////////////////////////
-// Precision mapping
-///////////////////////////////////////////////////////
+/*!
+ * \brief Precision mapping from given type to format string
+ * \tparam vobj is a Lattice type. 
+ */
 template<class vobj> static std::string getFormatString (void)
 {
   std::string format;
@@ -54,9 +59,8 @@ template<class vobj> static std::string getFormatString (void)
   return format;
 };
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // header specification/interpretation
-  ////////////////////////////////////////////////////////////////////////////////
+  /*! header specification/interpretation
+   */
     class FieldNormMetaData : Serializable {
     public:
       GRID_SERIALIZABLE_CLASS_MEMBERS(FieldNormMetaData, double, norm2);
@@ -96,13 +100,9 @@ template<class vobj> static std::string getFormatString (void)
       {}
   };
 
-// PB disable using namespace - this is a header and forces namesapce visibility for all 
-// including files
-//using namespace Grid;
-
-//////////////////////////////////////////////////////////////////////
-// Bit and Physical Checksumming and QA of data
-//////////////////////////////////////////////////////////////////////
+/*!
+ * Bit and Physical Checksumming and QA of data
+ */
 inline void GridMetaData(GridBase *grid,FieldMetaData &header)
 {
   int nd = grid->_ndimension;
@@ -118,6 +118,9 @@ inline void GridMetaData(GridBase *grid,FieldMetaData &header)
   }
 }
 
+/*! \brief retrieve machine info and store in FieldMetaData object.
+ *  \param header holds metadata related to the file and machine.
+ */
 inline void MachineCharacteristics(FieldMetaData &header)
 {
   // Who
@@ -167,6 +170,11 @@ inline void MachineCharacteristics(FieldMetaData &header)
   s << "FLOATING_POINT = "  << field.floating_point   << std::endl;	\
   s << "END_HEADER"         << std::endl;
 
+/*! \brief prepare meta data
+ *  \param[in] field the lattice object the metadata is about.
+ *  \tparam vobj type of the lattice object, implicitly determined by compiler
+ *  \param[in] header this stores the metadata information
+ */
 template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMetaData &header)
 {
   GridBase *grid = field.Grid();
@@ -176,6 +184,9 @@ template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMet
   GridMetaData(grid,header); 
   MachineCharacteristics(header);
 }
+/*
+ * \tparam Impl   
+ */
 template<class Impl>
 class GaugeStatistics
 {
@@ -186,8 +197,16 @@ public:
     header.plaquette  = WilsonLoops<Impl>::avgPlaquette(data);
   }
 };
+/*!
+ * \typedef PeriodicGaugeStatistic
+ * \typedef ConjugateGaugeStatistics 
+ * These typedefs are used in IldgIO.h, NerscIO.h, and OpenQcdIO.h
+ */
 typedef GaugeStatistics<PeriodicGimplD> PeriodicGaugeStatistics;
 typedef GaugeStatistics<ConjugateGimplD> ConjugateGaugeStatistics;
+/*!
+ * \brief template specialisation of PrepareMetaData
+ */
 template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzColourMatrixD> & field, FieldMetaData &header)
 {
   GridBase *grid = field.Grid();
@@ -198,9 +217,12 @@ template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzCo
   MachineCharacteristics(header);
 }
 
-//////////////////////////////////////////////////////////////////////
-// Utilities ; these are QCD aware
-//////////////////////////////////////////////////////////////////////
+/*!
+ * \ingroup mungers
+ * \brief Utilities; these are QCD aware
+ * \param[in,out] cm is a LorentzColourMatrix
+ * Gauge3x2munger() uses this to do the reconstruction
+ */
 inline void reconstruct3(LorentzColourMatrix & cm)
 {
   assert( Nc < 4 && Nc > 1 ) ;
@@ -217,18 +239,21 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Some data types for intermediate storage
-////////////////////////////////////////////////////////////////////////////////
+/*!
+ * \typedef Some data types for intermediate storage
+ */
 template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, Nc-1>, Nd >;
 
 typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
 typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
 
-/////////////////////////////////////////////////////////////////////////////////
-// Simple classes for precision conversion
-/////////////////////////////////////////////////////////////////////////////////
+/*! \ingroup mungers
+ *  Simple classes for precision conversion
+ *  \brief converts binary objects while respecting precision of the types.
+ * \tparam fobj is the type of the output lattice object
+ * \tparam sobj is the type of the input lattice object
+ */
 template <class fobj, class sobj>
 struct BinarySimpleUnmunger {
   typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
@@ -247,6 +272,13 @@ struct BinarySimpleUnmunger {
     
   }
 };
+/*!
+ * \ingroup mungers
+ * \brief returns a copy of its input while converting precision if needed.
+ * \details Used when reading lattices from disk.
+ * \tparam fobj is the input LorentzColour type
+ * \tparam sobj is the output LorentzColour type
+ */
 
 template <class fobj, class sobj>
 struct BinarySimpleMunger {
@@ -254,7 +286,7 @@ struct BinarySimpleMunger {
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
 
   void operator()(fobj &in, sobj &out) {
-    // take word by word and transform accoding to the status
+    /*! take word by word and transform accoding to the status */
     fobj_stype *in_buffer = (fobj_stype *)&in;
     sobj_stype *out_buffer = (sobj_stype *)&out;
     size_t fobj_words = sizeof(in) / sizeof(fobj_stype);
@@ -267,7 +299,13 @@ struct BinarySimpleMunger {
   }
 };
 
-
+/*!
+ * \ingroup mungers
+ * \brief returns a copy of its input while converting precision if needed.
+ * \details Used when reading lattices from disk.
+ * \tparam fobj is the input LorentzColour type
+ * \tparam sobj is the output LorentzColour type
+ */
 template<class fobj,class sobj>
 struct GaugeSimpleMunger{
   void operator()(fobj &in, sobj &out) {
@@ -279,7 +317,13 @@ struct GaugeSimpleMunger{
     }
   };
 };
-
+/*!
+ * \ingroup mungers
+ * \brief returns a copy of its input.
+ * \details This munger is used when writing lattices to disk
+ * \tparam fobj is the type of the output LorentzColour object
+ * \tparam sobj is the type of the input LorentzColour object 
+ */
 template <class fobj, class sobj>
 struct GaugeSimpleUnmunger {
   void operator()(sobj &in, fobj &out) {
@@ -292,6 +336,14 @@ struct GaugeSimpleUnmunger {
   };
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This is used when reading 'DoubleStored' gauge fields.
+ * see OpenQcdIO.h for usage.
+ * \tparam fobj is the type of the input object.
+ * \tparam sobj is the type of the output object. 
+ * \param Nds is equal to 2Nd (=2*4 in mo`st cases)
+ */
 template<class fobj,class sobj>
 struct GaugeDoubleStoredMunger{
   void operator()(fobj &in, sobj &out) {
@@ -304,6 +356,14 @@ struct GaugeDoubleStoredMunger{
   };
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This is used when writing 'DoubleStored' gauge fields.
+ * see OpenQcdIO.h for usage.
+ * \tparam fobj is the output type 
+ * \tparam sobj is the input type 
+ * \param Nds is equal to 2Nd (=2*4 in most cases)
+ */
 template <class fobj, class sobj>
 struct GaugeDoubleStoredUnmunger {
   void operator()(sobj &in, fobj &out) {
@@ -316,6 +376,17 @@ struct GaugeDoubleStoredUnmunger {
   };
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This munger reconstructs the full Nc by Nc matrix from an Nc-1 by Nc matrix.
+ * This is intended for use when reading reduced format SU(Nc) gauge fields from the disk.
+ * The function reconstruct3(LorentzColourMatrix &cm) does the reconstruction.
+ * \param Nc number of colours, only Nc=2,3 valid. 
+ * \tparam fobj is the type of the resulting reduced matrix.
+ * \tparam sobj is the type of the inputted full matrix. 
+ * \param[in] in is an object of type LorentzColourMatrix
+ * \param[out] out is an object of type ::LorentzColour2x3
+ */
 template<class fobj,class sobj>
 struct Gauge3x2munger{
   void operator() (fobj &in,sobj &out){
@@ -329,6 +400,15 @@ struct Gauge3x2munger{
   }
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This unmunger writes the first Nc-1 rows of an Nc by Nc matrix.
+ * This is intended for use when writing SU(Nc) gauge fields to disk in reduced format.
+ * \tparam fobj is the type of the resulting reduced matrix.
+ * \tparam sobj is the type of the inputted full matrix. 
+ * \param[in] in is an object of type LorentzColourMatrix
+ * \param[out] out is an object of type ::LorentzColour2x3
+ */
 template<class fobj,class sobj>
 struct Gauge3x2unmunger{
   void operator() (sobj &in,fobj &out){

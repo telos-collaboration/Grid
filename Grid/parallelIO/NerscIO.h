@@ -28,6 +28,10 @@
     See the full license in the file "LICENSE" in the top level distribution directory
 *************************************************************************************/
 /*  END LEGAL */
+/*! \file NerscIO.h
+ *  \brief defines classes and functions for reading/writing Nersc format lattices.
+ *  \details
+ */
 #ifndef GRID_NERSC_IO_H
 #define GRID_NERSC_IO_H
 

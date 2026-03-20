@@ -24,6 +24,12 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+
+/*! \file IldgIO.h
+ *  \brief includes the IldgReader and IldgWriter Classes alongside helper functions and classes.
+ *  \details The International Lattice Data Grid (ILDG) defines a structured file format for lattice gauge fields which encapsulates binary and meta data within a single file. The binary part of an ILDG-format file is packaged using the LIME library. 
+ */
+
 #pragma once
 
 #ifdef HAVE_LIME
@@ -51,9 +57,9 @@ NAMESPACE_BEGIN(Grid);
 #define GRID_FIELD_NORM_CHECK(FieldNormMetaData_, n2ck) \
 assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
 
-  /////////////////////////////////
-  // Encode word types as strings
-  /////////////////////////////////
+/*!
+ *  Encode word types as strings
+ */
  template<class word> inline std::string ScidacWordMnemonic(void){ return std::string("unknown"); }
  template<> inline std::string ScidacWordMnemonic<double>  (void){ return std::string("D"); }
  template<> inline std::string ScidacWordMnemonic<float>   (void){ return std::string("F"); }
@@ -62,9 +68,14 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
  template<> inline std::string ScidacWordMnemonic< int64_t>(void){ return std::string("I64_t"); }
  template<> inline std::string ScidacWordMnemonic<uint64_t>(void){ return std::string("U64_t"); }
 
-  /////////////////////////////////////////
-  // Encode a generic tensor as a string
-  /////////////////////////////////////////
+/*!
+ *  Encode a generic tensor as a string
+ *  \param[in] colors 
+ *  \param[in] spins
+ *  \param[in] typesize
+ *  \param[in] datacount
+ *  \return stream.str()
+ */
  template<class vobj> std::string ScidacRecordTypeString(int &colors, int &spins, int & typesize,int &datacount) { 
 
    typedef typename getPrecision<vobj>::real_scalar_type stype;
@@ -121,9 +132,9 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
  };
 
 
- ////////////////////////////////////////////////////////////
- // Helper to fill out metadata
- ////////////////////////////////////////////////////////////
+/*!
+ * Helper to fill out metadata
+ */
 template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 					  FieldMetaData &header,
 					  scidacRecord & _scidacRecord,
@@ -131,19 +142,17 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
  {
    typedef typename getPrecision<vobj>::real_scalar_type stype;
 
-   /////////////////////////////////////
-   // Pull Grid's metadata
-   /////////////////////////////////////
+   /*!
+    * Pull Grid's metadata
+    */
    PrepareMetaData(field,header);
 
-   /////////////////////////////////////
-   // Scidac Private File structure
-   /////////////////////////////////////
+   /*!
+    * Scidac Private File structure
+    */
    _scidacFile              = scidacFile(field.Grid());
 
-   /////////////////////////////////////
-   // Scidac Private Record structure
-   /////////////////////////////////////
+   /*! Scidac Private Record structure  */
    scidacRecord sr;
    sr.datatype   = ScidacRecordTypeString(field,sr.colors,sr.spins,sr.typesize,sr.datacount);
    sr.date       = header.creation_date;
@@ -151,13 +160,11 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
    sr.recordtype = GRID_IO_FIELD;
 
    _scidacRecord = sr;
-
-   //   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
  }
- 
- ///////////////////////////////////////////////////////
- // Scidac checksum
- ///////////////////////////////////////////////////////
+
+  /*!
+   * \brief Scidac checksum
+   */
  static int scidacChecksumVerify(scidacChecksum &scidacChecksum_,uint32_t scidac_csuma,uint32_t scidac_csumb)
  {
    uint32_t scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
@@ -178,9 +185,7 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 ////////////////////////////////////////////////////////////////////////////////////
 class GridLimeReader : public BinaryIO {
  public:
-   ///////////////////////////////////////////////////
-   // FIXME: format for RNG? Now just binary out instead
-   ///////////////////////////////////////////////////
+   /* \todo format for RNG? Now just binary out instead */
 
    FILE       *File;
    LimeReader *LimeR;
@@ -331,12 +336,9 @@ class GridLimeReader : public BinaryIO {
 class GridLimeWriter : public BinaryIO 
 {
  public:
-
-   ///////////////////////////////////////////////////
-   // FIXME: format for RNG? Now just binary out instead
-   // FIXME: collective calls or not ?
-   //      : must know if I am the I/O boss
-   ///////////////////////////////////////////////////
+   /*! \todo format for RNG? Now just binary out instead 
+    *  \todo collective calls or not ? must know if I am the I/O boss
+    */
    FILE       *File;
    LimeWriter *LimeW;
    std::string filename;
@@ -408,27 +410,26 @@ class GridLimeWriter : public BinaryIO
     write(WR,object_name,object);
     writeLimeObject(MB, ME, WR, object_name, record_name);
   }
-  ////////////////////////////////////////////////////
-  // Write a generic lattice field and csum
-  // This routine is Collectively called by all nodes
-  // in communicator used by the field.Grid()
-  ////////////////////////////////////////////////////
+  /*!
+   * Write a generic lattice field and csum
+   * This routine is Collectively called by all nodes
+   * in communicator used by the field.Grid()
+   */
   template<class vobj>
   void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
   {
-    ////////////////////////////////////////////////////////////////////
-    // NB: FILE and iostream are jointly writing disjoint sequences in the
-    // the same file through different file handles (integer units).
-    // 
-    // These are both buffered, so why I think this code is right is as follows.
-    //
-    // i)  write record header to FILE *File, telegraphing the size; flush
-    // ii) ftello reads the offset from FILE *File . 
-    // iii) iostream / MPI Open independently seek this offset. Write sequence direct to disk.
-    //      Closes iostream and flushes.
-    // iv) fseek on FILE * to end of this disjoint section.
-    //  v) Continue writing scidac record.
-    ////////////////////////////////////////////////////////////////////
+    /*!
+     * \remarks NB: FILE and iostream are jointly writing disjoint sequences in the
+     * the same file through different file handles (integer units).
+     * These are both buffered, so why I think this code is right is as follows.
+     * i)  write record header to FILE *File, telegraphing the size; flush
+     * ii) ftello reads the offset from FILE *File . 
+     * iii) iostream / MPI Open independently seek this offset. Write sequence direct to disk
+     *
+     * Closes iostream and flushes.
+     * iv) fseek on FILE * to end of this disjoint section.
+     * v) Continue writing scidac record.
+     */
     
     GridBase *grid = field.Grid();
     assert(boss_node == field.Grid()->IsBoss() );
@@ -625,11 +626,15 @@ class IldgWriter : public ScidacWriter {
     err=limeWriterCloseRecord(LimeW); assert(err>=0);
   }
 
-  ////////////////////////////////////////////////////////////////
-  // Special ILDG operations ; gauge configs only.
-  // Don't require scidac records EXCEPT checksum
-  // Use Grid MetaData object if present.
-  ////////////////////////////////////////////////////////////////
+/*! Special ILDG operations ; gauge configs only.
+ * Don't require scidac records EXCEPT checksum
+ * Use Grid MetaData object if present.
+ * \tparam stats 
+ * \param[in] Umu LatticeGaugeField to be written to disk
+ * \param[in] sequence
+ * \param[in] LFN Logical File Name
+ * \param[in] description 
+ */
   template <class stats = PeriodicGaugeStatistics>
   void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,int sequence,std::string LFN,std::string description) 
   {
@@ -638,9 +643,9 @@ class IldgWriter : public ScidacWriter {
     typedef vLorentzColourMatrixD vobj;
     typedef typename vobj::scalar_object sobj;
 
-    ////////////////////////////////////////
-    // fill the Grid header
-    ////////////////////////////////////////
+    /*!
+     * fill the Grid header
+     */
     FieldMetaData header;
     scidacRecord  _scidacRecord;
     scidacFile    _scidacFile;
@@ -659,9 +664,9 @@ class IldgWriter : public ScidacWriter {
     assert ( (format == std::string("IEEE32BIG"))  
            ||(format == std::string("IEEE64BIG")) );
 
-    //////////////////////////////////////////////////////
-    // Fill ILDG header data struct
-    //////////////////////////////////////////////////////
+    /*!
+     *  Fill ILDG header data struct
+     */
     ildgFormat ildgfmt ;
     const std::string stNC = std::to_string( Nc ) ;
     ildgfmt.field          = std::string("su"+stNC+"gauge");
@@ -679,24 +684,23 @@ class IldgWriter : public ScidacWriter {
     assert(header.nd==4);
     assert(header.nd==header.dimension.size());
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Field norm tests
-    //////////////////////////////////////////////////////////////////////////////
+    /*!
+     *  Field norm tests
+     */
     FieldNormMetaData FieldNormMetaData_;
     FieldNormMetaData_.norm2 = norm2(Umu);
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Fill the USQCD info field
-    //////////////////////////////////////////////////////////////////////////////
+    /*!
+     * Fill the USQCD info field
+     */
     usqcdInfo info;
     info.version=1.0;
     info.plaq   = header.plaquette;
     info.linktr = header.link_trace;
 
-    //    std::cout << GridLogMessage << " Writing config; IldgIO n2 "<< FieldNormMetaData_.norm2<<std::endl;
-    //////////////////////////////////////////////
-    // Fill the Lime file record by record
-    //////////////////////////////////////////////
+    /*!
+     * Fill the Lime file record by record
+     */
     writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
     writeLimeObject(0,0,FieldNormMetaData_,FieldNormMetaData_.SerialisableClassName(),std::string(GRID_FIELD_NORM));
     writeLimeObject(0,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
@@ -713,13 +717,16 @@ class IldgWriter : public ScidacWriter {
 class IldgReader : public GridLimeReader {
  public:
 
-  ////////////////////////////////////////////////////////////////
-  // Read either Grid/SciDAC/ILDG configuration
-  // Don't require scidac records EXCEPT checksum
-  // Use Grid MetaData object if present.
-  // Else use ILDG MetaData object if present.
-  // Else use SciDAC MetaData object if present.
-  ////////////////////////////////////////////////////////////////
+  /*!
+   * Read either Grid/SciDAC/ILDG configuration
+   * Don't require scidac records EXCEPT checksum
+   * Use Grid MetaData object if present.
+   * Else use ILDG MetaData object if present.
+   * Else use SciDAC MetaData object if present.
+   * \tparam stats 
+   * \param[in] Umu 
+   * \param[in] FieldMetaData_
+   */
   template <class stats = PeriodicGaugeStatistics>
   void readConfiguration(Lattice<vLorentzColourMatrixD> &Umu, FieldMetaData &FieldMetaData_) {
 
@@ -757,15 +764,13 @@ class IldgReader : public GridLimeReader {
 
     // Binary format
     std::string format;
-
-    //////////////////////////////////////////////////////////////////////////
-    // Loop over all records
-    // -- Order is poorly guaranteed except ILDG header preceeds binary section.
-    // -- Run like an event loop.
-    // -- Impose trust hierarchy. Grid takes precedence & look for ILDG, and failing
-    //    that Scidac. 
-    // -- Insist on Scidac checksum record.
-    //////////////////////////////////////////////////////////////////////////
+    /*!
+     * \remarks Loop over all records
+     * - Order is poorly guaranteed except ILDG header preceeds binary section.
+     * - Run like an event loop.
+     * - Impose trust hierarchy. Grid takes precedence & look for ILDG, and failing that Scidac. 
+     * - Insist on Scidac checksum record.
+     */
 
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 

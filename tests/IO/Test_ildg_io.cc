@@ -2,7 +2,7 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./tests/Test_nersc_io.cc
+    Source file: ./tests/Test_ildg_io.cc
 
     Copyright (C) 2015
 
@@ -27,6 +27,10 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+/*! \file Test_ildg_io.cc
+ *  \brief tests whether IldgWriter can write an ildg-format lattice to disk, checking by reading it back into Grid with IldgReader. 
+ */
+
 #include <Grid/Grid.h>
 
 using namespace std;
@@ -43,8 +47,6 @@ int main (int argc, char ** argv)
 
   auto simd_layout = GridDefaultSimd(4,vComplex::Nsimd());
   auto mpi_layout  = GridDefaultMpi();
-  //std::vector<int> latt_size  ({48,48,48,96});
-  //std::vector<int> latt_size  ({32,32,32,32});
   Coordinate latt_size  ({16,16,16,32});
   Coordinate clatt_size  ({4,4,4,8});
   int orthodir=3;
@@ -113,7 +115,7 @@ int main (int argc, char ** argv)
   _ScidacReader.close();
   Umu_diff = Umu - Umu_saved;
 
-
+  /*! \todo convert this to an assert condition. */
   std::cout <<GridLogMessage<< "norm2 Gauge Diff = "<<norm2(Umu_diff)<<std::endl;
 
   Grid_finalize();

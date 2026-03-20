@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/parallelIO/IldgIO.h
+Source file: ./lib/parallelIO/IldgIOtypes.h
 
 Copyright (C) 2015
 
@@ -24,6 +24,11 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 			   /*  END LEGAL */
+/*!
+ * \file IldgIOtypes.h
+ * \brief defines objects for storing grid/scidac/ildg metadata.
+ * \defgroup io_metadata IO Metadata
+ */
 #ifndef GRID_ILDGTYPES_IO_H
 #define GRID_ILDGTYPES_IO_H
 
@@ -34,9 +39,10 @@ extern "C" { // for linkage
 
 NAMESPACE_BEGIN(Grid);
 
-/////////////////////////////////////////////////////////////////////////////////
-// Data representation of records that enter ILDG and SciDac formats
-/////////////////////////////////////////////////////////////////////////////////
+/*!
+ * \ingroup io_metadata
+ * Data representation of records that enter ILDG and SciDac formats
+ */
 
 #define GRID_FORMAT      "grid-format"
 #define ILDG_FORMAT      "ildg-format"
@@ -141,9 +147,9 @@ public:
   {}
 };
 
-////////////////////////
-// ILDG format
-////////////////////////
+/*! \ingroup io_metadata
+ *  ILDG format
+ */
 struct ildgFormat : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(ildgFormat,
@@ -156,9 +162,10 @@ public:
 				  int, lt);
   ildgFormat() { version=1.0; };
 };
-////////////////////////
-// USQCD info
-////////////////////////
+
+/*! \ingroup io_metadata
+ *  USQCD info
+ */
 struct usqcdInfo : Serializable { 
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(usqcdInfo,
@@ -170,9 +177,9 @@ public:
     version=1.0; 
   };
 };
-////////////////////////
-// Scidac Checksum
-////////////////////////
+/*! \ingroup io_metadata
+ *  Scidac Checksum
+ */
 struct scidacChecksum : Serializable { 
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(scidacChecksum,
