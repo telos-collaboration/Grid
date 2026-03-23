@@ -169,24 +169,82 @@ void check_reconstructSU() {
 
 }
 
+///////////////////////////////////////////////////////////////////////////
+// test is_perm_even via the Johnson-Trotter algorithm which
+// exhausts **ALL** the permutations of {0...Nc-1}. 
+// J-T generates permutations by swapping one adjacent pair of elements
+// at a time. each step flips the parity - this is the basis of the test.
+// implementation derived from: 
+// https://github.com/Lampjaw/Johnson-Trotter/blob/master/main.cpp
+// ref: https://www.nist.gov/dads/HTML/johnsonTrotter.html
+///////////////////////////////////////////////////////////////////////////
 void check_is_perm_even() {
+  bool isMobile = true;
+  int count = 1;
 
-  std::vector<int> v = {0,1,2,3};
-  int count = 0;
+  // Initialization and establishment of number and direction lists
+  std::vector<int> elements(Nc); 
+  std::iota(elements.begin(), elements.end(), 0);
+  std::vector<std::string> dirs(Nc, "<");
 
-  // swap two elements and check if parity flipped.
-  for(auto& e: v) {
-    for(auto& d: v) {
-      if(e!=d) {
-        if(count%2==0) { assert( is_perm_even(v)==true ); }
-        else { assert( is_perm_even(v)==false ); }
-        std::swap(e, d);
-        count += 1;
+  // start with an even permutation
+  assert( is_perm_even(elements) == true );
+
+  // Generate permutations as long as it's possible
+  while(isMobile) {                                       
+    isMobile = false;
+    int mobileIndex = Nc;
+    elements[Nc] = 0;
+
+    // Find the greatest mobile integer
+    for(int i = 0; i < Nc; i ++) {  
+    // If integer is not on the edge of the list and pointing away from an integer
+      if(dirs[i] == "<" && i > 0){ 
+        // If Integer is greater than the one it's pointing to and
+        if(elements[i] > elements[i-1] && elements[i] > elements[mobileIndex]) {  
+          isMobile = true;  // greater than the previously found mobile integer
+          mobileIndex = i;
+        }
+      }
+      else if(dirs[i] == ">" && i < Nc-1) {
+        if(elements[i] > elements[i+1] && elements[i] > elements[mobileIndex]) {
+          isMobile = true;
+          mobileIndex = i;
+        }
       }
     }
-  }      
-
+    // If there is a valid mobile integer swap with the one it's pointing to
+    if(isMobile) {                                      
+      if(dirs[mobileIndex] == "<") {  // Integers pointing left
+        std::iter_swap(elements.begin()+mobileIndex-1, elements.begin()+mobileIndex);
+        std::iter_swap(dirs.begin()+mobileIndex-1, dirs.begin()+mobileIndex);
+        // Change the direction of every integer greater than the mobile integer
+        for(int i = 0; i < Nc; i++) {         
+          if(elements[i] > elements[mobileIndex - 1]){
+            if(dirs[i] == "<") { dirs[i] = ">"; }
+            else               { dirs[i] = "<"; }
+          }
+        }
+      }
+      else {  // Integers pointing right
+        std::iter_swap(elements.begin()+mobileIndex, elements.begin()+mobileIndex+1);
+        std::iter_swap(dirs.begin()+mobileIndex, dirs.begin()+mobileIndex+1);
+        // Change the direction of every integer greater than the mobile integer
+        for(int i = 0; i < Nc; i++) {         
+          if(elements[i] > elements[mobileIndex + 1]){
+            if(dirs[i] == "<") { dirs[i] = ">"; }
+            else               { dirs[i] = "<"; }
+          }
+        }
+      }
+      // test if permutation is even or odd
+      if(count%2==0) { assert(is_perm_even(elements) == true);  }
+      else           { assert(is_perm_even(elements) == false); }
+      count++;
+    }
+  } 
 }
+
 
 void check_unique_reconstructSU() {
 
