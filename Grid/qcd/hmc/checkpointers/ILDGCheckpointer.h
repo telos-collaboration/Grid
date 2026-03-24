@@ -70,6 +70,13 @@ public:
       std::cout << GridLogError << "Allowed: su | sp" << std::endl;
       exit(1);
     }
+
+    if ( Params.group == std::string("sp") && Nc%2!=0 ) {
+      std::cout << GridLogError << "Nc=" << Nc;
+      std::cout << ", Sp fields require even Nc" << std::endl;
+      exit(1);
+    }
+
   }
 
   // choose appropriate template instantiation here since the 
