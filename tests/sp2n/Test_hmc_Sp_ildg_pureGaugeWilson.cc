@@ -49,11 +49,12 @@ int main(int argc, char **argv)
   CPparams.smeared_prefix = "ckpoint/smr";
   CPparams.saveInterval = 5;
   CPparams.format = "IEEE32BIG";
-  //CPparams.saveSmeared = false;
+  CPparams.saveSmeared = true;
 
   // Ildg specific parameters
   CPparams.group = "sp";
   CPparams.reduced_matrix = true;
+  //CPparams.unique_su = true; // only applies to su fields
   
   TheHMC.Resources.LoadILDGCheckpointer(CPparams);
 
@@ -65,8 +66,9 @@ int main(int argc, char **argv)
   // Construct observables
   // here there is too much indirection 
   typedef PlaquetteMod<HMCWrapper::ImplPolicy> PlaqObs;
-  typedef TopologicalChargeMod<HMCWrapper::ImplPolicy> QObs;
   TheHMC.Resources.AddObservable<PlaqObs>();
+
+  typedef TopologicalChargeMod<HMCWrapper::ImplPolicy> QObs;
   TopologyObsParameters TopParams;
   TopParams.interval = 5;
   TopParams.do_smearing = true;
