@@ -54,16 +54,15 @@ public:
 
     // check here that the format is valid
     int ieee32big = (Params.format == std::string("IEEE32BIG"));
-    int ieee32    = (Params.format == std::string("IEEE32"));
     int ieee64big = (Params.format == std::string("IEEE64BIG"));
-    int ieee64    = (Params.format == std::string("IEEE64"));
 
-    if (!(ieee64big || ieee32 || ieee32big || ieee64)) {
+    if (!(ieee64big || ieee32big)) {
       std::cout << GridLogError << "Unrecognized file format " << Params.format
                 << std::endl;
       std::cout << GridLogError
-                << "Allowed: IEEE32BIG | IEEE32 | IEEE64BIG | IEEE64"
+                << "Allowed: IEEE32BIG | IEEE64BIG"
                 << std::endl;
+      exit(1);
     }
 
     if ( !((Params.group == std::string("su")) || (Params.group == std::string("sp"))) ) {
@@ -73,6 +72,51 @@ public:
     }
   }
 
+  // choose appropriate template instantiation here since the 
+  // non-const checkpointer parameters cannot be used directly as
+  // template arguments to IldgWriter
+  void chooseIldgWriter( std::string format, std::string group, bool reduced_matrix, 
+                         std::string lat_obj, int traj, 
+                         ConfigurationBase<GaugeField> &SmartConfig) {
+ 
+      GridBase *grid = SmartConfig.get_U(false).Grid();
+
+      IldgWriter _IldgWriter(grid->IsBoss());
+      _IldgWriter.open(lat_obj);
+
+      if(format=="IEEE64BIG") {
+        if(group=="su" && reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+        else if (group=="su" && !reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+        else if (group=="sp" && reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+        else if (group=="sp" && !reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+      }
+      else if (format=="IEEE32BIG") {
+         if(group=="su" && reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+        else if (group=="su" && !reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+        else if (group=="sp" && reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+        else if (group=="sp" && !reduced_matrix) {
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+        }
+      }
+
+      _IldgWriter.close();
+  }
+   
+
   void TrajectoryComplete(int traj,
 			  ConfigurationBase<GaugeField> &SmartConfig,
 			  GridSerialRNG &sRNG,
@@ -80,7 +124,6 @@ public:
     if ((traj % Params.saveInterval) == 0) {
       std::string config, rng, smr;
       this->build_filenames(traj, Params, config, smr, rng);
-      GridBase *grid = SmartConfig.get_U(false).Grid();
       uint32_t nersc_csum,scidac_csuma,scidac_csumb;
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       std::cout << GridLogMessage << "Written BINARY RNG " << rng
@@ -90,42 +133,8 @@ public:
 		<< scidac_csumb
 		<< std::dec << std::endl;
 
-
-      IldgWriter _IldgWriter(grid->IsBoss());
-      _IldgWriter.open(config);
-
-      if(Params.format=="IEEE64BIG") {
-        if(Params.group=="su" && Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else if (Params.group=="su" && !Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else if (Params.group=="sp" && Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else if (Params.group=="sp" && !Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else { assert(0); }
-      }
-      else if (Params.format=="IEEE32BIG") {
-         if(Params.group=="su" && Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else if (Params.group=="su" && !Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else if (Params.group=="sp" && Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else if (Params.group=="sp" && !Params.reduced_matrix) {
-          _IldgWriter.writeConfiguration<GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG, GaugeStats>(SmartConfig.get_U(false), traj, config, config);
-        }
-        else { assert(0); }
-      }
-
-      _IldgWriter.close();
+    chooseIldgWriter( Params.format, Params.group, Params.reduced_matrix, config, traj,
+                      SmartConfig );
 
       std::cout << GridLogMessage << "Written ILDG Configuration on " << config
                 << " checksum " << std::hex 
@@ -135,17 +144,15 @@ public:
 		<< std::dec << std::endl;
 
       if ( Params.saveSmeared ) { 
-	IldgWriter _IldgWriter(grid->IsBoss());
-	_IldgWriter.open(smr);
-	_IldgWriter.writeConfiguration<GaugeStats>(SmartConfig.get_U(true), traj, smr, smr);
-	_IldgWriter.close();
-
-	std::cout << GridLogMessage << "Written ILDG Configuration on " << smr
-                << " checksum " << std::hex 
-		<< nersc_csum<<"/"
-		<< scidac_csuma<<"/"
-		<< scidac_csumb
-		<< std::dec << std::endl;
+        chooseIldgWriter( Params.format, Params.group, Params.reduced_matrix, smr, traj, 
+                          SmartConfig );
+          
+        std::cout << GridLogMessage << "Written ILDG Configuration on " << smr
+                    << " checksum " << std::hex 
+        << nersc_csum<<"/"
+        << scidac_csuma<<"/"
+        << scidac_csumb
+        << std::dec << std::endl;
       }
 
     }
@@ -166,9 +173,9 @@ public:
     _IldgReader.open(config);
 
     if(Params.unique_su) {
-    _IldgReader.readConfiguration<true, GaugeStats>(U,header);// format from the header
+    _IldgReader.readConfiguration<GaugeStats, true>(U,header);// format from the header
     }
-    else { _IldgReader.readConfiguration<false, GaugeStats>(U,header); }
+    else { _IldgReader.readConfiguration<GaugeStats, false>(U,header); }
 
     _IldgReader.close();
 
