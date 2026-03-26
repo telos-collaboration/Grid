@@ -2,6 +2,7 @@
 html/*
 latex/*
 doxygen-doc/*
+site/*
 
 # Compiled Object files #
 #########################
