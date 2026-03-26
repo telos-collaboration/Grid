@@ -5,13 +5,6 @@
 
 License: GPL v2.
 
-Last update June 2017.
-
-_Please do not send pull requests to the `master` branch which is reserved for releases._
-
-
-
-### Description
 This library provides data parallel C++ container classes with internal memory layout
 that is transformed to map efficiently to SIMD architectures. CSHIFT facilities
 are provided, similar to HPF and cmfortran, and user control is given over the mapping of
@@ -40,65 +33,48 @@ MPI, OpenMP, and SIMD parallelism are present in the library.
 Please see [this paper](https://arxiv.org/abs/1512.03487) for more detail.
 
 
-### Compilers
+## Building Grid
 
-Intel ICPC v16.0.3 and later
+In addition to the instructions below,
+there are specific compulation examples:
 
-Clang v3.5 and later (need 3.8 and later for OpenMP)
+- [The Wiki contains specific instructions for some Summit, Tesseract and GPU compilation](https://github.com/paboyle/Grid/wiki)
+- [The /systems directory contains example build scripts, submit scripts, runtime wrappers, and benchmark output for many recent-generation systems](https://github.com/paboyle/Grid/tree/develop/systems)
 
-GCC   v4.9.x (recommended)
+### Compiler
 
-GCC   v6.3 and later
+Grid requires a C++ compiler with support for C++17.
 
-### Specific machine compilation instructions - Summit, Tesseract
-
-[The Wiki contains specific instructions for some Summit, Tesseract and GPU compilation](https://github.com/paboyle/Grid/wiki)
-
-### Important: 
-
-Some versions of GCC appear to have a bug under high optimisation (-O2, -O3).
-
-The safety of these compiler versions cannot be guaranteed at this time. Follow Issue 100 for details and updates.
-
-GCC   v5.x
-
-GCC   v6.1, v6.2
-
-### Bug report
-
-_To help us tracking and solving more efficiently issues with Grid, please report problems using the issue system of GitHub rather than sending emails to Grid developers._
-
-When you file an issue, please go though the following checklist:
-
-1. Check that the code is pointing to the `HEAD` of `develop` or any commit in `master` which is tagged with a version number. 
-2. Give a description of the target platform (CPU, network, compiler). Please give the full CPU part description, using for example `cat /proc/cpuinfo | grep 'model name' | uniq` (Linux) or `sysctl machdep.cpu.brand_string` (macOS) and the full output the `--version` option of your compiler.
-3. Give the exact `configure` command used.
-4. Attach `config.log`.
-5. Attach `grid.config.summary`.
-6. Attach the output of `make V=1`.
-7. Describe the issue and any previous attempt to solve it. If relevant, show how to reproduce the issue using a minimal working example.
+There have historically been issues with certain GCC versions
+(see e.g. issue #100);
+these are not expected to be observed
+with current-generation GCC versions supporting C++17.
 
 ### Required libraries
+
 Grid requires:
 
-[GMP](https://gmplib.org/), 
+- [GMP](https://gmplib.org/)
+- [MPFR](http://www.mpfr.org/) 
 
-[MPFR](http://www.mpfr.org/) 
+Bootstrapping Grid downloads the Eigen library,
+which is used for internal dense matrix
+(non-QCD operations).
 
-Bootstrapping grid downloads and uses for internal dense matrix (non-QCD operations) the Eigen library.
+Grid can optionally use:
 
-Grid optionally uses:
-
-[HDF5](https://support.hdfgroup.org/HDF5/)  
-
-[LIME](http://usqcd-software.github.io/c-lime/) for ILDG and SciDAC file format support. 
-
-[FFTW](http://www.fftw.org) either generic version or via the Intel MKL library.
-
-LAPACK either generic version or Intel MKL library.
-
+- [HDF5](https://support.hdfgroup.org/HDF5/)
+- [LIME](http://usqcd-software.github.io/c-lime/)
+  for ILDG and SciDAC file format support.
+- [FFTW](http://www.fftw.org),
+  either the generic version,
+  or via the Intel MKL library.
+- [LAPACK](https://www.netlib.org/lapack/),
+  either the generic version,
+  or via the Intel MKL library.
 
 ### Quick start
+
 First, start by cloning the repository:
 
 ``` bash
@@ -137,17 +113,21 @@ To minimise the build time, only the tests at the root of the `tests` directory 
 ``` bash
 make -C tests/<subdir> tests
 ```
+
 If you want to build all the tests at once just use `make tests`.
 
 ### Build configuration options
 
 - `--prefix=<path>`: installation prefix for Grid.
+- `--enable-Nc={2|3|4|...}`:
+  Set the default number of colours for lattice objects.
+  For most datastructures this can be overridden in template parameters;
+  for some components such as the HMC this is hardcoded and not overridable.
 - `--with-gmp=<path>`: look for GMP in the UNIX prefix `<path>`
 - `--with-mpfr=<path>`: look for MPFR in the UNIX prefix `<path>`
 - `--with-fftw=<path>`: look for FFTW in the UNIX prefix `<path>`
 - `--enable-lapack[=<path>]`: enable LAPACK support in Lanczos eigensolver. A UNIX prefix containing the library can be specified (optional).
 - `--enable-mkl[=<path>]`: use Intel MKL for FFT (and LAPACK if enabled) routines. A UNIX prefix containing the library can be specified (optional).
-- `--enable-numa`: enable NUMA first touch optimisation
 - `--enable-simd=<code>`: setup Grid for the SIMD target `<code>` (default: `GEN`). A list of possible SIMD targets is detailed in a section below.
 - `--enable-gen-simd-width=<size>`: select the size (in bytes) of the generic SIMD vector type (default: 64 bytes).
 - `--enable-comms=<comm>`: Use `<comm>` for message passing (default: `none`). A list of possible SIMD targets is detailed in a section below.
@@ -155,6 +135,13 @@ If you want to build all the tests at once just use `make tests`.
 - `--disable-timers`: disable system dependent high-resolution timers.
 - `--enable-chroma`: enable Chroma regression tests.
 - `--enable-doxygen-doc`: enable the Doxygen documentation generation (build with `make doxygen-doc`)
+- `--disable-fermion-reps`, `--disable-fermion-instantiations`:
+  disable building instantiations of higher fermion representations
+  (two-index symmetric antisymmetric, adjoint),
+  or all fermion representations
+  (including the fundamental)
+  respectively,
+  in order to reduce the compilation time.
 
 ### Possible communication interfaces
 
@@ -165,7 +152,6 @@ The following options can be use with the `--enable-comms=` option to target dif
 | `none`         | no communications                                             |
 | `mpi[-auto]`   | MPI communications                                            |
 | `mpi3[-auto]`  | MPI communications using MPI 3 shared memory                  |
-| `shmem `       | Cray SHMEM communications                                     |
 
 For the MPI interfaces the optional `-auto` suffix instructs the `configure` scripts to determine all the necessary compilation and linking flags. This is done by extracting the informations from the MPI wrapper specified in the environment variable `MPICXX` (if not specified `configure` will scan though a list of default names). The `-auto` suffix is not supported by the Cray environment wrapper scripts. Use the standard versions instead.  
 
@@ -184,6 +170,8 @@ The following options can be use with the `--enable-simd=` option to target diff
 | `AVX512`    | AVX 512 bit                            |
 | `NEONv8`    | [ARM NEON](http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch07s03.html) (128 bit)                     |
 | `QPX`       | IBM QPX (256 bit)                      |
+| `A64FX`     | Fujitsu A64FX                          |
+| `GPU`       | Use an accelerator; combine with `--enable-accelerator` |
 
 Alternatively, some CPU codenames can be directly used:
 
@@ -193,10 +181,11 @@ Alternatively, some CPU codenames can be directly used:
 | `SKL`       | [Intel Skylake with AVX512 extensions](https://ark.intel.com/products/codename/37572/Skylake#@server) |
 | `BGQ`       | Blue Gene/Q                            |
 
-#### Notes:
+#### Notes
+
 - We currently support AVX512 for the Intel compiler and GCC (KNL and SKL target). Support for clang will appear in future versions of Grid when the AVX512 support in the compiler will be more advanced.
 - For BG/Q only [bgclang](http://trac.alcf.anl.gov/projects/llvm-bgq) is supported. We do not presently plan to support more compilers for this platform.
-- BG/Q performances are currently rather poor. This is being investigated for future versions.
+  - BG/Q performances are currently rather poor.
 - The vector size for the `GEN` target can be specified with the `configure` script option `--enable-gen-simd-width`.
 
 ### Build setup for Intel Knights Landing platform
@@ -209,6 +198,7 @@ The following configuration is recommended for the Intel Knights Landing platfor
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
 ```
+
 The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
@@ -221,10 +211,12 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
 ```
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+
 ``` bash
                --with-gmp=<path>        \
                --with-mpfr=<path>       \
 ```
+
 where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
 
 Knight's Landing with Intel Omnipath adapters with two adapters per node 
@@ -249,13 +241,16 @@ The following configuration is recommended for the Intel Haswell platform:
              --enable-mkl             \
              CXX=icpc MPICXX=mpiicpc
 ```
+
 The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+
 ``` bash
                --with-gmp=<path>        \
                --with-mpfr=<path>       \
 ```
+
 where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
 
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
@@ -266,11 +261,14 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
              --enable-mkl             \
              CXX=CC CC=cc
 ```
+
 Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
 one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
+
 ```
         export I_MPI_PIN=1
 ```
+
 This is the default.
 
 ### Build setup for Intel Skylake Xeon platform
@@ -283,13 +281,16 @@ The following configuration is recommended for the Intel Skylake platform:
              --enable-mkl             \
              CXX=mpiicpc
 ```
+
 The MKL flag enables use of BLAS and FFTW from the Intel Math Kernels Library.
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+
 ``` bash
                --with-gmp=<path>        \
                --with-mpfr=<path>       \
 ```
+
 where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
 
 If you are working on a Cray machine that does not use the `mpiicpc` wrapper, please use:
@@ -300,19 +301,23 @@ If you are working on a Cray machine that does not use the `mpiicpc` wrapper, pl
              --enable-mkl             \
              CXX=CC CC=cc
 ```
+
 Since Dual socket nodes are commonplace, we recommend MPI-3 as the default with the use of 
 one rank per socket. If using the Intel MPI library, threads should be pinned to NUMA domains using
+
 ``` 
         export I_MPI_PIN=1
 ```
+
 This is the default. 
 
 #### Expected Skylake Gold 6148 dual socket (single prec, single node 20+20 cores) performance using NUMA MPI mapping): 
 
+``` bash
 mpirun -n 2 benchmarks/Benchmark_dwf --grid 16.16.16.16 --mpi 2.1.1.1 --cacheblocking 2.2.2.2 --dslash-asm --shm 1024 --threads 18 
+```
 
 TBA
-
 
 ### Build setup for AMD EPYC / RYZEN
 
@@ -332,10 +337,12 @@ The following configuration is recommended for the AMD EPYC platform.
 ```
 
 If gmp and mpfr are NOT in standard places (/usr/) these flags may be needed:
+
 ``` bash
                --with-gmp=<path>        \
                --with-mpfr=<path>       \
 ```
+
 where `<path>` is the UNIX prefix where GMP and MPFR are installed. 
 
 Using MPICH and g++ v4.9.2, best performance can be obtained using explicit GOMP_CPU_AFFINITY flags for each MPI rank.
@@ -344,9 +351,12 @@ This can be done by invoking MPI on a wrapper script omp_bind.sh to handle this.
 It is recommended to run 8 MPI ranks on a single dual socket AMD EPYC, with 8 threads per rank using MPI3 and
 shared memory to communicate within this node:
 
+``` bash
 mpirun -np 8 ./omp_bind.sh ./Benchmark_dwf --mpi 2.2.2.1 --dslash-unroll --threads 8 --grid 16.16.16.16 --cacheblocking 4.4.4.4 
+```
 
 Where omp_bind.sh does the following:
+
 ```
 #!/bin/bash
 
@@ -371,7 +381,9 @@ Performance:
 
 #### Expected AMD EPYC 7601 dual socket (single prec, single node 32+32 cores) performance using NUMA MPI mapping): 
 
+``` bash
 mpirun  -np 8 ./omp_bind.sh ./Benchmark_dwf --threads 8 --mpi 2.2.2.1 --dslash-unroll --grid 16.16.16.16 --cacheblocking 4.4.4.4
+```
 
 TBA
 
@@ -389,14 +401,29 @@ Many versions of g++ and clang++ work with Grid, and involve merely replacing CX
 and omit the enable-mkl flag. 
 
 Single node builds are enabled with 
+
 ```
             --enable-comms=none
 ```
 
 FFTW support that is not in the default search path may then enabled with
+
 ```
     --with-fftw=<installpath>
 ```
 
 BLAS will not be compiled in by default, and Lanczos will default to Eigen diagonalisation.
 
+## Reporting bugs
+
+_To help us tracking and solving more efficiently issues with Grid, please report problems using the issue system of GitHub rather than sending emails to Grid developers._
+
+When you file an issue, please go though the following checklist:
+
+1. Check that the code is pointing to the `HEAD` of `develop`. 
+2. Give a description of the target platform (CPU, network, compiler). Please give the full CPU part description, using for example `cat /proc/cpuinfo | grep 'model name' | uniq` (Linux) or `sysctl machdep.cpu.brand_string` (macOS) and the full output the `--version` option of your compiler.
+3. Give the exact `configure` command used.
+4. Attach `config.log`.
+5. Attach `grid.config.summary`.
+6. Attach the output of `make V=1`.
+7. Describe the issue and any previous attempt to solve it. If relevant, show how to reproduce the issue using a minimal working example.
