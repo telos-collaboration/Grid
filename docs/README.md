@@ -46,7 +46,7 @@ there are specific compulation examples:
 Grid requires a C++ compiler with support for C++17.
 
 There have historically been issues with certain GCC versions
-(see e.g. issue #100);
+(see e.g. issue [#100](https://github.com/paboyle/Grid/issues/100));
 these are not expected to be observed
 with current-generation GCC versions supporting C++17.
 
