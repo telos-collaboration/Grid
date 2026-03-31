@@ -17,5 +17,38 @@ nav:
   - Home: README.md
   - Licence: LICENCE.md
   - Doxygen documentation: dev/index.md
-  
+  - Getting started:
+      - Quick-start guide: getting-started/quick-start-guide.md
+      - Communication interfaces: getting-started/communications-interfaces.md
+      - Architecture targets: getting-started/simd-targets.md
+      - Building on Intel and AMD targets: getting-started/building-on-intel-and-amd.md
+  - Using Grid:
+      - Running on KNL: using-grid/running-on-knl.md
+  - Development:
+      - Execution model: development/execution-model.md
+      - Reporting an issue: development/reporting-issue.md
+      - Continuous integration: development/ci.md
+  - API description:
+      - Introduction: api-description/introduction.md
+      - Tensor classes: api-description/tensor-classes.md
+      - Vectorisation: api-description/vectorisation.md
+      - Coordinates: api-description/coordinates.md
+      - Grids: api-description/grids.md
+      - Lattice containers: api-description/lattice-containers.md
+      - Random number generators: api-description/random-number-generators.md
+  - Lattice theories:
+      - HMC: lattice-theories/using-hmc.md
+
 theme: readthedocs
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - tables
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
