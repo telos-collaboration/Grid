@@ -636,6 +636,9 @@ class IldgWriter : public ScidacWriter {
   void writeConfiguration(Lattice<vobj> &Umu, int sequence, std::string LFN, std::string description) 
   {
     GridBase * grid = Umu.Grid();
+    
+    // catch malformed (wrt group_name) template instantiations at compile-time 
+    static_assert( std::is_same_v<group_name, GroupName::SU> || (std::is_same_v<group_name, GroupName::Sp> && Nc%2==0), "IldgWriter supports SU(Nc) and Sp(Nc=2k) lattices. For Sp fields Nc must be even" );
 
     ////////////////////////////////////////
     // fill the Grid header
