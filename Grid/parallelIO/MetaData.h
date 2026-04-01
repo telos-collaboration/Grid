@@ -363,7 +363,7 @@ struct BinarySimpleUnmunger {
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
   
   void operator()(sobj &in, fobj &out) {
-    // take word by word and transform according to the status
+    // take word by word and transform accoding to the status
     fobj_stype *out_buffer = (fobj_stype *)&out;
     sobj_stype *in_buffer = (sobj_stype *)&in;
     size_t fobj_words = sizeof(out) / sizeof(fobj_stype);
