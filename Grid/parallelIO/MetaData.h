@@ -253,7 +253,7 @@ inline void reconstructSU(LorentzColourMatrix &cm)
 // is an even or odd parity permutation. even/odd if the number of 
 // inversions needed to get back to the lexicographic 1st sequence is
 // even or odd. ex: {1,2,0} --> {1,0,2} --> {0,1,2} implies {1,2,0} is even. 
-bool is_perm_even(std::vector<int> &v) {
+inline bool is_perm_even(std::vector<int> &v) {
 
     int n = v.size();
     std::vector<int> a(n,0);
