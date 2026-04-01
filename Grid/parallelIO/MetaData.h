@@ -4,10 +4,11 @@
 
     Source file: ./lib/parallelIO/Metadata.h
 
-    Copyright (C) 2015
+    Copyright (C) 2015, 2026
 
     Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     Author: Jamie Hudspith <renwick.james.hudspth@gmail.com>
+    Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

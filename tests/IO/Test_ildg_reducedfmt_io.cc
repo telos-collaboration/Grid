@@ -4,7 +4,7 @@
 
     Source file: ./Test_ildg_reducedfmt_io.cc
 
-    Copyright (C) 2015
+    Copyright (C) 2026
 
 Author: Azusa Yamaguchi <ayamaguc@staffmail.ed.ac.uk>
 Author: Peter Boyle <paboyle@ph.ed.ac.uk>

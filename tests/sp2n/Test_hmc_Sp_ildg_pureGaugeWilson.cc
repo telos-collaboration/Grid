@@ -4,11 +4,12 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./tests/Test_hmc_WilsonFermionGauge.cc
 
-Copyright (C) 2015
+Copyright (C) 2026
 
 Author: Peter Boyle <pabobyle@ph.ed.ac.uk>
 Author: neo <cossu@post.kek.jp>
 Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
