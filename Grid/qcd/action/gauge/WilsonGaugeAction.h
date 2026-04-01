@@ -47,7 +47,7 @@ template <class Gimpl>
 class WilsonGaugeAction : public Action<typename Gimpl::GaugeField>
 /*! @brief The Wilson gauge action,
  * as introduced in Wilson, Phys. Rev. D 10, 2445.
- * See for example Gattringer and Lang, Eq. (3.4).
+ * See for example Gattringer and Lang, Eq. (3.93).
  *
  * Expects a single parameter encoding the gauge coupling.
  * @param Gimpl: The gauge implementation.
@@ -65,9 +65,7 @@ public:
   using Action<GaugeField>::refresh;
   
   /*! @brief Construct a Wilson gauge action.
-   * @param[in] beta_: The inverse coupling \f$\beta\f$,
-   * Note that this is defined as \f$6 / g^2\f$ for all ``Nc``,
-   * **not** \f$2N_c / g^2\f$ as in Gattringer and Lang Eg. (3.93).
+   * @param[in] beta_: The inverse coupling \f$\beta\f = 2N_c/g^2$.
    */
   explicit WilsonGaugeAction(RealD beta_):beta(beta_){};
 
@@ -82,13 +80,18 @@ public:
   /*! @brief Gauge fields do not have pseudofermions, so this is a no-op */
   virtual void refresh(const GaugeField &U, GridSerialRNG &sRNG, GridParallelRNG &pRNG){};
 
-  /*! @brief The Wilson gauge action itself; see Gattringer and Lang Eq. (3.4)
+  /*! @brief The Wilson gauge action itself; see Gattringer and Lang Eq. (3.93)
    * @param[in] U: The gauge field on which to compute the action.
    * @returns The value of the action \f$S[U]\f$
    */
   virtual RealD S(const GaugeField &U) {
     RealD plaq = WilsonLoops<Gimpl>::avgPlaquette(U);
     RealD vol = U.Grid()->gSites();
+
+    // Comparing with Gattringer and Lang Eq. (3.93),
+    // taking the _average_ plaquette here means that
+    // multiplying explicitly by the volume and dimensionality factors is needed,
+    // but the factor of \f$1 / N_c\f$ divides out.
     RealD action = beta * (1.0 - plaq) * (Nd * (Nd - 1.0)) * vol * 0.5;
     return action;
   };
@@ -96,11 +99,13 @@ public:
   /*! @brief The derivative of the Wilson gauge action
    * @param[in] U: The gauge field on which to compute the derivative
    * @param[out] dSdU: Output field into which to write the derivative
+   *
+   * !todo The deriv method of WilsonGaugeAction
+   * does not currently use an optimal implementation;
+   * by extending the function Ta to include Lorentz indices,
+   * this could be improved.
    */
   virtual void deriv(const GaugeField &U, GaugeField &dSdU) {
-    // not optimal implementation FIXME
-    // extend Ta to include Lorentz indexes
-
     RealD factor = 0.5 * beta / RealD(Nc);
     GridBase *grid = U.Grid();
 
