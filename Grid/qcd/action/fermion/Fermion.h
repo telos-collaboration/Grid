@@ -224,7 +224,7 @@ template <typename WImpl> using WilsonExpClover = WilsonCloverFermion<WImpl, Exp
 /*! Doubled, double-precision, Wilson clover fermion in fundamental representation of \f$SU(N)\f$ */
 typedef WilsonClover<WilsonImplD2> WilsonCloverFermionD2;
 /*! Single-precision Wilson clover fermion in fundamental representation of \f$SU(N)\f$ */
-typedef WilsonCloverWilsonImplF> WilsonCloverFermionF;
+typedef WilsonClover<WilsonImplF> WilsonCloverFermionF;
 /*! Double-precision Wilson clover fermion in fundamental representation of \f$SU(N)\f$ */
 typedef WilsonClover<WilsonImplD> WilsonCloverFermionD;
 
