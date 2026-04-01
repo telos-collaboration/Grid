@@ -401,8 +401,8 @@ struct GaugeSimpleMunger{
   void operator()(fobj &in, sobj &out) {
     for (int mu = 0; mu < Nd; mu++) {
       for (int i = 0; i < Nc; i++) {
-for (int j = 0; j < Nc; j++) {
-	  out(mu)()(i, j) = in(mu)()(i, j);
+    for (int j = 0; j < Nc; j++) {
+	out(mu)()(i, j) = in(mu)()(i, j);
 	}}
     }
   };
