@@ -38,7 +38,7 @@ jobs:
         uses: zauguin/install-texlive@v4
         with:
           packages: >
-            latex iftex graphics xcolor newunicodechar
+            scheme-basic iftex graphics xcolor newunicodechar
 
       - name: Set up Python
         uses: actions/setup-python@v5
