@@ -2,7 +2,7 @@
 
 Grid physics library, www.github.com/paboyle/Grid
 
-Source file: ./lib/parallelIO/IldgIO.h
+Source file: ./lib/parallelIO/IldgIOtypes.h
 
 Copyright (C) 2015
 
@@ -150,6 +150,7 @@ public:
 				  double, version,
 				  std::string, field,
 				  int, precision,
+				  int, rows,
 				  int, lx,
 				  int, ly,
 				  int, lz,

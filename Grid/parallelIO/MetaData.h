@@ -2,12 +2,13 @@
 
     Grid physics library, www.github.com/paboyle/Grid 
 
-    Source file: ./lib/parallelIO/NerscIO.h
+    Source file: ./lib/parallelIO/Metadata.h
 
-    Copyright (C) 2015
+    Copyright (C) 2015, 2026
 
     Author: Peter Boyle <paboyle@ph.ed.ac.uk>
     Author: Jamie Hudspith <renwick.james.hudspth@gmail.com>
+    Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -209,7 +210,7 @@ inline void reconstruct3(LorentzColourMatrix & cm)
       cm(mu)()(1,0) = -adj(cm(mu)()(0,y)) ;
       cm(mu)()(1,1) =  adj(cm(mu)()(0,x)) ;
     #else
-      const int x=0 , y=1 , z=2 ; // a little disinenuous labelling
+      const int x=0 , y=1 , z=2 ; // a little disingenuous labelling
       cm(mu)()(2,x) = adj(cm(mu)()(0,y)*cm(mu)()(1,z)-cm(mu)()(0,z)*cm(mu)()(1,y)); //x= yz-zy
       cm(mu)()(2,y) = adj(cm(mu)()(0,z)*cm(mu)()(1,x)-cm(mu)()(0,x)*cm(mu)()(1,z)); //y= zx-xz
       cm(mu)()(2,z) = adj(cm(mu)()(0,x)*cm(mu)()(1,y)-cm(mu)()(0,y)*cm(mu)()(1,x)); //z= xy-yx
@@ -217,14 +218,142 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
+// the elements of the final row of an SU(N) matrix
+// can be obtained from the determinants of the N N-1 by N-1 matrices
+// formed by deleting each column and the Nth row of the SU(N) matrix.
+// 1) create a ColourSubMatrix object to store the N-1 dim matrix.
+// 2) peek the colour matrix in a particular direction. 
+// 3) fill the ColourSubMatrix object from the peeked matrix.
+// 4) take the Determinant and fill the corresponding element
+// 5) repeat for each Lorentz index 
+inline void reconstructSU(LorentzColourMatrix &cm)
+{
+  using ColourSubMatrix = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
+
+  ColourSubMatrix Su; // for the Nc-1 by Nc-1 matrix
+  ColourMatrix SU;   // for the Nc-1 by N matrix read from disk
+
+  for(int mu=0; mu<Nd; mu++) {
+    Su = Zero();
+    SU = peekIndex<LorentzIndex>(cm,mu); 
+    for(int k=0; k<Nc; k++) {
+      for(int i=0; i<Nc-1; i++) {
+        for(int j=0; j<Nc-1; j++) {
+          int J = (j<k) ? j : j+1; // for correct indexing of columns in SU
+          Su()()(i,j) = SU()()(i,J);
+        }
+      }
+      SU()()(Nc-1,k) = std::pow(-1,k+Nc-1) * adj(Determinant(Su));
+    } 
+    pokeIndex<LorentzIndex>(cm,SU,mu);
+  }
+}
+
+// this function determines if a sequence of integers {i0...ik}
+// is an even or odd parity permutation. even/odd if the number of 
+// inversions needed to get back to the lexicographic 1st sequence is
+// even or odd. ex: {1,2,0} --> {1,0,2} --> {0,1,2} implies {1,2,0} is even. 
+inline bool is_perm_even(std::vector<int> &v) {
+
+    int n = v.size();
+    std::vector<int> a(n,0);
+    int c = 0;
+
+    for(int j=0; j<n; j++) {
+        if(a[j]==0) {
+            c += 1;
+            a[j] = 1;
+            int i = j;
+            while(v[i]!=j) {
+                i = v[i];
+                a[i] = 1;
+            }
+        }
+    }
+
+    if ((n-c)%2==0) {
+      return true;
+    } else {
+      return false;
+    }
+}
+
+/////////////////////////////////////////////////////////////
+//
+//  this function follows the prescription laid out by the
+//  ildg spec, forming a sum of products in lexicographic order.
+//
+// SU[N-1][k] = sum ( SU[0][i0].SU[1][i1]...SU[N-2][iN-2] )*
+//         {i0...iN-2!=k}
+//
+// see appendix A.2 of
+// https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
+/////////////////////////////////////////////////////////////
+inline void unique_reconstructSU(LorentzColourMatrix &cm)
+{
+
+  std::vector<int> indices(Nc);
+  std::iota(indices.begin(), indices.end(), 0); // {0,1,...,Nc-1}
+
+  for(int mu=0; mu<Nd; mu++) {
+    for(int k=0; k<Nc; k++) {
+      std::vector<int> cols = indices;
+      cols.erase(cols.begin()+k);     // {0,...,k-1,k+1,...Nc-1}
+      cm(mu)()(Nc-1,k) = 0;
+			// construct sum of products
+      // as we cycle through permutations of cols
+      do
+      {
+        std::vector<int> perm = cols;
+        perm.emplace_back(k);
+        ComplexD prod(1,0);
+        for(int i=0;i<Nc-1;i++) {
+          prod *= cm(mu)()(i,cols[i]) ;
+        }
+        if( is_perm_even(perm) ) { cm(mu)()(Nc-1,k) += conjugate(prod); }
+        else  									 { cm(mu)()(Nc-1,k) -= conjugate(prod); }
+      }
+      while (std::next_permutation(cols.begin(), cols.end())); 
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////
+//  this function takes a reduced format
+//  Sp(2N) field with N rows and 2N columns 
+//  and reconstructs the full 2Nx2N matrix.
+//  the full matrix has block structure: 
+//      | A  B |
+//      |-B* A*|
+//  where A and B are NxN matrices.
+//  see appendix A.2 of
+// https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
+////////////////////////////////////////////////////////////////
+inline void reconstructSp(LorentzColourMatrix & cm) 
+{
+  assert( Nc%2==0 ); 
+  int N = Nc/2;
+  for(int mu=0;mu<Nd;mu++){
+    for(int i=0;i<N;i++){
+      for(int j=0;j<N;j++){
+        cm(mu)()(i+N,j) = -adj( cm(mu)()(i,j+N) ); //B to -B*
+        cm(mu)()(i+N,j+N) = adj( cm(mu)()(i,j) );	//A to A*
+      }
+    }
+  }
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Some data types for intermediate storage
 ////////////////////////////////////////////////////////////////////////////////
 template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, Nc-1>, Nd >;
-
 typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
 typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
+
+// intermediate types for Sp(2N) fields
+template<typename vtype> using iLorentzColourNx2N = iVector<iVector<iVector<vtype, Nc>, Nc/2>, Nd >;
+typedef iLorentzColourNx2N<ComplexF>  LorentzColourNx2NF;
+typedef iLorentzColourNx2N<ComplexD>  LorentzColourNx2ND;
 
 /////////////////////////////////////////////////////////////////////////////////
 // Simple classes for precision conversion
@@ -273,8 +402,8 @@ struct GaugeSimpleMunger{
   void operator()(fobj &in, sobj &out) {
     for (int mu = 0; mu < Nd; mu++) {
       for (int i = 0; i < Nc; i++) {
-	for (int j = 0; j < Nc; j++) {
-	  out(mu)()(i, j) = in(mu)()(i, j);
+    for (int j = 0; j < Nc; j++) {
+	out(mu)()(i, j) = in(mu)()(i, j);
 	}}
     }
   };
@@ -340,6 +469,149 @@ struct Gauge3x2unmunger{
     }
   }
 };
+
+template<class fobj,class sobj, bool unique_su>
+struct GaugeSUmunger;
+// two specialisations for two ways to reconstruct
+// NcxNc matrix from (Nc-1)xNc matrix
+
+template<class fobj,class sobj>
+struct GaugeSUmunger<fobj,sobj,false>{
+  void operator() (fobj &in,sobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc-1;i++){
+        for(int j=0;j<Nc;j++){
+          out(mu)()(i,j) = in(mu)(i)(j);
+        }
+      }
+    }
+  reconstructSU(out);
+  }
+};
+
+template<class fobj,class sobj>
+struct GaugeSUmunger<fobj,sobj,true>{
+  void operator() (fobj &in,sobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc-1;i++){
+        for(int j=0;j<Nc;j++){
+          out(mu)()(i,j) = in(mu)(i)(j);
+        }
+      }
+    }
+    unique_reconstructSU(out);
+  }
+};
+
+
+template<class fobj,class sobj>
+struct GaugeSUunmunger{
+  void operator() (sobj &in,fobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc-1;i++){
+	      for(int j=0;j<Nc;j++){
+	        out(mu)(i)(j) = in(mu)()(i,j);
+	      }
+      }
+    }
+  }
+};
+
+template<class fobj,class sobj>
+struct GaugeSpmunger{
+  void operator() (fobj &in,sobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc/2;i++){
+		    for(int j=0;j<Nc;j++){
+	  	    out(mu)()(i,j) = in(mu)(i)(j);
+		    }
+	    }
+    }
+  	reconstructSp(out);
+  }
+};
+
+// transform Sp(2N) fields into reduced Nx2N format.
+template<class fobj,class sobj>
+struct GaugeSpunmunger{
+  void operator() (sobj &in,fobj &out){
+    for(int mu=0;mu<Nd;mu++){
+      for(int i=0;i<Nc/2;i++){
+	      for(int j=0;j<Nc;j++){
+	        out(mu)(i)(j) = in(mu)()(i,j);
+		    }
+	    }
+    }
+  }
+};
+
+// these are used as non-type template parameters when
+// writing with GaugeUnMunger and as regular parameters
+// when reading with IldgReader.readConfiguration 
+enum struct FloatingPointFormat { IEEE64BIG, IEEE32BIG };
+enum struct MatrixFormat { FULL, REDUCED };
+/////////////////////////////////////////////////////////
+// this struct is used to choose the appropriate
+// unmunger (for writing) at compile time.
+// there are 3 partial template specialisations,
+// > no group reduction - treat SU and Sp the same
+// > group reduction for SU fields
+// > group reduction for Sp fields
+// It also exposes the intermediate out_type for use in 
+// IldgWriter.writeConfiguration
+/////////////////////////////////////////////////////////
+template<class vobj, class group_name, MatrixFormat m_fmt, FloatingPointFormat fp_fmt>
+struct GaugeUnMunger;
+
+// no group reduction
+template<class vobj, class group_name, FloatingPointFormat fp_fmt>
+struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, fp_fmt>
+{	
+  using in_type  = typename vobj::scalar_object; 
+  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  BinarySimpleUnmunger<out_type, in_type> unmunger;
+
+  void operator() (in_type &in, out_type &out){
+    unmunger(in,out);
+  }
+};
+
+//template specialisation for SU
+template<class vobj, FloatingPointFormat fp_fmt>
+struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
+{
+  using in_type  = typename vobj::scalar_object; 
+  using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColour2x3D,LorentzColour2x3F>>;
+
+  BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
+  GaugeSUunmunger<out_type, tmp_type> gauge_unmunger;
+
+  void operator() (in_type &in, out_type &out){
+    tmp_type tmp;
+    binary_unmunger(in, tmp);
+    gauge_unmunger(tmp,out);
+  }
+};
+
+//template specialisation for Sp
+template<class vobj, FloatingPointFormat fp_fmt>
+struct GaugeUnMunger<vobj, GroupName::Sp, MatrixFormat::REDUCED, fp_fmt>
+{
+  using in_type  = typename vobj::scalar_object;
+  using tmp_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourNx2ND,LorentzColourNx2NF>>;
+
+  BinarySimpleUnmunger<tmp_type, in_type> binary_unmunger;
+  GaugeSpunmunger<out_type, tmp_type> gauge_unmunger;
+
+  void operator() (in_type &in, out_type &out){
+    tmp_type tmp;
+    binary_unmunger(in, tmp);
+    gauge_unmunger(tmp, out);
+  }
+};
+
 
 NAMESPACE_END(Grid);
 

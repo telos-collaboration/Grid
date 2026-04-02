@@ -2104,20 +2104,23 @@ These are specialised to SciDAC writers, introducing facilities for generating t
     void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord);
   };
 
-They are also specialised to ILDG format writers, available and defined only for Gauge configurations::
+They are also specialised to ILDG format writers, available and defined only for Gauge configurations. These ``IldgWriter`` and ``IldgReader`` template classes can read and write ILDG-compliant SU(N) and Sp(2N) lattice configurations as full NxN and 2Nx2N matrix fields respectively. They also support reduced format read/write with (N-1)xN matrix fields for SU(N) and Nx2N matrix fields for Sp(2N), as specified by `Rev. 1.2 <https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf>`_ of the ILDG Binary File Format.::
 
   class IldgWriter : public ScidacWriter {
 
-    template <class vsimd>
-    void writeConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu,int sequence,std::string LFN,std::string description);
+    template <class group_name = GroupName::SU, MatrixFormat matrix_fmt = MatrixFormat::FULL, FloatingPointFormat fp_fmt = FloatingPointFormat::IEEE64BIG, class stats = PeriodicGaugeStatistics, class vobj>
+    void writeConfiguration(Lattice<vobj> &Umu, int sequence, std::string LFN, std::string description)
 
   };
 
   class IldgReader : public GridLimeReader {
-    template <class vsimd>
-    void readConfiguration(Lattice<iLorentzColourMatrix<vsimd> > &Umu, FieldMetaData &FieldMetaData_) ;
+
+    template <bool unique_su = false, class stats = PeriodicGaugeStatistics, class vobj>
+    void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_);
 
   };
+
+``writeConfiguration``'s template parameters; ``group_name``, ``MatrixFormat``, and ``FloatingPointFormat`` specify the format the lattices are to be written to disk with. At present there are two options for the group, SU and Sp, two options for the matrix format, reduced and not reduced, and two options for the floating point format, 32 bit and 64 bit precision. Reduced format Sp gauge fields take up half as much storage as non-reduced fields while SU(N) fields take up N-1/N as much storage as their non-reduced counterparts. When reading reduced format lattices from disk there are multiple ways the full SU(N) field can be recovered. The ``unique_su`` template parameter of ``readConfiguration`` controls which of two alternative functions is used. Set ``unique_su=true`` if you want ``Grid`` to follow the prescription laid out in the ILDG Binary File Format specification when reconstructing reduced format lattices.
 
 **Implementation detail**
 

@@ -4,7 +4,11 @@ Grid physics library, www.github.com/paboyle/Grid
 
 Source file: ./lib/parallelIO/IldgIO.h
 
-Copyright (C) 2015
+Copyright (C) 2015, 2026
+
+Author: Peter Boyle <paboyle@ph.ed.ac.uk>
+Author: Guido Cossu <guido.cossu@ed.ac.uk>
+Author: Gaurav Ray <gaurav.sinharay@swansea.ac.uk>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -413,7 +417,7 @@ class GridLimeWriter : public BinaryIO
   // This routine is Collectively called by all nodes
   // in communicator used by the field.Grid()
   ////////////////////////////////////////////////////
-  template<class vobj>
+  template<class vobj, class group_name=GroupName::SU, MatrixFormat matrix_fmt=MatrixFormat::FULL, FloatingPointFormat fp_fmt=FloatingPointFormat::IEEE64BIG>
   void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
   {
     ////////////////////////////////////////////////////////////////////
@@ -438,9 +442,9 @@ class GridLimeWriter : public BinaryIO
     ////////////////////////////////////////////
     // Create record header
     ////////////////////////////////////////////
-    typedef typename vobj::scalar_object sobj;
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
+	  typedef typename GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt>::out_type sobj;
     uint64_t PayloadSize = sizeof(sobj) * grid->_gsites;
     if ( boss_node ) {
       createLimeRecordHeader(record_name, 0, 0, PayloadSize);
@@ -463,9 +467,11 @@ class GridLimeWriter : public BinaryIO
     ///////////////////////////////////////////
     // The above is collective. Write by other means into the binary record
     ///////////////////////////////////////////
-    std::string format = getFormatString<vobj>();
-    BinarySimpleMunger<sobj,sobj> munge;
-    BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, munge, offset1, format,nersc_csum,scidac_csuma,scidac_csumb,control);
+    std::string format = getFormatString<sobj>();
+
+    GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt> unmunger;
+
+    BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, unmunger, offset1, format, nersc_csum, scidac_csuma, scidac_csumb, control);
 
     ///////////////////////////////////////////
     // Wind forward and close the record
@@ -484,7 +490,7 @@ class GridLimeWriter : public BinaryIO
       err=limeWriterCloseRecord(LimeW);  assert(err>=0);
     }
     ////////////////////////////////////////
-    // Write checksum element, propagaing forward from the BinaryIO
+    // Write checksum element, propagating forward from the BinaryIO
     // Always pair a checksum with a binary object, and close message
     ////////////////////////////////////////
     scidacChecksum checksum;
@@ -620,7 +626,7 @@ class IldgWriter : public ScidacWriter {
   {
     uint64_t PayloadSize = LFN.size();
     int err;
-    createLimeRecordHeader(ILDG_DATA_LFN, 0 , 0, PayloadSize);
+    createLimeRecordHeader(ILDG_DATA_LFN, 1 , 1, PayloadSize);
     err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize,LimeW); assert(err>=0);
     err=limeWriterCloseRecord(LimeW); assert(err>=0);
   }
@@ -630,13 +636,13 @@ class IldgWriter : public ScidacWriter {
   // Don't require scidac records EXCEPT checksum
   // Use Grid MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class stats = PeriodicGaugeStatistics>
-  void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,int sequence,std::string LFN,std::string description) 
+  template <class stats = PeriodicGaugeStatistics, class group_name = GroupName::SU, MatrixFormat matrix_fmt = MatrixFormat::FULL, FloatingPointFormat fp_fmt = FloatingPointFormat::IEEE64BIG, class vobj>
+  void writeConfiguration(Lattice<vobj> &Umu, int sequence, std::string LFN, std::string description) 
   {
     GridBase * grid = Umu.Grid();
-    typedef Lattice<vLorentzColourMatrixD> GaugeField;
-    typedef vLorentzColourMatrixD vobj;
-    typedef typename vobj::scalar_object sobj;
+    
+    // catch malformed (wrt group_name) template instantiations at compile-time 
+    static_assert( std::is_same_v<group_name, GroupName::SU> || (std::is_same_v<group_name, GroupName::Sp> && Nc%2==0), "IldgWriter supports SU(Nc) and Sp(Nc=2k) lattices. For Sp fields Nc must be even" );
 
     ////////////////////////////////////////
     // fill the Grid header
@@ -649,29 +655,51 @@ class IldgWriter : public ScidacWriter {
 
     stats Stats;
     Stats(Umu,header);
-    
-    std::string format = header.floating_point;
+     
     header.ensemble_id    = description;
     header.ensemble_label = description;
     header.sequence_number = sequence;
     header.ildg_lfn = LFN;
-
-    assert ( (format == std::string("IEEE32BIG"))  
-           ||(format == std::string("IEEE64BIG")) );
-
     //////////////////////////////////////////////////////
     // Fill ILDG header data struct
     //////////////////////////////////////////////////////
     ildgFormat ildgfmt ;
     const std::string stNC = std::to_string( Nc ) ;
-    ildgfmt.field          = std::string("su"+stNC+"gauge");
 
-    if ( format == std::string("IEEE32BIG") ) { 
-      ildgfmt.precision = 32;
-    } else { 
-      ildgfmt.precision = 64;
+    // use the gauge group to populate the 'field' element of ildg header
+    if constexpr ( is_su<group_name>::value ) {
+      std::cout << GridLogMessage << "writing SU(" << stNC << ") field" << std::endl;
+      ildgfmt.field = std::string("su"+stNC+"gauge");
+    } else if constexpr ( is_sp<group_name>::value ) {
+      std::cout << GridLogMessage << "writing Sp(" << stNC << ") field" << std::endl;
+      ildgfmt.field = std::string("sp"+stNC+"gauge");
+    } else {
+      static_assert(1, "Unrecognised group; unable to determine field tag");
     }
-    ildgfmt.version = 1.0;
+
+    // populate 'rows' element of ildg header
+    if constexpr( matrix_fmt==MatrixFormat::REDUCED && is_su<group_name>::value ) {
+      ildgfmt.rows = Nc-1 ; 
+    } else if constexpr( matrix_fmt==MatrixFormat::REDUCED && is_sp<group_name>::value ) {
+      ildgfmt.rows = Nc/2 ; 
+    } else if constexpr( matrix_fmt==MatrixFormat::FULL ) {
+      ildgfmt.rows = Nc;
+    } else {
+      static_assert(1, "Unknown MatrixFormat specified");
+    }
+
+    // set fmt string for single/double precision
+    if constexpr( fp_fmt == FloatingPointFormat::IEEE32BIG ) {
+      header.floating_point = std::string("IEEE32BIG");
+      ildgfmt.precision = 32;
+    } else if constexpr ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
+      header.floating_point = std::string("IEEE64BIG");
+      ildgfmt.precision = 64;
+    } else {
+      static_assert(1, "Unknown FloatingPointFormat specified");
+    }
+
+    ildgfmt.version = 1.2; 
     ildgfmt.lx = header.dimension[0];
     ildgfmt.ly = header.dimension[1];
     ildgfmt.lz = header.dimension[2];
@@ -704,14 +732,70 @@ class IldgWriter : public ScidacWriter {
     writeLimeObject(1,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
     writeLimeObject(0,0,info,info.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
     writeLimeObject(0,0,ildgfmt,std::string("ildgFormat")   ,std::string(ILDG_FORMAT)); // rec
+    writeLimeLatticeBinaryObject<vobj,group_name,matrix_fmt,fp_fmt>(Umu,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
     writeLimeIldgLFN(header.ildg_lfn);                                                 // rec
-    writeLimeLatticeBinaryObject(Umu,std::string(ILDG_BINARY_DATA));      // Closes message with checksum
     //    limeDestroyWriter(LimeW);
   }
 };
 
 class IldgReader : public GridLimeReader {
  public:
+
+  //////////////////////////////////////////////////////////////////
+  // this helper function wraps the logic for choosing
+  // the correct munger and intermediate lattice data type
+  // when reading a lattice field from disk.  
+  // This is a runtime choice as Grid has to first read the 
+  // header of the lattice cfg. Therefore templating this function on
+  // FloatingPointFormat etc. does not work. It is a rather 
+  // cumbersome if statement with 6 branches, 
+  // but the benefit of organising IldgReader this way is it makes 
+  // readConfiguration clearer and more readable.
+  //////////////////////////////////////////////////////////////////
+  template<bool unique_su, class vobj>
+  void readLatticeBinaryObject(Lattice<vobj> &Umu, std::string filename, FloatingPointFormat fp_fmt, MatrixFormat matrix_fmt, bool is_grp_su, bool is_grp_sp, uint64_t &offset, uint32_t &nersc_csum, uint32_t &scidac_csuma, uint32_t &scidac_csumb) 
+  {
+
+    // need all the types we could possibly read from
+    // including the intermediate data types for 
+    // reduced format lattices and single/double precision
+    typedef typename vobj::scalar_object sobj;
+    typedef LorentzColourMatrixF  fobj;
+    typedef LorentzColourMatrixD  dobj;
+    typedef LorentzColour2x3F     fobjsuR;
+    typedef LorentzColour2x3D     dobjsuR;
+    typedef LorentzColourNx2NF    fobjspR;
+    typedef LorentzColourNx2ND    dobjspR;
+
+    std::string format;
+    
+    if ( fp_fmt == FloatingPointFormat::IEEE64BIG ) {
+      format = std::string("IEEE64BIG");
+      if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
+        GaugeSUmunger<dobjsuR,sobj,unique_su> munge;
+        BinaryIO::readLatticeObject<vobj,dobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb); 
+      } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
+        GaugeSpmunger<dobjspR,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,dobjspR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      } else {
+        GaugeSimpleMunger<dobj,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,dobj>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      }
+      } else if ( fp_fmt == FloatingPointFormat::IEEE32BIG) {
+        format = std::string("IEEE32BIG");
+        if ( is_grp_su && matrix_fmt==MatrixFormat::REDUCED ) {
+        GaugeSUmunger<fobjsuR,sobj,unique_su> munge;
+        BinaryIO::readLatticeObject<vobj,fobjsuR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      } else if ( is_grp_sp && matrix_fmt==MatrixFormat::REDUCED ) {
+        GaugeSpmunger<fobjspR,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,fobjspR>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      } else {
+        GaugeSimpleMunger<fobj,sobj> munge;
+        BinaryIO::readLatticeObject<vobj,fobj>(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
+      }	  
+      } else { assert("Unable to determine which readLatticeObject function template to instantiate."); }	
+
+  }
 
   ////////////////////////////////////////////////////////////////
   // Read either Grid/SciDAC/ILDG configuration
@@ -720,15 +804,8 @@ class IldgReader : public GridLimeReader {
   // Else use ILDG MetaData object if present.
   // Else use SciDAC MetaData object if present.
   ////////////////////////////////////////////////////////////////
-  template <class stats = PeriodicGaugeStatistics>
-  void readConfiguration(Lattice<vLorentzColourMatrixD> &Umu, FieldMetaData &FieldMetaData_) {
-
-    typedef Lattice<vLorentzColourMatrixD > GaugeField;
-    typedef typename GaugeField::vector_object  vobj;
-    typedef typename vobj::scalar_object sobj;
-
-    typedef LorentzColourMatrixF fobj;
-    typedef LorentzColourMatrixD dobj;
+  template <class stats = PeriodicGaugeStatistics, bool unique_su = false, class vobj>
+  void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_) {
 
     GridBase *grid = Umu.Grid();
 
@@ -755,8 +832,15 @@ class IldgReader : public GridLimeReader {
     uint32_t scidac_csuma;
     uint32_t scidac_csumb;
 
+    // these variables store information about the lattice that is read
+    // from its ildg-format header. if matrix_fmt==MatrixFormat::REDUCED 
+    // then Grid will reconstruct the full matrix using the appropriate munger.
+    bool is_grp_su = false;
+    bool is_grp_sp = false;
+    MatrixFormat matrix_fmt;
     // Binary format
     std::string format;
+    FloatingPointFormat fp_fmt;
 
     //////////////////////////////////////////////////////////////////////////
     // Loop over all records
@@ -787,11 +871,52 @@ class IldgReader : public GridLimeReader {
 	std::string xmlstring(&xmlc[0]);
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
+	  // 'older' format ildg lattices don't have a <rows/> element in their header.
+	  // Grid's XML parsing doesn't support optional parameters with default values. 
+	  // Rather than rewrite that, here we explicitly add the <rows/> element with default
+	  // value = Nc to the ildg header if it is missing, before passing it to XmlReader."
+	  pugi::xml_document doc;
+	  doc.load_string(xmlstring.c_str());
+
+	  if(doc.child("ildgFormat").child("rows")) {
+	    std::string rows = doc.child("ildgFormat").child("rows").child_value();
+	    std::cout << GridLogMessage << "<rows/> element present = " << rows << ". So this lattice might be ildg 1.2 compliant." << std::endl;
+	  } else {
+	    std::cout << GridLogMessage << "<rows/> element not present - adding it after <field>." << std::endl;
+	    pugi::xml_node ildgfmt = doc.child("ildgFormat");
+	    const std::string stNC = std::to_string(Nc);
+	    ildgfmt.insert_child_after("rows", ildgfmt.child("field")).text().set(stNC.c_str());
+
+	    // write result back into xmlstring
+	    std::ostringstream ss;
+	    doc.save(ss);
+	    xmlstring = ss.str();
+	  }
+
 	  XmlReader RD(xmlstring, true, "");
 	  read(RD,"ildgFormat",ildgFormat_);
 
-	  if ( ildgFormat_.precision == 64 ) format = std::string("IEEE64BIG");
-	  if ( ildgFormat_.precision == 32 ) format = std::string("IEEE32BIG");
+	  if ( ildgFormat_.precision == 64 ) { fp_fmt = FloatingPointFormat::IEEE64BIG; }
+	  if ( ildgFormat_.precision == 32 ) { fp_fmt = FloatingPointFormat::IEEE32BIG; }
+
+	  // set vars to tell Grid if it needs to reconstruct the full field.
+	  std::cout << GridLogMessage << "ildgFormat_.rows is " << ildgFormat_.rows << std::endl;
+	  matrix_fmt = (ildgFormat_.rows < Nc) ? MatrixFormat::REDUCED : MatrixFormat::FULL;
+	  if( !strncmp(ildgFormat_.field.c_str(),"su",2) ) { is_grp_su = true; }
+	  if( !strncmp(ildgFormat_.field.c_str(),"sp",2) ) { is_grp_sp = true; }
+	  // check if field element corresponds to either su or sp
+	  assert( is_grp_su || is_grp_sp );
+    
+	  // check rows and Nc are related in the way we expect for each gauge group.
+	  if (matrix_fmt==MatrixFormat::REDUCED && is_grp_su) {
+	    assert( ildgFormat_.rows == Nc-1 );
+	  }
+	  if (matrix_fmt==MatrixFormat::REDUCED && is_grp_sp) {
+	    assert( ildgFormat_.rows == Nc/2 );
+	  }
+	  if (matrix_fmt==MatrixFormat::FULL) {
+	    assert( ildgFormat_.rows == Nc );
+	  }
 
 	  assert( ildgFormat_.lx == dims[0]);
 	  assert( ildgFormat_.ly == dims[1]);
@@ -848,14 +973,10 @@ class IldgReader : public GridLimeReader {
 	// Binary data
 	/////////////////////////////////
 	//	std::cout << GridLogMessage << "ILDG Binary record found : "  ILDG_BINARY_DATA << std::endl;
+
 	uint64_t offset= ftello(File);
-	if ( format == std::string("IEEE64BIG") ) {
-	  GaugeSimpleMunger<dobj, sobj> munge;
-	  BinaryIO::readLatticeObject< vobj, dobj >(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-	} else { 
-	  GaugeSimpleMunger<fobj, sobj> munge;
-	  BinaryIO::readLatticeObject< vobj, fobj >(Umu, filename, munge, offset, format,nersc_csum,scidac_csuma,scidac_csumb);
-	}
+
+	readLatticeBinaryObject<unique_su>(Umu, filename, fp_fmt, matrix_fmt, is_grp_su, is_grp_sp, offset, nersc_csum, scidac_csuma, scidac_csumb); 
 
 	found_ildgBinary = 1;
       }
@@ -876,7 +997,7 @@ class IldgReader : public GridLimeReader {
 
     if ( found_FieldMetaData ) {
 
-      std::cout << GridLogMessage<<"Grid MetaData was record found: configuration was probably written by Grid ! Yay ! "<<std::endl;
+      std::cout << GridLogMessage<<"Grid MetaData record found: configuration was probably written by Grid ! Yay ! "<<std::endl;
 
     } else { 
 
