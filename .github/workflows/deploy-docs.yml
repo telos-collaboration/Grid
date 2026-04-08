@@ -41,6 +41,7 @@ jobs:
         run: |
           pip install mkdocs
           pip install mkdocs-literate-nav
+          pip install pymdown-extensions
 
       - name: Build User Docs
         run: mkdocs build
