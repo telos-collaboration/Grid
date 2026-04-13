@@ -31,6 +31,14 @@ jobs:
         with:
           version: "1.16.1"
 
+      - name: Install Ghostscript
+        run: sudo apt install ghostscript
+
+      - name: Install TeX Live
+        uses: zauguin/install-texlive@v4
+        with:
+          packages: >
+            scheme-basic iftex graphics xcolor newunicodechar
 
       - name: Set up Python
         uses: actions/setup-python@v5
