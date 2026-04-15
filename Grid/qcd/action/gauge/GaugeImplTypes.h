@@ -78,6 +78,8 @@ public:
   typedef Lattice<SiteLink>    LinkField; 
   typedef Lattice<SiteField>   Field;
 
+  typedef Group GaugeGroup;
+
   // Guido: we can probably separate the types from the HMC functions
   // this will create 2 kind of implementations
   // probably confusing the users
