@@ -32,7 +32,20 @@ directory
 NAMESPACE_BEGIN(Grid);
 
 template <class Field>
-class HmcObservable {
+class HmcObservable 
+/*! @brief HMC Observable class,
+ *  HMC observables inherit the method 
+ *  TrajectoryComplete from here, which
+ *  is used to run the computation of
+ *  on-the-fly observables.
+ *
+ *  Expects:
+ *   an integer traj : trajectory number
+ *   a reference to ConfigurationBase : the gauge field configuration
+ *   a reference to a serial RNG
+ *   a reference to a parallel RNG
+ */
+{
  public:
   virtual void TrajectoryComplete(int traj,
                                   ConfigurationBase<Field> &SmartConfig,
