@@ -85,39 +85,40 @@ public:
   // template arguments to IldgWriter
   void chooseIldgWriter( std::string format, std::string group, bool reduced_matrix, 
                          std::string lat_obj, int traj, 
-                         ConfigurationBase<GaugeField> &SmartConfig) {
+                         ConfigurationBase<GaugeField> &SmartConfig,
+                         bool smeared ) {
  
-      GridBase *grid = SmartConfig.get_U(false).Grid();
+      GridBase *grid = SmartConfig.get_U(smeared).Grid();
 
       IldgWriter _IldgWriter(grid->IsBoss());
       _IldgWriter.open(lat_obj);
 
       if(format=="IEEE64BIG") {
         if(group=="su" && reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
         else if (group=="su" && !reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
         else if (group=="sp" && reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
         else if (group=="sp" && !reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
       }
       else if (format=="IEEE32BIG") {
          if(group=="su" && reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
         else if (group=="su" && !reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::SU, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
         else if (group=="sp" && reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::REDUCED, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
         else if (group=="sp" && !reduced_matrix) {
-          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(false), traj, lat_obj, lat_obj);
+          _IldgWriter.writeConfiguration<GaugeStats, GroupName::Sp, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>(SmartConfig.get_U(smeared), traj, lat_obj, lat_obj);
         }
       }
 
@@ -136,33 +137,31 @@ public:
       BinaryIO::writeRNG(sRNG, pRNG, rng, 0,nersc_csum,scidac_csuma,scidac_csumb);
       std::cout << GridLogMessage << "Written BINARY RNG " << rng
                 << " checksum " << std::hex 
-		<< nersc_csum<<"/"
-		<< scidac_csuma<<"/"
-		<< scidac_csumb
-		<< std::dec << std::endl;
+      << nersc_csum<<"/"
+      << scidac_csuma<<"/"
+      << scidac_csumb
+      << std::dec << std::endl;
 
-    chooseIldgWriter( Params.format, Params.group, Params.reduced_matrix, config, traj,
-                      SmartConfig );
+      chooseIldgWriter(Params.format, Params.group, Params.reduced_matrix, config, traj,
+                       SmartConfig, false);
 
-      std::cout << GridLogMessage << "Written ILDG Configuration on " << config
-                << " checksum " << std::hex 
-		<< nersc_csum<<"/"
-		<< scidac_csuma<<"/"
-		<< scidac_csumb
-		<< std::dec << std::endl;
+        std::cout << GridLogMessage << "Written ILDG Configuration on " << config
+                  << " checksum " << std::hex
+      << nersc_csum<<"/"
+      << scidac_csuma<<"/"
+      << scidac_csumb
+      << std::dec << std::endl;
 
-      if ( Params.saveSmeared ) { 
-        chooseIldgWriter( Params.format, Params.group, Params.reduced_matrix, smr, traj, 
-                          SmartConfig );
-          
+      if ( Params.saveSmeared ) {
+        chooseIldgWriter(Params.format, Params.group, Params.reduced_matrix, smr, traj,
+                         SmartConfig, true);
         std::cout << GridLogMessage << "Written ILDG Configuration on " << smr
-                    << " checksum " << std::hex 
+                    << " checksum " << std::hex
         << nersc_csum<<"/"
         << scidac_csuma<<"/"
         << scidac_csumb
         << std::dec << std::endl;
       }
-
     }
   };
 
@@ -188,7 +187,7 @@ public:
     _IldgReader.close();
 
     std::cout << GridLogMessage << "Read ILDG Configuration from " << config
-              << " checksum " << std::hex 
+              << " checksum " << std::hex
 	      << nersc_csum<<"/"
 	      << scidac_csuma<<"/"
 	      << scidac_csumb
