@@ -67,7 +67,7 @@ class HmcObservable
                                   GridParallelRNG &pRNG, 
                                   bool accept)
   {
-    TrajectoryComplete(traj,SmartConfig,sRNG,pRNG); // Unsmeared observable
+    TrajectoryComplete(traj,SmartConfig.get_U(false),sRNG,pRNG,accept); // Unsmeared observable
   };
   virtual void TrajectoryComplete(int traj, 
                                   Field &U,
