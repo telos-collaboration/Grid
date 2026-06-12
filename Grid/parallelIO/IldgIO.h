@@ -624,11 +624,13 @@ class IldgWriter : public ScidacWriter {
   ///////////////////////////////////
   void writeLimeIldgLFN(std::string &LFN)
   {
-    uint64_t PayloadSize = LFN.size();
-    int err;
-    createLimeRecordHeader(ILDG_DATA_LFN, 1 , 1, PayloadSize);
-    err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize,LimeW); assert(err>=0);
-    err=limeWriterCloseRecord(LimeW); assert(err>=0);
+    if(this->boss_node) {
+      uint64_t PayloadSize = LFN.size();
+      int err;
+      createLimeRecordHeader(ILDG_DATA_LFN, 1 , 1, PayloadSize);
+      err=limeWriteRecordData(const_cast<char*>(LFN.c_str()), &PayloadSize,LimeW); assert(err>=0);
+      err=limeWriterCloseRecord(LimeW); assert(err>=0);
+    }
   }
 
   ////////////////////////////////////////////////////////////////
