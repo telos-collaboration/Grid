@@ -93,7 +93,20 @@ struct HMCparameters: Serializable {
 };
 	
 template <class IntegratorType>
-class HybridMonteCarlo {
+class HybridMonteCarlo 
+/*! @brief The HMC class,
+ * which performs the metropolis
+ * accept/reject step and molecular dynamics
+ * integration step.
+ *
+ * As introduced in Duane, Kennedy, Pendleton & Roweth,
+ * Phys. Letters B, 2, 1987
+ * https://doi.org/10.1016/0370-2693(87)91197-X
+ *
+ * See Rothe, Third Edition, Section 16.7
+ * 'The Hybrid Monte Carlo Algorithm'
+ */
+{
 private:
   const HMCparameters Params;
 
@@ -289,7 +302,7 @@ public:
       	std::cout << GridLogDebug << "Observables # " << obs << std::endl;
       	std::cout << GridLogDebug << "Observables total " << Observables.size() << std::endl;
       	std::cout << GridLogDebug << "Observables pointer " << Observables[obs] << std::endl;
-        Observables[obs]->TrajectoryComplete(traj + 1, TheIntegrator.Smearer, sRNG, pRNG);
+        Observables[obs]->TrajectoryComplete(traj + 1, TheIntegrator.Smearer, sRNG, pRNG, accept);
       }
       std::cout << GridLogHMC << ":::::::::::::::::::::::::::::::::::::::::::" << std::endl;
     }
