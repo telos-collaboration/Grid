@@ -150,6 +150,8 @@ namespace namespace_LLR {
   } /* end of print_s_hmc_params_llr method */
   
   /// [Readers]
+  // IC TODO: does this have to be so different from the GenericHMCrunner::ReadCommandLine?
+  //          Why does it return the same pointer instead of being void?
   hmc_params_llr* llr_hmc::ReadCommandLine(int argc, char **argv,
 					   namespace_LLR::hmc_params_llr* HMCParams ) {
     std::cout<<"*------- ReadCommandLine       --------*"<<std::endl;
