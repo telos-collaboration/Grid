@@ -70,6 +70,7 @@ public:
   
     int dims = Nd;
     if( orthog < Nd ) dims=Nd-1;
+    std::cout<< GridLogMessage << "Multiplicative factor : "<< coeff <<std::endl;
 
     for(int n = 0; n < Iterations; ++n) {
       psi = (-2.0*dims)*chi;
