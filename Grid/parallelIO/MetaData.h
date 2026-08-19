@@ -564,11 +564,28 @@ template<class vobj, class group_name, MatrixFormat m_fmt, FloatingPointFormat f
 struct GaugeUnMunger;
 
 // no group reduction
-template<class vobj, class group_name, FloatingPointFormat fp_fmt>
-struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, fp_fmt>
-{	
+template<class vobj, class group_name>
+struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>
+{
+  using in_type  = typename vobj::scalar_object;
+  using out_type = typename vobj::scalar_object;
+
+  BinarySimpleUnmunger<out_type, in_type> unmunger;
+
+  void operator() (in_type &in, out_type &out){
+    unmunger(in,out);
+  }
+};
+
+// no group reduction
+// this specialisation only intended to be used by IldgWriter when
+// writing gauge fields.
+template<class vobj, class group_name>
+struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>
+{
   using in_type  = typename vobj::scalar_object; 
-  using out_type = typename std::tuple_element_t<static_cast<int>(fp_fmt), std::tuple<LorentzColourMatrixD,LorentzColourMatrixF>>;
+  using out_type = LorentzColourMatrixF;
+
   BinarySimpleUnmunger<out_type, in_type> unmunger;
 
   void operator() (in_type &in, out_type &out){
