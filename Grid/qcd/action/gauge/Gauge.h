@@ -45,6 +45,7 @@ directory
 #include <Grid/qcd/utils/WilsonLoops.h>
 #include <Grid/qcd/action/gauge/WilsonGaugeAction.h>
 #include <Grid/qcd/action/gauge/PlaqPlusRectangleAction.h>
+#include <Grid/qcd/action/gauge/ConstrainedAction.h>
 
 /// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
