@@ -547,7 +547,7 @@ class ScidacWriter : public GridLimeWriter {
       writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
     }
     // Collective call
-    writeLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA),control);      // Closes message with checksum
+    writeLimeLatticeBinaryObject<vobj,GroupName::SU,MatrixFormat::FULL>(field,std::string(ILDG_BINARY_DATA),control);      // Closes message with checksum
   }
 };
 
