@@ -667,10 +667,6 @@ class IldgWriter : public ScidacWriter {
     header.ensemble_label = description;
     header.sequence_number = sequence;
     header.ildg_lfn = LFN;
-
-    assert ( (format == std::string("IEEE32BIG"))
-           ||(format == std::string("IEEE64BIG")) );
-
     /*!
      *  Fill ILDG header data struct
      */
