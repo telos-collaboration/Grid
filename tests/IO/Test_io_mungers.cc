@@ -76,7 +76,7 @@ void mock_SU_field( ColourMatrixD &cm, std::vector<int> seed )  {
   cm = Exponentiate(lie, 2.0);
 
 }
-
+#if Sp2n_config == 1
 void mock_Sp_field( ColourMatrixD &cm, std::vector<int> seed ) {
 
   GridSerialRNG sRNG;   sRNG.SeedFixedIntegers(seed);
@@ -95,6 +95,7 @@ void mock_Sp_field( ColourMatrixD &cm, std::vector<int> seed ) {
   }
 
 }
+#endif
 ////////////////////////////////////////////
 
 void check_reconstruct3() {
@@ -345,7 +346,7 @@ void checkGaugeSUmungers() {
 
 }
 
-
+#if Sp2n_config == 1
 void check_reconstructSp() {
 
   ColourMatrixD Sp_xfield, Sp_yfield, Sp_zfield, Sp_tfield;
@@ -413,7 +414,7 @@ void checkGaugeSpmungers() {
   assert(scalar==scalar_recon);
 
 }
-
+#endif // Sp2n_config == 1
 
 void checkBinarySimpleMungers() {
 
@@ -631,20 +632,20 @@ int main (int argc, char ** argv)
   checkGaugeSUmungers<true>();
   std::cout << GridLogMessage << "(unique_su=true) GaugeSUmungers: PASS" << std::endl;
 
-  if constexpr(Nc>2 && Nc%2==0) {
-    std::cout <<GridLogMessage<< "Testing Sp(" << Nc << ") mungers..." << std::endl;
+#if Sp2n_config == 1
+  std::cout <<GridLogMessage<< "Testing Sp(" << Nc << ") mungers..." << std::endl;
 
-    check_reconstructSp();
-    std::cout << GridLogMessage << "reconstructSp: PASS" << std::endl;
-    
-    checkGaugeSpmungers();
-    std::cout << GridLogMessage << "GaugeSpmungers: PASS" << std::endl;
-  }
+  check_reconstructSp();
+  std::cout << GridLogMessage << "reconstructSp: PASS" << std::endl;
+
+  checkGaugeSpmungers();
+  std::cout << GridLogMessage << "GaugeSpmungers: PASS" << std::endl;
+#endif
 
   std::cout << GridLogMessage << "Testing BinarySimple mungers..." << std::endl;
   checkBinarySimpleMungers();
   std::cout << GridLogMessage << "BinarySimpleMungers: PASS" << std::endl;
-  
+
 
   std::cout << GridLogMessage << "Testing GaugeSimple mungers..." << std::endl;
   checkGaugeSimpleMungers();
