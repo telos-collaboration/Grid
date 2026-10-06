@@ -106,7 +106,8 @@ const Coordinate GridDefaultSimd(int dims,int nsimd)
 {
   Coordinate layout(dims);
   int nn=nsimd;
-  for(int d=dims-1;d>=0;d--){
+  layout[dims-1] = 1; // I think I also need this
+  for(int d=dims-2;d>=0;d--){
     if ( nn>=2) {
       layout[d]=2;
       nn/=2;
