@@ -140,7 +140,10 @@ class BinaryIO {
       }
     }
   }
-
+	/*! 
+	 * \remark Scidac csum is rather more heavyweight
+	 * \todo 128^3 x 256 x 16 will overflow.
+	 */
   template<class fobj> static inline void ScidacChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &scidac_csuma,uint32_t &scidac_csumb)
   {
     int nd = grid->_ndimension;
@@ -165,11 +168,6 @@ class BinaryIO {
 
 	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
 
-	/* 
-	 * Scidac csum  is rather more heavyweight
-	 * \todo 128^3 x 256 x 16 will overflow.
-	 */
-	
 	int64_t global_site;
 
 	Lexicographic::CoorFromIndex(coor,local_site,local_vol);

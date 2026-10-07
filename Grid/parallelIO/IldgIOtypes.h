@@ -27,7 +27,16 @@ directory
 
 /*!
  * \file
- * \brief Defines objects for storing Grid/Scidac/ILDG metadata.
+ * \brief Defines Serializable objects for storing Grid/Scidac/ILDG metadata.
+ * 
+ * The headers defined here are used by the read and write classes defined in
+ * IldgIO.h. When writing a cfg to disk the metadata is prepended to the binary
+ * data as an xml string. Upon reading a cfg the metadata in the header 
+ * is used to interpret the binary data. Each file format has its own
+ * specification for the metadata and a cfg can have multiple
+ * headers with overlapping metadata. 
+ * 
+ * \remark The C-Lime library is required for ILDG and Scidac I/O functionality.
  */
 
 /// \cond DO_NOT_DOCUMENT
@@ -42,9 +51,8 @@ extern "C" { // for linkage
 NAMESPACE_BEGIN(Grid);
 /// \endcond
 
-/*! 
- * \remark Data representation of records that enter ILDG and Scidac formats
- */
+/*! \name Data representation of records that enter ILDG and Scidac formats
+ * @{ */
 #define GRID_FORMAT               "grid-format"
 #define ILDG_FORMAT               "ildg-format"
 #define ILDG_BINARY_DATA          "ildg-binary-data"
@@ -55,21 +63,20 @@ NAMESPACE_BEGIN(Grid);
 #define SCIDAC_PRIVATE_RECORD_XML "scidac-private-record-xml"
 #define SCIDAC_RECORD_XML         "scidac-record-xml"
 #define SCIDAC_BINARY_DATA        "scidac-binary-data"
-// Unused SCIDAC records names; could move to support this functionality
+//! \remark Unused SCIDAC records names; could move to support this functionality
 #define SCIDAC_SITELIST           "scidac-sitelist"
+/*! @} */
 
-////////////////////////////////////////////////////////////
-const int GRID_IO_SINGLEFILE = 0; // hardcode lift from QIO compat
-const int GRID_IO_MULTIFILE  = 1; // hardcode lift from QIO compat
-const int GRID_IO_FIELD      = 0; // hardcode lift from QIO compat
-const int GRID_IO_GLOBAL     = 1; // hardcode lift from QIO compat
-////////////////////////////////////////////////////////////
+const int GRID_IO_SINGLEFILE = 0; ///< hardcode lift from QIO compat
+const int GRID_IO_MULTIFILE  = 1; ///< hardcode lift from QIO compat
+const int GRID_IO_FIELD      = 0; ///< hardcode lift from QIO compat
+const int GRID_IO_GLOBAL     = 1; ///< hardcode lift from QIO compat
 
 /*! \remarks QIO uses mandatory "private" records fixed format.
  *  private is in principle "opaque" however it can't be changed 
  *  now because that would break existing file compatability, 
  *  so should be correct to assume the undocumented but defacto file structure.
- *  \brief required for Scidac file compatibility.
+ *  \brief Required for Scidac file compatibility.
  */
 struct emptyUserRecord : Serializable { 
   GRID_SERIALIZABLE_CLASS_MEMBERS(emptyUserRecord,int,dummy);
@@ -77,17 +84,17 @@ struct emptyUserRecord : Serializable {
 };
 
 /*!
- * Example metadata header: Scidac private file xml
+ * Example header: `scidac-private-file-xml`
 \code{.xml}
-<?xml version="1.0" encoding="UTF-8"?><scidacFile><version>1.1</version><spacetime>4</spacetime><dims>16 16 16 32 </dims><volfmt>0</volfmt></scidacFile>
+<?xml version="1.0" encoding="UTF-8"?><scidacFile><version>1.1</version><spacetime>4</spacetime><dims>16 16 16 32</dims><volfmt>0</volfmt></scidacFile>
 \endcode
  */
 /*! 
  *  \brief Serializable class to hold Scidac metadata.
  *  \param version Scidac lattice format version number.
- *  \param spacetime
- *  \param dims
- *  \param volfmt
+ *  \param spacetime Number of dimensions.
+ *  \param dims Size of each dimension, `Lx Ly Lz Lt`.
+ *  \param volfmt 0 or 1 depending on `GRID_IO_*`
  */
 struct scidacFile : Serializable {
 public:
@@ -131,7 +138,7 @@ public:
 };
 
 /*!
- * Example metadata header: scidac-private-record-xml
+ * Example header: `scidac-private-record-xml`
 \code{.xml}
 <scidacRecord>
 <version>1.1</version><date>Tue Jul 26 21:14:44 2011 UTC</date><recordtype>0</recordtype>
@@ -143,13 +150,13 @@ public:
 /*! 
  *  \brief Serializable class to hold Scidac metadata.
  *  \param version Scidac lattice format version number.
- *  \param date
+ *  \param date Date of cfg generation.
  *  \param recordtype 
  *  \param datatype 
- *  \param precision 64 or 32.
- *  \param colors
- *  \param spins
- *  \param typesize 
+ *  \param precision D of F(?).
+ *  \param colors `Nc`
+ *  \param spins  `Ns`
+ *  \param typesize Size of ...
  *  \param datacount 
  */
 struct scidacRecord : Serializable {
@@ -171,11 +178,15 @@ public:
 };
 
 /*! 
- *  \param version ILDG Binary Format Version.
+ *  \brief Serializable class to hold ILDG metadata.
+ *  \param version ILDG format version number.
  *  \param field   String representing gauge group and Nc.
  *  \param precision 64 or 32.
  *  \param rows Number of rows saved per gauge field. 
- *  \brief Serializable class to hold ILDG metadata.
+ *  \param lx Size in lattice units of x spatial dimension.
+ *  \param ly Size in lattice units of y spatial dimension.
+ *  \param lz Size in lattice units of z spatial dimension.
+ *  \param lt Size in lattice units of time dimension.
  */
 struct ildgFormat : Serializable {
 public:
@@ -211,6 +222,9 @@ public:
 };
 /*!
  *  \brief Serializable Class for holding Scidac checksums.
+ *  \param version 
+ *  \param suma
+ *  \param sumb
  */
 struct scidacChecksum : Serializable { 
 public:
