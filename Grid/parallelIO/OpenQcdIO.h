@@ -26,14 +26,18 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+
 /*! \file OpenQcdIO.h
- *  \brief defines classes and functions for reading/writing OpenQcd format lattices.
- *  \details
+ *  \brief Defines classes and functions for reading/writing OpenQcd format lattices.
  */
+
 #pragma once
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
+/*! \brief Stores metadata for header */
 struct OpenQcdHeader : Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(OpenQcdHeader,
                                   int,    Nt,
@@ -225,4 +229,6 @@ private:
   }
 };
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
+/// \endcond

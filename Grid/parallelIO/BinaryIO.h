@@ -27,10 +27,9 @@
     *************************************************************************************/
     /*  END LEGAL */
 
-/*! \file BinaryIO.h
- *  \brief defines classes and functions to read and write binary lattice data.
+/*! \file  BinaryIO.h
+ *  \brief Defines classes and functions to read and write binary lattice data.
  */
-
 
 #pragma once
 
@@ -47,7 +46,9 @@
 #include <arpa/inet.h>
 #include <algorithm>
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
 /////////////////////////////////////////////////////////////////////////////////
 // Byte reversal garbage
@@ -73,16 +74,16 @@ inline uint64_t Grid_ntohll(uint64_t A) {
 }
 #endif
 
-// A little helper
+//! A little helper
 inline void removeWhitespace(std::string &key)
 {
   key.erase(std::remove_if(key.begin(), key.end(), ::isspace),key.end());
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Static class holding the parallel IO code
-// Could just use a namespace
-///////////////////////////////////////////////////////////////////////////////////////////////////
+/*!
+ * \brief Static class holding the parallel IO code
+ * \remark Could just use a namespace
+ */
 class BinaryIO {
  public:
   struct IoPerf
@@ -94,9 +95,7 @@ class BinaryIO {
   static IoPerf lastPerf;
   static int latticeWriteMaxRetry;
 
-  /////////////////////////////////////////////////////////////////////////////
-  // more byte manipulation helpers
-  /////////////////////////////////////////////////////////////////////////////
+  //! more byte manipulation helpers
 
   template<class vobj> static inline void Uint32Checksum(Lattice<vobj> &lat,uint32_t &nersc_csum)
   {
@@ -544,19 +543,20 @@ class BinaryIO {
     }
   }
 
-  /*!
-   *  Read a Lattice of object
-   *  \tparam vobj 
-   *  \tparam munger
-   *  \param[in] Umu
-   *  \param[in] munge
-   *  \param[in] offset
-   *  \param[in] format
-   *  \param[in] nersc_csum
-   *  \param[in] scidac_csuma
-   *  \param[in] scidac_csumb
-   *  \param[in] control
-   */
+/*!
+ *  Read a Lattice of object
+ *  \tparam vobj inferred type of Grid lattice object.
+ *  \tparam munger 
+ *  \param[in] file filename of lattice configuration.
+ *  \param[in] Umu  Grid lattice object.
+ *  \param[in] munge munge object.
+ *  \param[in] offset 
+ *  \param[in] format
+ *  \param[in] nersc_csum
+ *  \param[in] scidac_csuma
+ *  \param[in] scidac_csumb
+ *  \param[in] control
+ */
   template<class vobj,class fobj,class munger>
   static inline void readLatticeObject(Lattice<vobj> &Umu,
 				       std::string file,
@@ -793,4 +793,6 @@ class BinaryIO {
   }
 };
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
+/// \endcond

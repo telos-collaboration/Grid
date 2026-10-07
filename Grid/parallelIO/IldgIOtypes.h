@@ -24,11 +24,13 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 			   /*  END LEGAL */
+
 /*!
- * \file IldgIOtypes.h
- * \brief defines objects for storing grid/scidac/ildg metadata.
- * \defgroup io_metadata IO Metadata
+ * \file
+ * \brief Defines objects for storing Grid/Scidac/ILDG metadata.
  */
+
+/// \cond DO_NOT_DOCUMENT
 #ifndef GRID_ILDGTYPES_IO_H
 #define GRID_ILDGTYPES_IO_H
 
@@ -38,16 +40,15 @@ extern "C" { // for linkage
 }
 
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
-/*!
- * \ingroup io_metadata
- * Data representation of records that enter ILDG and SciDac formats
+/*! 
+ * \remark Data representation of records that enter ILDG and Scidac formats
  */
-
-#define GRID_FORMAT      "grid-format"
-#define ILDG_FORMAT      "ildg-format"
-#define ILDG_BINARY_DATA "ildg-binary-data"
-#define ILDG_DATA_LFN    "ildg-data-lfn"
+#define GRID_FORMAT               "grid-format"
+#define ILDG_FORMAT               "ildg-format"
+#define ILDG_BINARY_DATA          "ildg-binary-data"
+#define ILDG_DATA_LFN             "ildg-data-lfn"
 #define SCIDAC_CHECKSUM           "scidac-checksum"
 #define SCIDAC_PRIVATE_FILE_XML   "scidac-private-file-xml"
 #define SCIDAC_FILE_XML           "scidac-file-xml"
@@ -64,19 +65,30 @@ const int GRID_IO_FIELD      = 0; // hardcode lift from QIO compat
 const int GRID_IO_GLOBAL     = 1; // hardcode lift from QIO compat
 ////////////////////////////////////////////////////////////
 
-/*!
- * \remarks QIO uses mandatory "private" records fixed format
- * private is in principle "opaque" however it can't be changed now because that would break existing file compatability, so should be correct to assume the undocumented but defacto file structure.
+/*! \remarks QIO uses mandatory "private" records fixed format.
+ *  private is in principle "opaque" however it can't be changed 
+ *  now because that would break existing file compatability, 
+ *  so should be correct to assume the undocumented but defacto file structure.
+ *  \brief required for Scidac file compatibility.
  */
 struct emptyUserRecord : Serializable { 
   GRID_SERIALIZABLE_CLASS_MEMBERS(emptyUserRecord,int,dummy);
   emptyUserRecord() { dummy=0; };
 };
 
-////////////////////////
-// Scidac private file xml
-// <?xml version="1.0" encoding="UTF-8"?><scidacFile><version>1.1</version><spacetime>4</spacetime><dims>16 16 16 32 </dims><volfmt>0</volfmt></scidacFile>
-////////////////////////
+/*!
+ * Example metadata header: Scidac private file xml
+\code{.xml}
+<?xml version="1.0" encoding="UTF-8"?><scidacFile><version>1.1</version><spacetime>4</spacetime><dims>16 16 16 32 </dims><volfmt>0</volfmt></scidacFile>
+\endcode
+ */
+/*! 
+ *  \brief Serializable class to hold Scidac metadata.
+ *  \param version Scidac lattice format version number.
+ *  \param spacetime
+ *  \param dims
+ *  \param volfmt
+ */
 struct scidacFile : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(scidacFile,
@@ -118,15 +130,28 @@ public:
 
 };
 
-///////////////////////////////////////////////////////////////////////
-// scidac-private-record-xml : example
-// <scidacRecord>
-// <version>1.1</version><date>Tue Jul 26 21:14:44 2011 UTC</date><recordtype>0</recordtype>
-// <datatype>QDP_D3_ColorMatrix</datatype><precision>D</precision><colors>3</colors><spins>4</spins>
-// <typesize>144</typesize><datacount>4</datacount>
-// </scidacRecord>
-///////////////////////////////////////////////////////////////////////
-
+/*!
+ * Example metadata header: scidac-private-record-xml
+\code{.xml}
+<scidacRecord>
+<version>1.1</version><date>Tue Jul 26 21:14:44 2011 UTC</date><recordtype>0</recordtype>
+<datatype>QDP_D3_ColorMatrix</datatype><precision>D</precision><colors>3</colors><spins>4</spins>
+<typesize>144</typesize><datacount>4</datacount>
+</scidacRecord>
+\endcode
+ */
+/*! 
+ *  \brief Serializable class to hold Scidac metadata.
+ *  \param version Scidac lattice format version number.
+ *  \param date
+ *  \param recordtype 
+ *  \param datatype 
+ *  \param precision 64 or 32.
+ *  \param colors
+ *  \param spins
+ *  \param typesize 
+ *  \param datacount 
+ */
 struct scidacRecord : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(scidacRecord,
@@ -145,8 +170,12 @@ public:
   {}
 };
 
-/*! \ingroup io_metadata
- *  ILDG format
+/*! 
+ *  \param version ILDG Binary Format Version.
+ *  \param field   String representing gauge group and Nc.
+ *  \param precision 64 or 32.
+ *  \param rows Number of rows saved per gauge field. 
+ *  \brief Serializable class to hold ILDG metadata.
  */
 struct ildgFormat : Serializable {
 public:
@@ -162,8 +191,12 @@ public:
   ildgFormat() { version=1.0; };
 };
 
-/*! \ingroup io_metadata
- *  USQCD info
+/*! 
+ * \brief Serializable class to hold USQCD metadata.
+ * \param version USQCD lattice format version
+ * \param plaq average plaquette value
+ * \param linktr average link trace value
+ * \param info 
  */
 struct usqcdInfo : Serializable { 
 public:
@@ -176,8 +209,8 @@ public:
     version=1.0; 
   };
 };
-/*! \ingroup io_metadata
- *  Scidac Checksum
+/*!
+ *  \brief Serializable Class for holding Scidac checksums.
  */
 struct scidacChecksum : Serializable { 
 public:
@@ -189,6 +222,7 @@ public:
     version=1.0; 
   };
 };
+/// \cond DO_NOT_DOCUMENT
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Type:           scidac-file-xml         <title>MILC ILDG archival gauge configuration</title>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -239,5 +273,7 @@ public:
 #endif
 
 NAMESPACE_END(Grid);
+/// \endcond
+
 #endif
 #endif
