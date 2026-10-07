@@ -32,11 +32,14 @@ directory
 /*! \file IldgIO.h
  *  \brief includes the IldgReader and IldgWriter Classes alongside helper functions and classes.
  *  \details The International Lattice Data Grid (ILDG) defines a structured file format for lattice gauge fields which encapsulates binary and meta data within a single file. The binary part of an ILDG-format file is packaged using the LIME library. 
+//! \remark The C-Lime library is required for ILDG and Scidac I/O functionality.
  */
 
 #pragma once
 
+/// \cond DO_NOT_DOCUMENT
 #ifdef HAVE_LIME
+/// \endcond
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -48,12 +51,13 @@ directory
 #include <sys/utsname.h>
 #include <unistd.h>
 
-//C-Lime is a must have for this functionality
 extern "C" {  
 #include "lime.h"
 }
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
 #define GRID_FIELD_NORM "FieldNormMetaData"
 #define GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) \
@@ -184,9 +188,7 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
    return 1;
  }
 
-////////////////////////////////////////////////////////////////////////////////////
-// Lime, ILDG and Scidac I/O classes
-////////////////////////////////////////////////////////////////////////////////////
+/*! @brief Lime, ILDG and Scidac I/O classes */
 class GridLimeReader : public BinaryIO {
  public:
    /* \todo format for RNG? Now just binary out instead */
@@ -1075,8 +1077,9 @@ class IldgReader : public GridLimeReader {
   }
  };
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
-
+/// \endcond
 
 //HAVE_LIME
 #endif

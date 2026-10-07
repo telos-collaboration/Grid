@@ -28,10 +28,6 @@
 *************************************************************************************/
 /*  END LEGAL */
 
-/*! \file Metadata.h
- *  \brief Here Grid defines mungers for writing and reading lattice objects to and from disk.
- *  \defgroup mungers IO Mungers
- */
 #include <algorithm>
 #include <iostream>
 #include <iomanip>
@@ -41,7 +37,14 @@
 #include <sys/utsname.h>
 #include <pwd.h>
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
+
+/*! \file 
+ *  \brief Class and function definitions for writing and reading lattice objects.
+ * Some test text herre.
+ */
 
 /*!
  * \brief Precision mapping from given type to format string
@@ -92,7 +95,7 @@ template<class vobj> static std::string getFormatString (void)
 				      std::string, archive_date,
 				      std::string, floating_point);
       // WARNING: non-initialised values might lead to twisted parallel IO
-      // issues, std::string are fine because they initliase to size 0
+      // issues, std::string are fine because they initialise to size 0
       // as per C++ standard.
       FieldMetaData(void) 
       : nd(4), dimension(4,0), boundary(4, ""), data_start(0),
@@ -240,6 +243,7 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
+/*! \remarks
 // the elements of the final row of an SU(N) matrix
 // can be obtained from the determinants of the N N-1 by N-1 matrices
 // formed by deleting each column and the Nth row of the SU(N) matrix.
@@ -248,6 +252,7 @@ inline void reconstruct3(LorentzColourMatrix & cm)
 // 3) fill the ColourSubMatrix object from the peeked matrix.
 // 4) take the Determinant and fill the corresponding element
 // 5) repeat for each Lorentz index 
+*/
 inline void reconstructSU(LorentzColourMatrix &cm)
 {
   using ColourSubMatrix = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
@@ -270,11 +275,12 @@ inline void reconstructSU(LorentzColourMatrix &cm)
     pokeIndex<LorentzIndex>(cm,SU,mu);
   }
 }
-
+/*! \remarks
 // this function determines if a sequence of integers {i0...ik}
 // is an even or odd parity permutation. even/odd if the number of 
 // inversions needed to get back to the lexicographic 1st sequence is
-// even or odd. ex: {1,2,0} --> {1,0,2} --> {0,1,2} implies {1,2,0} is even. 
+// even or odd. ex: {1,2,0} --> {1,0,2} --> {0,1,2} implies {1,2,0} is even.
+*/
 inline bool is_perm_even(std::vector<int> &v) {
 
     int n = v.size();
@@ -300,8 +306,7 @@ inline bool is_perm_even(std::vector<int> &v) {
     }
 }
 
-/////////////////////////////////////////////////////////////
-//
+/*! \remarks
 //  this function follows the prescription laid out by the
 //  ildg spec, forming a sum of products in lexicographic order.
 //
@@ -310,7 +315,7 @@ inline bool is_perm_even(std::vector<int> &v) {
 //
 // see appendix A.2 of
 // https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
-/////////////////////////////////////////////////////////////
+*/
 inline void unique_reconstructSU(LorentzColourMatrix &cm)
 {
 
@@ -339,8 +344,7 @@ inline void unique_reconstructSU(LorentzColourMatrix &cm)
     }
   }
 }
-
-////////////////////////////////////////////////////////////////
+/*! \remarks
 //  this function takes a reduced format
 //  Sp(2N) field with N rows and 2N columns 
 //  and reconstructs the full 2Nx2N matrix.
@@ -350,7 +354,7 @@ inline void unique_reconstructSU(LorentzColourMatrix &cm)
 //  where A and B are NxN matrices.
 //  see appendix A.2 of
 // https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
-////////////////////////////////////////////////////////////////
+*/
 inline void reconstructSp(LorentzColourMatrix & cm) 
 {
   assert( Nc%2==0 ); 
@@ -627,12 +631,29 @@ struct GaugeSpunmunger{
   }
 };
 
-// these are used as non-type template parameters when
-// writing with GaugeUnMunger and as regular parameters
-// when reading with IldgReader.readConfiguration 
+
+/*! \enum FloatingPointFormat
+ * Sets the FP precision of the IldgWriter.
+ * \var FloatingPointFormat::IEEE64BIG 
+        Save lattice in double precision.
+ * \var FloatingPointFormat::IEEE32BIG 
+        Save lattice in single precision.
+ * \enum MatrixFormat
+ * Sets the matrix format of the IldgWriter. 
+ * \var MatrixFormat::FULL
+ *      Save lattice without reducing fields.
+ * \var MatrixFormat::REDUCED
+ *      Save lattice with reduced fields.
+ */
+
+/*! \remarks
+// These enums are used as non-type template parameters.
+// They are specified when calling IldgWriter::writeConfiguration,
+// which passes them through to GaugeUnMunger. 
+ */ 
 enum struct FloatingPointFormat { IEEE64BIG, IEEE32BIG };
 enum struct MatrixFormat { FULL, REDUCED };
-/////////////////////////////////////////////////////////
+/*! \remarks
 // this struct is used to choose the appropriate
 // unmunger (for writing) at compile time.
 // there are 3 partial template specialisations,
@@ -641,7 +662,7 @@ enum struct MatrixFormat { FULL, REDUCED };
 // > group reduction for Sp fields
 // It also exposes the intermediate out_type for use in 
 // IldgWriter.writeConfiguration
-/////////////////////////////////////////////////////////
+*/
 template<class vobj, class group_name, MatrixFormat m_fmt, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger;
 
@@ -711,6 +732,6 @@ struct GaugeUnMunger<vobj, GroupName::Sp, MatrixFormat::REDUCED, fp_fmt>
   }
 };
 
-
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
-
+/// \endcond

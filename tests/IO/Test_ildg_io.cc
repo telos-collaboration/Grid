@@ -35,14 +35,13 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 
 using namespace std;
 using namespace Grid;
- ;
 
 /*! \page test_ildg_io Testing the ILDG I/O classes
  *  This test demonstrates how to use the IldgReader and IldgWriter classes provided by Grid and defined in parallelIO/IldgIO.h
- *  \subsection subsec1 Setting up Grid
+ *  \section sec1 Setting up Grid
  *  Note that the LIME library is required when using the Ildg classes in %Grid. If you don't have it <a href="https://usqcd-software.github.io/c-lime/">install it</a> and let %Grid know its location with at configure time with the \code{.sh}../configure --with-lime=<path-to-lime>\endcode flag. 
  *  \snippet{lineno} this setup
- *  \subsection sec2 Grid layout
+ *  \section sec2 Grid layout
  *  Some boilerplate code to setup a basic Grid using the defaults and a smaller lattice.
  *  \snippet{lineno} this grid
  *  this is some interleaved text
@@ -50,7 +49,7 @@ using namespace Grid;
  *  setup random number generators for generating SU fields 
  *  \snippet{lineno} this umu
  *  generate SU field using pRNGa and write into Umu
- *  \subsection sec3 ILDG I/O
+ *  \section sec3 ILDG I/O
  *  create an instance of the IldgWriter object to write lattice into a file %ckpoint_ildg.4000 
  *  \snippet{lineno} this ildg_write
  *  we store the lattice for later comparison. 
@@ -59,7 +58,7 @@ using namespace Grid;
  *  finally we need to compare the two lattices by computing the norm of the difference.
  *  \snippet{lineno} this umu_diff
  *  \snippet{lineno} this check_norm
- *  \subsection sec4 Scidac I/O
+ *  \section sec4 Scidac I/O
  *  \snippet{lineno} this scidac_write
  *  \snippet{lineno} this scidac_read
  */
@@ -117,9 +116,9 @@ int main (int argc, char ** argv)
   _IldgWriter.close();
 //! [ildg_write]
 
-//! [umu save]  
+//! [umu_save]
   Umu_saved = Umu;
-//! [umu save]  
+//! [umu_save]
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
   std::cout <<GridLogMessage<<"** Reading back ILDG conf    *********"<<std::endl;
   std::cout <<GridLogMessage<<"**************************************"<<std::endl;
@@ -129,10 +128,10 @@ int main (int argc, char ** argv)
   _IldgReader.readConfiguration(Umu,header);
   _IldgReader.close();
 //! [ildg_read]
-//! [umu diff]
+//! [umu_diff]
   /*! compute difference between initially generated lattice and lattice read from disk */ 
   Umu_diff = Umu - Umu_saved;
-//! [umu diff]
+//! [umu_diff]
 
   /*! \todo convert this to an assert condition. */
 //! [check_norm]
