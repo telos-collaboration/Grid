@@ -191,7 +191,7 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 /*! @brief Lime, ILDG and Scidac I/O classes */
 class GridLimeReader : public BinaryIO {
  public:
-   /* \todo format for RNG? Now just binary out instead */
+   /*! \todo format for RNG? Now just binary out instead */
 
    FILE       *File;
    LimeReader *LimeR;
