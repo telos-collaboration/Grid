@@ -26,9 +26,14 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+
 /*! \file OpenQcdIOChromaReference.h
- *  \brief
- *  \details
+ *  \brief Alternative classes and functions for reading/writing OpenQCD format lattices.
+ *
+ *  The \c ParRdr \c class implements parallel I/O functionality *independent* of BinaryIO 
+ *  for reading OpenQCD lattices. It appears to be based on the 
+ *  [Chroma](https://jeffersonlab.github.io/chroma/) library implementation. For writing
+ *  OpenQCD lattices look in OpenQcdIO.h.
  */
 
 #pragma once
@@ -46,7 +51,9 @@ directory
 // #undef CHECK
 // #define CHECK
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
 class ParRdr {
 private:
@@ -88,9 +95,9 @@ public:
 
     readBlock(reinterpret_cast<char*>(&header), 0, sizeof(OpenQcdHeader), MPI_CHAR);
 
-    header.plaq /= 3.; // TODO change this into normalizationfactor
+    header.plaq /= 3.; ///< \todo change 3. into \p normalisationFactor
 
-    // sanity check (should trigger on endian issues) TODO remove?
+    /// \todo remove sanity check? (should trigger on endian issues)
     assert(0 < header.Nt && header.Nt <= 1024);
     assert(0 < header.Nx && header.Nx <= 1024);
     assert(0 < header.Ny && header.Ny <= 1024);
@@ -146,6 +153,7 @@ public:
     err = MPI_Type_free(&oddSiteType); assert(err == MPI_SUCCESS);
   }
 
+  /*! Serves the same function as BinaryIO::IOobject() when used to read a lattice into memory. */
   bool readGauge(std::vector<ColourMatrixD>& domain_buff, FieldMetaData& meta) {
     auto hdr_offset = readHeader(meta);
     CHECK
@@ -199,17 +207,17 @@ public:
     {
       ParRdr rdr(MPI_COMM_WORLD, file, grid);
       rdr.readGauge(iodata, header);
-    } // equivalent to using binaryio
+    }
 
     std::vector<iDoubleStoredColourMatrix<typename vsimd::scalar_type>> Umu_ds_scalar(grid->lSites());
 
-    copyToLatticeObject(Umu_ds_scalar, iodata, grid); // equivalent to munging
+    copyToLatticeObject(Umu_ds_scalar, iodata, grid);
 
     DoubledGaugeField Umu_ds(grid);
 
     vectorizeFromLexOrdArray(Umu_ds_scalar, Umu_ds);
 
-    redistribute(Umu, Umu_ds); // equivalent to undoDoublestore
+    redistribute(Umu, Umu_ds);
 
     FieldMetaData clone(header);
 
@@ -236,6 +244,7 @@ public:
   }
 
 private:
+  /*! \remark Equivalent to OpenQcdIO::undoDoubleStore */
   template<class vsimd>
   static inline void redistribute(Lattice<iLorentzColourMatrix<vsimd>>&            Umu,
                                   Lattice<iDoubleStoredColourMatrix<vsimd>> const& Umu_ds) {
@@ -248,6 +257,10 @@ private:
     U = PeekIndex<LorentzIndex>(Umu_ds, 0) + Cshift(PeekIndex<LorentzIndex>(Umu_ds, 1), 3, +1); PokeIndex<LorentzIndex>(Umu, U, 3);
   }
 
+  /*! Serves an analogous role to the mungeing that BinaryIO::IOobject does 
+      \important OpenQCD orders the lorentz indices (t,x,y,z), 
+                 in contrast to Grid's (x,y,z,t).
+  */
   static inline void copyToLatticeObject(std::vector<DoubleStoredColourMatrix>& u_fb,
                                          std::vector<ColourMatrixD> const&      node_buff,
                                          GridBase*                              grid) {
@@ -262,7 +275,7 @@ private:
     int&       t = coord[3];
 
     int buff_idx = 0;
-    for(t = 0; t < l[3]; ++t) // IMPORTANT: openQCD file ordering
+    for(t = 0; t < l[3]; ++t)
       for(x = 0; x < l[0]; ++x)
         for(y = 0; y < l[1]; ++y)
           for(z = 0; z < l[2]; ++z) {
@@ -282,5 +295,6 @@ private:
     assert(node_buff.size() == buff_idx);
   }
 };
-
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
+/// \endcond

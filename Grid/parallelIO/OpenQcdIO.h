@@ -28,7 +28,8 @@ directory
 /*  END LEGAL */
 
 /*! \file OpenQcdIO.h
- *  \brief Defines classes and functions for reading/writing OpenQcd format lattices.
+ *  \brief Defines classes and functions for reading/writing 
+           [OpenQCD](https://luscher.web.cern.ch/luscher/openQCD) format lattices.
  */
 
 #pragma once
@@ -37,7 +38,7 @@ directory
 NAMESPACE_BEGIN(Grid);
 /// \endcond
 
-/*! \brief Stores metadata for header */
+/*! \brief Holds metadata about the lattice. */
 struct OpenQcdHeader : Serializable {
   GRID_SERIALIZABLE_CLASS_MEMBERS(OpenQcdHeader,
                                   int,    Nt,
@@ -47,10 +48,20 @@ struct OpenQcdHeader : Serializable {
                                   double, plaq);
 };
 
+
+/*! \class OpenQcdIO
+ *  \brief Contains the methods to read/write OpenQCD format lattices.
+ */
 class OpenQcdIO : public BinaryIO {
 public:
-  static constexpr double normalisationFactor = Nc; // normalisation difference: grid 18, openqcd 6
+  /// \attention normalisation difference: grid 18, openqcd 6
+  static constexpr double normalisationFactor = Nc; 
 
+  /*! 
+   * \param file  Path to the lattice to be read.
+   * \param grid  Pointer to GridBase object.
+   * \param field Store for lattice metadata.
+   */
   static inline int readHeader(std::string file, GridBase* grid, FieldMetaData& field) {
     OpenQcdHeader header;
 
@@ -88,6 +99,9 @@ public:
     return field.data_start;
   }
 
+  /*! 
+   * \remark OpenQCD lattices always stored in little endian and double precision.
+   */
   template<class vsimd>
   static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd>>& Umu,
                                        FieldMetaData&                        header,
@@ -103,7 +117,7 @@ public:
 
     FieldMetaData clone(header);
 
-    std::string format("IEEE64"); // they always store little endian double precsision
+    std::string format("IEEE64");
     uint32_t    nersc_csum, scidac_csuma, scidac_csumb;
 
     GridCartesian*         grid_openqcd = createOpenQcdGrid(grid);
@@ -192,17 +206,19 @@ public:
   }
 
 private:
+  /*!
+   * \remark Exploits GridCartesian to be able to still use IOobject.\n 
+   *         OpenQCD does rb on the z direction
+   *         and has the order T X Y Z (from slowest to fastest)
+   */
   static inline GridCartesian* createOpenQcdGrid(GridCartesian* grid) {
-    // exploit GridCartesian to be able to still use IOobject
     Coordinate gdim  = grid->GlobalDimensions();
     Coordinate ldim  = grid->LocalDimensions();
     Coordinate pcoor = grid->ThisProcessorCoor();
 
-    // openqcd does rb on the z direction
     gdim[Zdir] /= 2;
     ldim[Zdir] /= 2;
 
-    // and has the order T X Y Z (from slowest to fastest)
     std::swap(gdim[Xdir], gdim[Zdir]);
     std::swap(ldim[Xdir], ldim[Zdir]);
     std::swap(pcoor[Xdir], pcoor[Zdir]);
@@ -213,13 +229,15 @@ private:
     return ret;
   }
 
+  /*! 
+   * \remark Umu_ds has lorentz index structure T+, T-, X+, X-, Y+, Y-, Z+, Z-
+   */
   template<class vsimd>
   static inline void undoDoubleStore(Lattice<iLorentzColourMatrix<vsimd>>&            Umu,
                                      Lattice<iDoubleStoredColourMatrix<vsimd>> const& Umu_ds) {
     conformable(Umu.Grid(), Umu_ds.Grid());
     Lattice<iColourMatrix<vsimd>> U(Umu.Grid());
 
-    // they store T+, T-, X+, X-, Y+, Y-, Z+, Z-
     for(int mu_g = 0; mu_g < Nd; ++mu_g) {
       int mu_o = (mu_g + 1) % Nd;
       U        = PeekIndex<LorentzIndex>(Umu_ds, 2 * mu_o)
