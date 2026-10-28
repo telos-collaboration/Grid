@@ -29,26 +29,29 @@
 *************************************************************************************/
 /*  END LEGAL */
 /*! \file NerscIO.h
- *  \brief defines classes and functions for reading/writing Nersc format lattices.
- *  \details
+ *  \brief Defines classes and functions for reading/writing Nersc format lattices.
  */
 #ifndef GRID_NERSC_IO_H
 #define GRID_NERSC_IO_H
 
 #include <string>
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
 using namespace Grid;
 
-////////////////////////////////////////////////////////////////////////////////
-// Write and read from fstream; comput header offset for payload
-////////////////////////////////////////////////////////////////////////////////
+/*!
+ * \brief Read and write objects of type LatticeGaugeField. 
+ * Read and write from `fstream` and compute header `offset` for payload.
+ */
 class NerscIO : public BinaryIO { 
 public:
   typedef Lattice<vLorentzColourMatrixD> GaugeField;
 
-  // Enable/disable exiting if the plaquette in the header does not match the value computed (default true)
+  /// Enable/disable exiting if the plaquette in the header does not 
+  /// match the value computed (default __true__ )
   static bool & exitOnReadPlaquetteMismatch(){ static bool v=true; return v; }
 
   static inline void truncate(std::string file){
@@ -64,18 +67,19 @@ public:
     return field.data_start;
   }
 
-  // for the header-reader
+  /*!
+   * - read the header in \p file with std::ifstream
+     - parse one line at a time with getline()
+     - move header data into FieldMetaData object
+   */
   static inline int readHeader(std::string file,GridBase *grid,  FieldMetaData &field)
   {
     std::map<std::string,std::string> header;
     std::string line;
 
-    //////////////////////////////////////////////////
-    // read the header
-    //////////////////////////////////////////////////
     std::ifstream fin(file);
 
-    getline(fin,line); // read one line and insist is 
+    getline(fin,line);
 
     removeWhitespace(line);
     std::cout << GridLogMessage << "* " << line << std::endl;
@@ -83,7 +87,7 @@ public:
     assert(line==std::string("BEGIN_HEADER"));
 
     do {
-      getline(fin,line); // read one line
+      getline(fin,line);
       std::cout << GridLogMessage << "* "<<line<< std::endl;
       int eq = line.find("=");
       if(eq >0) {
@@ -98,9 +102,6 @@ public:
 
     field.data_start = fin.tellg();
 
-    //////////////////////////////////////////////////
-    // chomp the values
-    //////////////////////////////////////////////////
     field.hdr_version    = header["HDR_VERSION"];
     field.data_type      = header["DATATYPE"];
     field.storage_format = header["STORAGE_FORMAT"];
@@ -136,10 +137,13 @@ public:
     return field.data_start;
   }
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Now the meat: the object readers
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+  /*!
+   *  - Can read double or single precision, big or little endian.
+   *  - Depending on datatype, set up munger.
+   *  - munger is a function of <floating point, Real, data_type>.
+   *  \remark `Umu`, the object that holds the lattice data in memory, always has
+   *          underlying basic type `double`.
+   */
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void readConfiguration(GaugeField &Umu,
 				       FieldMetaData& header,
@@ -161,8 +165,6 @@ public:
 			   format == std::string("IEEE64LITTLE"));
 
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
-    // depending on datatype, set up munger;
-    // munger is a function of <floating point, Real, data_type>
     const std::string stNC = std::to_string( Nc ) ;
     if ( header.data_type == std::string("4D_SU"+stNC+"_GAUGE") ) {
       if ( ieee32 || ieee32big ) {
@@ -216,7 +218,9 @@ public:
     std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
   }
 
-  // Preferred interface
+  /*! \remark Preferred interface
+   *  \note Always writes lattices in double precision and big endian.
+   */
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
@@ -226,6 +230,7 @@ public:
   {
     writeConfiguration(Umu,file,0,1,ens_label,ens_id,sequence_number);
   }
+
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
@@ -256,7 +261,6 @@ public:
 
     uint64_t offset;
 
-    // Sod it -- always write NcxNc double
     header.floating_point  = std::string("IEEE64BIG");
     const std::string stNC = std::to_string( Nc ) ;
     if( two_row ) {
@@ -290,14 +294,14 @@ public:
 	     <<std::dec<<" plaq "<< header.plaquette <<std::endl;
 
   }
-  ///////////////////////////////
-  // RNG state
-  ///////////////////////////////
+ 
+  /*!
+   *  \todo `header` should become argument
+   */
   static inline void writeRNGState(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file)
   {
     typedef typename GridParallelRNG::RngStateType RngStateType;
 
-    // Following should become arguments
     FieldMetaData header;
     header.sequence_number = 1;
     header.ensemble_id     = "UKQCD";
@@ -371,8 +375,6 @@ public:
     assert(data_type == std::string("SITMO"));
 #endif
 
-    // depending on datatype, set up munger;
-    // munger is a function of <floating point, Real, data_type>
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
     BinaryIO::readRNG(serial,parallel,file,offset,nersc_csum,scidac_csuma,scidac_csumb);
 
@@ -385,7 +387,7 @@ public:
     std::cout<<GridLogMessage <<"Read NERSC RNG file "<<file<< " format "<< data_type <<std::endl;
   }
 };
-
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
-
+/// \endcond
 #endif
