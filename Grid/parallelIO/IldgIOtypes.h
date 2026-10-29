@@ -27,7 +27,7 @@ directory
 
 /*!
  * \file
- * \brief Defines Serializable objects for storing Grid/Scidac/ILDG metadata.
+ * \brief Defines Grid::Serializable objects for storing Grid/Scidac/ILDG format metadata.
  * 
  * The headers defined here are used by the read and write classes defined in
  * IldgIO.h. When writing a cfg to disk the metadata is prepended to the binary
@@ -36,7 +36,8 @@ directory
  * specification for the metadata and a cfg can have multiple
  * headers with overlapping metadata. 
  * 
- * \remark The C-Lime library is required for ILDG and Scidac I/O functionality.
+ * \remark The [C-LIME](https://usqcd-software.github.io/c-lime)
+           library is required for ILDG and Scidac I/O functionality.
  */
 
 /// \cond DO_NOT_DOCUMENT
@@ -95,15 +96,18 @@ struct emptyUserRecord : Serializable {
  *  \param spacetime Number of dimensions.
  *  \param dims Size of each dimension, `Lx Ly Lz Lt`.
  *  \param volfmt 0 or 1 depending on `GRID_IO_*`
+ *
+ *  Constructor accepts `GridBase` pointer.
  */
 struct scidacFile : Serializable {
 public:
   GRID_SERIALIZABLE_CLASS_MEMBERS(scidacFile,
                                   double, version,
                                   int, spacetime,
-				  std::string, dims, // must convert to int
+				                          std::string, dims,
                                   int, volfmt);
 
+  /// converts string `dims` into `vector<int>` 
   std::vector<int> getDimensions(void) { 
     std::stringstream stream(dims);
     std::vector<int> dimensions;
@@ -126,8 +130,7 @@ public:
     dims = stream.str();
   }
 
-  // Constructor provides Grid
-  scidacFile() =default; // default constructor
+  scidacFile() =default;
   scidacFile(GridBase * grid){
     version      = 1.0;
     spacetime    = grid->_ndimension;
@@ -149,14 +152,14 @@ public:
  */
 /*! 
  *  \brief Serializable class to hold Scidac metadata.
- *  \param version Scidac lattice format version number.
+ *  \param version Scidac format version number.
  *  \param date Date of cfg generation.
  *  \param recordtype 
- *  \param datatype 
- *  \param precision D of F(?).
+ *  \param datatype Underlying format, example: `GRID_D_LorentzVector4_ColourMatrix4`
+ *  \param precision D or F
  *  \param colors `Nc`
  *  \param spins  `Ns`
- *  \param typesize Size of ...
+ *  \param typesize Size of \p datatype in bytes.
  *  \param datacount 
  */
 struct scidacRecord : Serializable {
@@ -179,14 +182,14 @@ public:
 
 /*! 
  *  \brief Serializable class to hold ILDG metadata.
- *  \param version ILDG format version number.
- *  \param field   String representing gauge group and Nc.
- *  \param precision 64 or 32.
- *  \param rows Number of rows saved per gauge field. 
- *  \param lx Size in lattice units of x spatial dimension.
- *  \param ly Size in lattice units of y spatial dimension.
- *  \param lz Size in lattice units of z spatial dimension.
- *  \param lt Size in lattice units of time dimension.
+ *  \param version ILDG format version number
+ *  \param field   String representing gauge group and Nc
+ *  \param precision 64 or 32
+ *  \param rows Number of rows saved per gauge field
+ *  \param lx Size in lattice units of `x` spatial dimension
+ *  \param ly Size in lattice units of `y` spatial dimension
+ *  \param lz Size in lattice units of `z` spatial dimension
+ *  \param lt Size in lattice units of time dimension
  */
 struct ildgFormat : Serializable {
 public:
@@ -203,8 +206,8 @@ public:
 };
 
 /*! 
- * \brief Serializable class to hold USQCD metadata.
- * \param version USQCD lattice format version
+ * \brief Serializable class to hold USQCD metadata
+ * \param version USQCD format version number
  * \param plaq average plaquette value
  * \param linktr average link trace value
  * \param info 
@@ -222,7 +225,7 @@ public:
 };
 /*!
  *  \brief Serializable Class for holding Scidac checksums.
- *  \param version 
+ *  \param version Checksum version number
  *  \param suma
  *  \param sumb
  */
