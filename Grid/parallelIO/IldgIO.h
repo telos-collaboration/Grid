@@ -40,9 +40,7 @@ directory
 
 #pragma once
 
-/// \cond DO_NOT_DOCUMENT
 #ifdef HAVE_LIME
-/// \endcond
 #include <algorithm>
 #include <fstream>
 #include <iomanip>
@@ -1061,4 +1059,3 @@ NAMESPACE_END(Grid);
 
 //HAVE_LIME
 #endif
-

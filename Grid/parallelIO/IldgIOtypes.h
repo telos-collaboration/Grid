@@ -36,11 +36,10 @@ directory
  * specification for the metadata and a cfg can have multiple
  * headers with overlapping metadata. 
  * 
- * \remark The [C-LIME](https://usqcd-software.github.io/c-lime)
-           library is required for ILDG and Scidac I/O functionality.
+ * \attention The [C-LIME](https://usqcd-software.github.io/c-lime)
+              library is __required__ to enable ILDG and Scidac I/O functionality.
  */
 
-/// \cond DO_NOT_DOCUMENT
 #ifndef GRID_ILDGTYPES_IO_H
 #define GRID_ILDGTYPES_IO_H
 
@@ -49,6 +48,7 @@ extern "C" { // for linkage
 #include "lime.h"
 }
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
 /// \endcond
 
@@ -239,7 +239,6 @@ public:
     version=1.0; 
   };
 };
-/// \cond DO_NOT_DOCUMENT
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Type:           scidac-file-xml         <title>MILC ILDG archival gauge configuration</title>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -289,6 +288,7 @@ public:
 };
 #endif
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
 /// \endcond
 
