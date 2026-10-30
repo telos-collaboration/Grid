@@ -29,6 +29,10 @@
 
 /*! \file  BinaryIO.h
  *  \brief Defines classes and functions to read and write binary lattice data.
+ *
+ * Real action: Read or Write distributed lexico array of ANY object to a 
+ *              specific location in file.
+ *
  */
 
 #pragma once
@@ -50,9 +54,7 @@
 NAMESPACE_BEGIN(Grid);
 /// \endcond
 
-/////////////////////////////////////////////////////////////////////////////////
-// Byte reversal garbage
-/////////////////////////////////////////////////////////////////////////////////
+/// \brief Byte reversal garbage
 inline uint32_t byte_reverse32(uint32_t f) { 
       f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
       return f;
@@ -74,14 +76,14 @@ inline uint64_t Grid_ntohll(uint64_t A) {
 }
 #endif
 
-//! A little helper
+//! \brief A little helper
 inline void removeWhitespace(std::string &key)
 {
   key.erase(std::remove_if(key.begin(), key.end(), ::isspace),key.end());
 }
 
 /*!
- * \brief Static class holding the parallel IO code
+ * \brief Static class holding the parallel IO objects/methods.
  * \remark Could just use a namespace
  */
 class BinaryIO {
@@ -95,8 +97,7 @@ class BinaryIO {
   static IoPerf lastPerf;
   static int latticeWriteMaxRetry;
 
-  //! more byte manipulation helpers
-
+  /// \brief more byte manipulation helpers
   template<class vobj> static inline void Uint32Checksum(Lattice<vobj> &lat,uint32_t &nersc_csum)
   {
     typedef typename vobj::scalar_object sobj;
@@ -140,9 +141,9 @@ class BinaryIO {
       }
     }
   }
-	/*! 
-	 * \remark Scidac csum is rather more heavyweight
-	 * \todo 128^3 x 256 x 16 will overflow.
+	/*! \brief Compute Scidac checksum. 
+	 *  \remark Scidac csum is rather more heavyweight
+	 *  \todo 128^3 x 256 x 16 will overflow.
 	 */
   template<class fobj> static inline void ScidacChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &scidac_csuma,uint32_t &scidac_csumb)
   {
@@ -196,7 +197,7 @@ class BinaryIO {
     }
   }
 
-  /*! \remark Network is big endian */
+  /// \remark Network is big endian
   static inline void htobe32_v(void *file_object,uint32_t bytes){ be32toh_v(file_object,bytes);} 
   static inline void htobe64_v(void *file_object,uint32_t bytes){ be64toh_v(file_object,bytes);} 
   static inline void htole32_v(void *file_object,uint32_t bytes){ le32toh_v(file_object,bytes);} 
@@ -210,9 +211,7 @@ class BinaryIO {
       f[i] = ntohl(f[i]);
     });
   }
-  /*! 
-   *  \remark LE must Swap and switch to host 
-   */
+  /// \remark LE must Swap and switch to host
   static inline void le32toh_v(void *file_object,uint64_t bytes)
   {
     uint32_t *fp = (uint32_t *)file_object;
@@ -227,7 +226,7 @@ class BinaryIO {
     });
   }
 
-  // BE is same as network
+  /// \remark BE is same as network
   static inline void be64toh_v(void *file_object,uint64_t bytes)
   {
     uint64_t * f = (uint64_t *)file_object;
@@ -237,9 +236,7 @@ class BinaryIO {
     });
   }
   
-  /*! 
-   *  \remark LE must Swap and switch to host 
-   */
+  /// \remark LE must Swap and switch to host 
   static inline void le64toh_v(void *file_object,uint64_t bytes)
   {
     uint64_t *fp = (uint64_t *)file_object;
@@ -255,10 +252,6 @@ class BinaryIO {
       fp[i] = Grid_ntohll(g);
     });
   }
-  /////////////////////////////////////////////////////////////////////////////
-  // Real action:
-  // Read or Write distributed lexico array of ANY object to a specific location in file 
-  //////////////////////////////////////////////////////////////////////////////////////
 
   static const int BINARYIO_MASTER_APPEND = 0x10;
   static const int BINARYIO_UNORDERED     = 0x08;
@@ -266,6 +259,10 @@ class BinaryIO {
   static const int BINARYIO_READ          = 0x02;
   static const int BINARYIO_WRITE         = 0x01;
 
+/*! \brief Read or Write distributed lexico array of ANY object 
+ *         to a specific location in file/
+ *
+ */ 
   template<class word,class fobj>
   static inline void IOobject(word w,
 			      GridBase *grid,
@@ -297,7 +294,7 @@ class BinaryIO {
     Coordinate lStart(ndim);
     Coordinate gStart(ndim);
 
-    // Flatten the file
+    /// - Flatten the file
     uint64_t lsites = grid->lSites();
     if ( control & BINARYIO_MASTER_APPEND )  {
       assert(iodata.size()==1);
@@ -329,9 +326,7 @@ class BinaryIO {
       mpiword = MPI_DOUBLE;
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Sobj in MPI phrasing
-    //////////////////////////////////////////////////////////////////////////////
+    /// - Sobj in MPI phrasing
     int ierr;
     ierr = MPI_Type_contiguous(numword,mpiword,&mpiObject);    assert(ierr==0);
     ierr = MPI_Type_commit(&mpiObject);
@@ -659,9 +654,7 @@ class BinaryIO {
     std::cout<<GridLogMessage<<"writeLatticeObject: unvectorize overhead "<<timer.Elapsed()  <<std::endl;
   }
   
-  /////////////////////////////////////////////////////////////////////////////
-  // Read a RNG;  use IOobject and lexico map to an array of state 
-  //////////////////////////////////////////////////////////////////////////////////////
+  /// Read a RNG;  use IOobject and lexico map to an array of state 
   static inline void readRNG(GridSerialRNG &serial_rng,
 			     GridParallelRNG &parallel_rng,
 			     std::string file,
@@ -694,7 +687,7 @@ class BinaryIO {
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    thread_for(lidx,lsites,{  // FIX ME, suboptimal implementation
+    thread_for(lidx,lsites,{  /// \todo suboptimal implementation
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
       Coordinate lcoor;
@@ -726,9 +719,7 @@ class BinaryIO {
 
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
   }
-  /////////////////////////////////////////////////////////////////////////////
-  // Write a RNG; lexico map to an array of state and use IOobject
-  //////////////////////////////////////////////////////////////////////////////////////
+  /// Write a RNG; lexico map to an array of state and use IOobject
   static inline void writeRNG(GridSerialRNG &serial_rng,
 			      GridParallelRNG &parallel_rng,
 			      std::string file,
