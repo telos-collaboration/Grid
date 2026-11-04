@@ -1,0 +1,25 @@
+/** \dir Grid/parallelIO
+ * \anchor parallelIO
+ * This directory contains implementations of
+ * reading and writing lattice objects in common formats.
+ *
+ * Implementations include:
+ *
+ * - \ref binaryio_h "BinaryIO.h": Raw binary files
+ * - IldgIO.h: The <a href="https://ildg.net">International %Lattice Data %Grid</a> standard format and related formats
+ * - NerscIO.h: The <a href="https://arxiv.org/pdf/1112.2193.pdf">NERSC</a> format
+ * - OpenQcdIO.h: The <a href="https://luscher.web.cern.ch/luscher/openQCD/">openQCD</a> format
+ *
+ * \section mungers Mungers and unmungers
+ *
+ * Some formats use a different matrix format on disk to that used by %Grid in memory.
+ * For example,
+ * ILDG allows storing a subset of the rows of a square unitary or symplecti matrix,
+ * and reconstructing the missing ones when loading the file.
+ *
+ * In such cases,
+ * \em munging refers to the reconstruction done when reading from disk
+ * (reconstructing missing rows),
+ * and \em unmunging refers to the preparation done for writing to disk
+ * (dropping rows from the input data matrices).
+ */

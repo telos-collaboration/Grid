@@ -26,6 +26,16 @@
     See the full license in the file "LICENSE" in the top level distribution directory
     *************************************************************************************/
     /*  END LEGAL */
+
+/*! \file  BinaryIO.h
+ *  \anchor binaryio_h
+ *  \brief Defines classes and functions to read and write binary lattice data.
+ *
+ *  Read or Write distributed lexico array of ANY object to a specific 
+ *  location in file.
+ *
+ */
+
 #pragma once
 
 #if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3) || defined(GRID_COMMS_MPIT) 
@@ -41,15 +51,16 @@
 #include <arpa/inet.h>
 #include <algorithm>
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
-/////////////////////////////////////////////////////////////////////////////////
-// Byte reversal garbage
-/////////////////////////////////////////////////////////////////////////////////
+/// \brief Byte reversal garbage
 inline uint32_t byte_reverse32(uint32_t f) { 
       f = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
       return f;
 }
+/// \brief Byte reversal garbage
 inline uint64_t byte_reverse64(uint64_t f) { 
   uint64_t g;
   g = ((f&0xFF)<<24) | ((f&0xFF00)<<8) | ((f&0xFF0000)>>8) | ((f&0xFF000000UL)>>24) ; 
@@ -67,16 +78,16 @@ inline uint64_t Grid_ntohll(uint64_t A) {
 }
 #endif
 
-// A little helper
+//! \brief A little helper
 inline void removeWhitespace(std::string &key)
 {
   key.erase(std::remove_if(key.begin(), key.end(), ::isspace),key.end());
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Static class holding the parallel IO code
-// Could just use a namespace
-///////////////////////////////////////////////////////////////////////////////////////////////////
+/*!
+ * \brief Static class holding the parallel IO objects/methods.
+ * \remark Could just use a namespace?
+ */
 class BinaryIO {
  public:
   struct IoPerf
@@ -88,10 +99,7 @@ class BinaryIO {
   static IoPerf lastPerf;
   static int latticeWriteMaxRetry;
 
-  /////////////////////////////////////////////////////////////////////////////
-  // more byte manipulation helpers
-  /////////////////////////////////////////////////////////////////////////////
-
+  /// \brief more byte manipulation helpers
   template<class vobj> static inline void Uint32Checksum(Lattice<vobj> &lat,uint32_t &nersc_csum)
   {
     typedef typename vobj::scalar_object sobj;
@@ -135,7 +143,10 @@ class BinaryIO {
       }
     }
   }
-
+	/*! \brief Compute Scidac checksum. 
+	 *  \remark Scidac csum is rather more heavyweight
+	 *  \todo 128^3 x 256 x 16 will overflow.
+	 */
   template<class fobj> static inline void ScidacChecksum(GridBase *grid,std::vector<fobj> &fbuf,uint32_t &scidac_csuma,uint32_t &scidac_csumb)
   {
     int nd = grid->_ndimension;
@@ -160,11 +171,6 @@ class BinaryIO {
 
 	uint32_t * site_buf = (uint32_t *)&fbuf[local_site];
 
-	/* 
-	 * Scidac csum  is rather more heavyweight
-	 * FIXME -- 128^3 x 256 x 16 will overflow.
-	 */
-	
 	int64_t global_site;
 
 	Lexicographic::CoorFromIndex(coor,local_site,local_vol);
@@ -193,7 +199,7 @@ class BinaryIO {
     }
   }
 
-  // Network is big endian
+  /// \remark Network is big endian
   static inline void htobe32_v(void *file_object,uint32_t bytes){ be32toh_v(file_object,bytes);} 
   static inline void htobe64_v(void *file_object,uint32_t bytes){ be64toh_v(file_object,bytes);} 
   static inline void htole32_v(void *file_object,uint32_t bytes){ le32toh_v(file_object,bytes);} 
@@ -207,7 +213,7 @@ class BinaryIO {
       f[i] = ntohl(f[i]);
     });
   }
-  // LE must Swap and switch to host
+  /// \remark LE must Swap and switch to host
   static inline void le32toh_v(void *file_object,uint64_t bytes)
   {
     uint32_t *fp = (uint32_t *)file_object;
@@ -222,7 +228,7 @@ class BinaryIO {
     });
   }
 
-  // BE is same as network
+  /// \remark BE is same as network
   static inline void be64toh_v(void *file_object,uint64_t bytes)
   {
     uint64_t * f = (uint64_t *)file_object;
@@ -232,7 +238,7 @@ class BinaryIO {
     });
   }
   
-  // LE must swap and switch;
+  /// \remark LE must Swap and switch to host 
   static inline void le64toh_v(void *file_object,uint64_t bytes)
   {
     uint64_t *fp = (uint64_t *)file_object;
@@ -248,10 +254,6 @@ class BinaryIO {
       fp[i] = Grid_ntohll(g);
     });
   }
-  /////////////////////////////////////////////////////////////////////////////
-  // Real action:
-  // Read or Write distributed lexico array of ANY object to a specific location in file 
-  //////////////////////////////////////////////////////////////////////////////////////
 
   static const int BINARYIO_MASTER_APPEND = 0x10;
   static const int BINARYIO_UNORDERED     = 0x08;
@@ -259,6 +261,24 @@ class BinaryIO {
   static const int BINARYIO_READ          = 0x02;
   static const int BINARYIO_WRITE         = 0x01;
 
+/*! \brief Read or Write distributed lexico array of ANY object 
+ *         to a specific location in file
+ *  \details Main function in BinaryIO. 
+ *           - Reads or writes binary data with MPI or C++ `std`.
+ *           - Computes Nersc and Scidac checksums.
+ *  \tparam word
+ *  \tparam fobj
+ *  \param w
+ *  \param grid pointer to #GridBase object
+ *  \param iodata binary data to read or write
+ *  \param file file to read from or write to
+ *  \param offset
+ *  \param format precision and endianness, eg. `IEEE64BIG`
+ *  \param control choose what mode to operate in, eg. #BINARYIO_READ
+ *  \param nersc_csum Nersc checksum
+ *  \param scidac_csuma Scidac checksum
+ *  \param scidac_csumb Scidac checksum 
+ */ 
   template<class word,class fobj>
   static inline void IOobject(word w,
 			      GridBase *grid,
@@ -290,7 +310,7 @@ class BinaryIO {
     Coordinate lStart(ndim);
     Coordinate gStart(ndim);
 
-    // Flatten the file
+    /// - Flatten the file
     uint64_t lsites = grid->lSites();
     if ( control & BINARYIO_MASTER_APPEND )  {
       assert(iodata.size()==1);
@@ -322,28 +342,26 @@ class BinaryIO {
       mpiword = MPI_DOUBLE;
     }
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Sobj in MPI phrasing
-    //////////////////////////////////////////////////////////////////////////////
+    /// - Sobj in MPI phrasing
     int ierr;
     ierr = MPI_Type_contiguous(numword,mpiword,&mpiObject);    assert(ierr==0);
     ierr = MPI_Type_commit(&mpiObject);
 
     //////////////////////////////////////////////////////////////////////////////
-    // File global array data type
+    /// - File global array data type
     //////////////////////////////////////////////////////////////////////////////
     ierr=MPI_Type_create_subarray(ndim,&gLattice[0],&lLattice[0],&gStart[0],MPI_ORDER_FORTRAN, mpiObject,&fileArray);    assert(ierr==0);
     ierr=MPI_Type_commit(&fileArray);    assert(ierr==0);
 
     //////////////////////////////////////////////////////////////////////////////
-    // local lattice array
+    /// - local lattice array
     //////////////////////////////////////////////////////////////////////////////
     ierr=MPI_Type_create_subarray(ndim,&lLattice[0],&lLattice[0],&lStart[0],MPI_ORDER_FORTRAN, mpiObject,&localArray);    assert(ierr==0);
     ierr=MPI_Type_commit(&localArray);    assert(ierr==0);
 #endif
 
     //////////////////////////////////////////////////////////////////////////////
-    // Byte order
+    /// - Byte order checks
     //////////////////////////////////////////////////////////////////////////////
     int ieee32big = (format == std::string("IEEE32BIG"));
     int ieee32    = (format == std::string("IEEE32"));
@@ -352,7 +370,7 @@ class BinaryIO {
     assert(ieee64||ieee32|ieee64big||ieee32big);
     assert((ieee64+ieee32+ieee64big+ieee32big)==1);
     //////////////////////////////////////////////////////////////////////////////
-    // Do the I/O
+    /// - Do the `I/O`. 
     //////////////////////////////////////////////////////////////////////////////
     if ( control & BINARYIO_READ ) { 
 
@@ -521,10 +539,8 @@ class BinaryIO {
 
     std::cout<<GridLogMessage<<"IOobject: endian and checksum overhead "<<bstimer.Elapsed()  <<std::endl;
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Safety check
-    //////////////////////////////////////////////////////////////////////////////
-    // if the data size is 1 we do not want to sum over the MPI ranks
+    /*! - Safety check, if `iodata.size` is 1 
+     *    we _do not_ want to sum over the MPI ranks */
     if (iodata.size() != 1){
       grid->Barrier();
       grid->GlobalSum(nersc_csum);
@@ -534,9 +550,21 @@ class BinaryIO {
     }
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Read a Lattice of object
-  //////////////////////////////////////////////////////////////////////////////////////
+/*!
+ *  \brief Read a Lattice object from a file.
+ *  \tparam vobj inferred underlying type of #Lattice object.
+ *  \tparam munger one of the types defined in MetaData.h 
+ *  \param[in] file Filename of lattice configuration.
+ *  \param[out] Umu  Grid Lattice object.
+ *  \param[in] munge Callable munge object.
+ *  \param[in] offset Header size in bytes to skip 
+ *             to get to the start of the binary data.
+ *  \param[in] format precision and endianness, eg. `IEEE64BIG`
+ *  \param[out] nersc_csum Nersc checksum
+ *  \param[out] scidac_csuma Scidac checksum
+ *  \param[out] scidac_csumb Scidac checksum
+ *  \param[in] control
+ */
   template<class vobj,class fobj,class munger>
   static inline void readLatticeObject(Lattice<vobj> &Umu,
 				       std::string file,
@@ -573,9 +601,7 @@ class BinaryIO {
     std::cout<<GridLogMessage<<"readLatticeObject: vectorize overhead "<<timer.Elapsed()  <<std::endl;
   }
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Write a Lattice of object
-  //////////////////////////////////////////////////////////////////////////////////////
+  /*! \brief Write a Lattice object to a file. */
   template<class vobj,class fobj,class munger>
     static inline void writeLatticeObject(Lattice<vobj> &Umu,
 					  std::string file,
@@ -598,7 +624,7 @@ class BinaryIO {
     std::vector<fobj>     iodata(lsites); // Munge, checksum, byte order in here
 
     //////////////////////////////////////////////////////////////////////////////
-    // Munge [ .e.g 3rd row recon ]
+    /// - Munge [ .e.g 3rd row recon ]
     //////////////////////////////////////////////////////////////////////////////
     GridStopWatch timer; timer.Start();
     unvectorizeToLexOrdArray(scalardata,Umu);    
@@ -641,9 +667,7 @@ class BinaryIO {
     std::cout<<GridLogMessage<<"writeLatticeObject: unvectorize overhead "<<timer.Elapsed()  <<std::endl;
   }
   
-  /////////////////////////////////////////////////////////////////////////////
-  // Read a RNG;  use IOobject and lexico map to an array of state 
-  //////////////////////////////////////////////////////////////////////////////////////
+  /// \brief Read a RNG;  use IOobject and lexico map to an array of state 
   static inline void readRNG(GridSerialRNG &serial_rng,
 			     GridParallelRNG &parallel_rng,
 			     std::string file,
@@ -676,7 +700,7 @@ class BinaryIO {
 	     nersc_csum,scidac_csuma,scidac_csumb);
 
     timer.Start();
-    thread_for(lidx,lsites,{  // FIX ME, suboptimal implementation
+    thread_for(lidx,lsites,{  /// \todo suboptimal implementation
       std::vector<RngStateType> tmp(RngStateCount);
       std::copy(iodata[lidx].begin(),iodata[lidx].end(),tmp.begin());
       Coordinate lcoor;
@@ -708,9 +732,7 @@ class BinaryIO {
 
     std::cout << GridLogMessage << "RNG state overhead " << timer.Elapsed() << std::endl;
   }
-  /////////////////////////////////////////////////////////////////////////////
-  // Write a RNG; lexico map to an array of state and use IOobject
-  //////////////////////////////////////////////////////////////////////////////////////
+  /// Write a RNG; lexico map to an array of state and use IOobject()
   static inline void writeRNG(GridSerialRNG &serial_rng,
 			      GridParallelRNG &parallel_rng,
 			      std::string file,
@@ -773,4 +795,6 @@ class BinaryIO {
   }
 };
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
+/// \endcond

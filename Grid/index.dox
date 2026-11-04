@@ -1,0 +1,23 @@
+/** \mainpage %Grid developer documentation
+ *
+ * This Doxygen gives significant detail on
+ * the functions and data structures in %Grid.
+ *
+ * The navigation on the left allows browsing by <a href="files.html">Files</a>,
+ * <a href="namespaces.html">Namespaces</a>
+ * and <a href="annotated.html">Data Structures</a>.
+ * Additionally,
+ * any `TODO` comments identified by Doxygen are listed
+ * in the <a href="todo.html">Todo List</a>.
+ *
+ * This documentation is a work in progress.
+ * Areas of %Grid that have had particular attention paid to them include:
+ *
+ * - Gauge actions, starting at \ref action "Grid/qcd/action"
+ * - Parallel I/O, starting at \ref parallelIO "Grid/parallelIO"
+ *
+ * Certain \ref test_docs "tests from the test suite" are also documented separately.
+ *
+ * Pull requests are welcome from those familiar with other areas of Grid
+ * to add additional detail.
+ */

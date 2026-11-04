@@ -28,6 +28,16 @@ See the full license in the file "LICENSE" in the top level distribution
 directory
 *************************************************************************************/
 /*  END LEGAL */
+
+/*! \file IldgIO.h
+ *  \brief Defines classes and functions for reading/writing [ILDG](https://hpc.desy.de/ildg) format lattices. 
+ *  \details The International %Lattice Data %Grid (ILDG) defines a structured file format
+ *           for lattice gauge fields which encapsulates binary and meta data within a single file.
+             The binary part of an ILDG-format file is packaged using the LIME library. 
+ *           This file contains the `IldgReader` and `IldgWriter` Classes alongside helper functions and classes.
+//! \remark The C-Lime library is required for ILDG and Scidac I/O functionality.
+ */
+
 #pragma once
 
 #ifdef HAVE_LIME
@@ -42,12 +52,13 @@ directory
 #include <sys/utsname.h>
 #include <unistd.h>
 
-//C-Lime is a must have for this functionality
 extern "C" {  
 #include "lime.h"
 }
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
 #define GRID_FIELD_NORM "FieldNormMetaData"
 #define GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) \
@@ -55,9 +66,8 @@ NAMESPACE_BEGIN(Grid);
 #define GRID_FIELD_NORM_CHECK(FieldNormMetaData_, n2ck) \
 assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
 
-  /////////////////////////////////
-  // Encode word types as strings
-  /////////////////////////////////
+/*! \name Encode word types as strings
+ * @{ */
  template<class word> inline std::string ScidacWordMnemonic(void){ return std::string("unknown"); }
  template<> inline std::string ScidacWordMnemonic<double>  (void){ return std::string("D"); }
  template<> inline std::string ScidacWordMnemonic<float>   (void){ return std::string("F"); }
@@ -65,10 +75,16 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
  template<> inline std::string ScidacWordMnemonic<uint32_t>(void){ return std::string("U32_t"); }
  template<> inline std::string ScidacWordMnemonic< int64_t>(void){ return std::string("I64_t"); }
  template<> inline std::string ScidacWordMnemonic<uint64_t>(void){ return std::string("U64_t"); }
+/*! @} */
 
-  /////////////////////////////////////////
-  // Encode a generic tensor as a string
-  /////////////////////////////////////////
+/*!
+ *  Encode a generic tensor as a string
+ *  \param[in] colors 
+ *  \param[in] spins
+ *  \param[in] typesize
+ *  \param[in] datacount
+ *  \return stream.str()
+ */
  template<class vobj> std::string ScidacRecordTypeString(int &colors, int &spins, int & typesize,int &datacount) { 
 
    typedef typename getPrecision<vobj>::real_scalar_type stype;
@@ -125,9 +141,15 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
  };
 
 
- ////////////////////////////////////////////////////////////
- // Helper to fill out metadata
- ////////////////////////////////////////////////////////////
+/*!
+ * Helper to fill out metadata
+ * \param field Lattice object whose metadata we need
+ * \param header Object for holding Grid metadata
+ * \param _scidacFile   Scidac Private File structure for holding Scidac metadata
+ * \param _scidacRecord Scidac Private Record structure for holding Scidac metadata
+ *
+ * MetaData::PrepareMetaData() retrieves Grid metadata.
+ */
 template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 					  FieldMetaData &header,
 					  scidacRecord & _scidacRecord,
@@ -135,19 +157,14 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
  {
    typedef typename getPrecision<vobj>::real_scalar_type stype;
 
-   /////////////////////////////////////
-   // Pull Grid's metadata
-   /////////////////////////////////////
+   /// <ol>
+   /// <li> Pull Grid's metadata
    PrepareMetaData(field,header);
 
-   /////////////////////////////////////
-   // Scidac Private File structure
-   /////////////////////////////////////
+   /// <li> Set Scidac Private File structure
    _scidacFile              = scidacFile(field.Grid());
 
-   /////////////////////////////////////
-   // Scidac Private Record structure
-   /////////////////////////////////////
+   /// <li> Set Scidac Private Record structure
    scidacRecord sr;
    sr.datatype   = ScidacRecordTypeString(field,sr.colors,sr.spins,sr.typesize,sr.datacount);
    sr.date       = header.creation_date;
@@ -155,13 +172,10 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
    sr.recordtype = GRID_IO_FIELD;
 
    _scidacRecord = sr;
-
-   //   std::cout << GridLogMessage << "Build SciDAC datatype " <<sr.datatype<<std::endl;
+   /// </ol>
  }
- 
- ///////////////////////////////////////////////////////
- // Scidac checksum
- ///////////////////////////////////////////////////////
+
+  /*! \brief Verify data integrity by comparing Scidac checksums */
  static int scidacChecksumVerify(scidacChecksum &scidacChecksum_,uint32_t scidac_csuma,uint32_t scidac_csumb)
  {
    uint32_t scidac_checksuma = stoull(scidacChecksum_.suma,0,16);
@@ -177,22 +191,22 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
    return 1;
  }
 
-////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 // Lime, ILDG and Scidac I/O classes
 ////////////////////////////////////////////////////////////////////////////////////
+
+/*! \brief Read a generic lattice with C-LIME
+ *
+ *  \note the use of `limeReaderBytes(LimeR)` to get the size of a lime record
+ *  \todo format for RNG? Now just binary out instead */
 class GridLimeReader : public BinaryIO {
  public:
-   ///////////////////////////////////////////////////
-   // FIXME: format for RNG? Now just binary out instead
-   ///////////////////////////////////////////////////
 
    FILE       *File;
    LimeReader *LimeR;
    std::string filename;
 
-   /////////////////////////////////////////////
-   // Open the file
-   /////////////////////////////////////////////
+   /*!\brief  Open the file */
    void open(const std::string &_filename) 
    {
      filename= _filename;
@@ -204,17 +218,22 @@ class GridLimeReader : public BinaryIO {
      }
      LimeR = limeCreateReader(File);
    }
-   /////////////////////////////////////////////
-   // Close the file
-   /////////////////////////////////////////////
+   /*! \brief Close the file */
    void close(void){
      fclose(File);
      //     limeDestroyReader(LimeR);
    }
 
-  ////////////////////////////////////////////
-  // Read a generic lattice field and verify checksum
-  ////////////////////////////////////////////
+  /*! \brief Read a generic lattice field and verify checksum 
+   *  \param[in] field Lattice object into which data is read
+   *  \param[in] record_name "ildg-binary-data" for the binary record per the spec
+   *  \param[in] control whether MPI I/O or `std::ifstream` used to read binary data
+   *  \remark `PayloadSize` _must_ match `file_bytes`
+   *
+   *  Two checks are performed:
+   *    -# Scidac checksum of `field` is computed and compared to metadata record
+   *    -# Norm squared of `field` is computed and compared to metadata record
+   */
   template<class vobj>
   void readLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
   {
@@ -243,7 +262,7 @@ class GridLimeReader : public BinaryIO {
 	//	std::cout << "R Payload expected " <<PayloadSize<<std::endl;
 	//	std::cout << "R file size " <<file_bytes <<std::endl;
 
-	assert(PayloadSize == file_bytes);// Must match or user error
+	assert(PayloadSize == file_bytes);
 
 	uint64_t offset= ftello(File);
 	//	std::cout << " ReadLatticeObject from offset "<<offset << std::endl;
@@ -271,6 +290,10 @@ class GridLimeReader : public BinaryIO {
       }
     }
   }
+  /*!
+   *  Retrieve checksum and norm metadata by reading the lime records
+   *  `SCIDAC_CHECKSUM` and `GRID_FIELD_NORM` respectively. 
+   */
   void readScidacChecksum(scidacChecksum     &scidacChecksum_,
 			  FieldNormMetaData  &FieldNormMetaData_)
   {
@@ -295,16 +318,14 @@ class GridLimeReader : public BinaryIO {
     }
     assert(0);
   }
-  ////////////////////////////////////////////
-  // Read a generic serialisable object
-  ////////////////////////////////////////////
+  /*! \brief Read a generic serialisable object */
   void readLimeObject(std::string &xmlstring,std::string record_name)
   {
-    // should this be a do while; can we miss a first record??
+    /// \remark should the `while` loop be a `do while`? can we miss a first record?
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
       //      std::cout << GridLogMessage<< " readLimeObject seeking "<< record_name <<" found record :" <<limeReaderType(LimeR) <<std::endl;
-      uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
+      uint64_t nbytes = limeReaderBytes(LimeR);
 
       if ( !strncmp(limeReaderType(LimeR), record_name.c_str(),strlen(record_name.c_str()) )  ) {
 
@@ -320,7 +341,10 @@ class GridLimeReader : public BinaryIO {
     }  
     assert(0);
   }
-
+  /*!
+   * \brief Read a generic serialisable object,
+   *        normally of type Grid::Serializable
+   */
   template<class serialisable_object>
   void readLimeObject(serialisable_object &object,std::string object_name,std::string record_name)
   {
@@ -332,15 +356,14 @@ class GridLimeReader : public BinaryIO {
   }
 };
 
+/*!
+ * \brief Write a generic lattice with C-LIME
+ */
 class GridLimeWriter : public BinaryIO 
 {
  public:
-
-   ///////////////////////////////////////////////////
-   // FIXME: format for RNG? Now just binary out instead
-   // FIXME: collective calls or not ?
-   //      : must know if I am the I/O boss
-   ///////////////////////////////////////////////////
+   /*! \todo format for RNG? Now just binary out instead 
+    *  \todo collective calls or not ? must know if I am the I/O boss */
    FILE       *File;
    LimeWriter *LimeW;
    std::string filename;
@@ -364,9 +387,10 @@ class GridLimeWriter : public BinaryIO
      }
      //  limeDestroyWriter(LimeW);
    }
-  ///////////////////////////////////////////////////////
-  // Lime utility functions
-  ///////////////////////////////////////////////////////
+  /// \name Lime utility functions
+  /// @{
+
+  /// \brief Create the LIME header for a record to be written
   int createLimeRecordHeader(std::string message, int MB, int ME, size_t PayloadSize)
   {
     if ( boss_node ) {
@@ -377,9 +401,7 @@ class GridLimeWriter : public BinaryIO
     }
     return LIME_SUCCESS;
   }
-  ////////////////////////////////////////////
-  // Write a generic serialisable object
-  ////////////////////////////////////////////
+  /// \brief Write an already-constructed XML object
   void writeLimeObject(int MB,int ME,XmlWriter &writer,std::string object_name,std::string record_name)
   {
     if ( boss_node ) {
@@ -398,7 +420,7 @@ class GridLimeWriter : public BinaryIO
       limeDestroyHeader(h);
     }
   }
-
+  /// \brief Write a generic serialisable object
   template<class serialisable_object>
   void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name, const unsigned int scientificPrec = 0)
   {
@@ -412,36 +434,34 @@ class GridLimeWriter : public BinaryIO
     write(WR,object_name,object);
     writeLimeObject(MB, ME, WR, object_name, record_name);
   }
-  ////////////////////////////////////////////////////
-  // Write a generic lattice field and csum
-  // This routine is Collectively called by all nodes
-  // in communicator used by the field.Grid()
-  ////////////////////////////////////////////////////
+  /*! @} */
+
+  /*!
+   * \brief Write a generic lattice field and csum
+   *
+   *  This routine is _collectively_ called by all nodes
+   *  in communicator used by `field.Grid()`
+   */
   template<class vobj, class group_name=GroupName::SU, MatrixFormat matrix_fmt=MatrixFormat::FULL, FloatingPointFormat fp_fmt=FloatingPointFormat::IEEE64BIG>
   void writeLimeLatticeBinaryObject(Lattice<vobj> &field,std::string record_name,int control=BINARYIO_LEXICOGRAPHIC)
   {
-    ////////////////////////////////////////////////////////////////////
-    // NB: FILE and iostream are jointly writing disjoint sequences in the
-    // the same file through different file handles (integer units).
-    // 
-    // These are both buffered, so why I think this code is right is as follows.
-    //
-    // i)  write record header to FILE *File, telegraphing the size; flush
-    // ii) ftello reads the offset from FILE *File . 
-    // iii) iostream / MPI Open independently seek this offset. Write sequence direct to disk.
-    //      Closes iostream and flushes.
-    // iv) fseek on FILE * to end of this disjoint section.
-    //  v) Continue writing scidac record.
-    ////////////////////////////////////////////////////////////////////
-    
+    /*!
+     * \note `FILE` and `iostream` are jointly writing disjoint sequences in the
+     * the same file through different file handles (integer units).
+     * These are both buffered, so why I think this code is right is as follows.
+     * -# write record header to FILE *File, telegraphing the size; flush
+     * -# ftello reads the offset from FILE *File. 
+     * -# iostream / MPI Open independently seek this offset. Write sequence direct to disk.
+     *    Closes iostream and flushes.
+     * -# fseek on FILE * to end of this disjoint section.
+     * -# Continue writing scidac record.
+     */
     GridBase *grid = field.Grid();
     assert(boss_node == field.Grid()->IsBoss() );
 
     FieldNormMetaData FNMD; FNMD.norm2 = norm2(field);
 
-    ////////////////////////////////////////////
-    // Create record header
-    ////////////////////////////////////////////
+    /// - Create a record header with `creatLimeRecordHeader`
     int err;
     uint32_t nersc_csum,scidac_csuma,scidac_csumb;
 	  typedef typename GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt>::out_type sobj;
@@ -455,44 +475,34 @@ class GridLimeWriter : public BinaryIO
     //    std::cout << "W Gsites "           <<field.Grid()->_gsites<<std::endl;
     //    std::cout << "W Payload expected " <<PayloadSize<<std::endl;
 
-    ////////////////////////////////////////////////
-    // Check all nodes agree on file position
-    ////////////////////////////////////////////////
+    /// - Check all nodes agree on file position with `grid->Broadcast()`
     uint64_t offset1;
     if ( boss_node ) {
       offset1 = ftello(File);    
     }
     grid->Broadcast(0,(void *)&offset1,sizeof(offset1));
 
-    ///////////////////////////////////////////
-    // The above is collective. Write by other means into the binary record
-    ///////////////////////////////////////////
+    /// - The above is collective. Write by other means into the binary record
     std::string format = getFormatString<sobj>();
 
     GaugeUnMunger<vobj, group_name, matrix_fmt, fp_fmt> unmunger;
 
     BinaryIO::writeLatticeObject<vobj,sobj>(field, filename, unmunger, offset1, format, nersc_csum, scidac_csuma, scidac_csumb, control);
 
-    ///////////////////////////////////////////
-    // Wind forward and close the record
-    ///////////////////////////////////////////
+    /// - Wind forward with `fseek` before closing the record
     if ( boss_node ) {
       fseek(File,0,SEEK_END);             
       uint64_t offset2 = ftello(File);     //    std::cout << " now at offset "<<offset2 << std::endl;
       assert( (offset2-offset1) == PayloadSize);
     }
 
-    /////////////////////////////////////////////////////////////
-    // Check MPI-2 I/O did what we expect to file
-    /////////////////////////////////////////////////////////////
+    /// - Check MPI-2 I/O did what we expect to file
 
     if ( boss_node ) { 
       err=limeWriterCloseRecord(LimeW);  assert(err>=0);
     }
-    ////////////////////////////////////////
-    // Write checksum element, propagating forward from the BinaryIO
-    // Always pair a checksum with a binary object, and close message
-    ////////////////////////////////////////
+    /*! - Write checksum element, propagating forward from the BinaryIO.
+     *    Always pair a checksum with a binary object, and close message */
     scidacChecksum checksum;
     std::stringstream streama; streama << std::hex << scidac_csuma;
     std::stringstream streamb; streamb << std::hex << scidac_csumb;
@@ -505,6 +515,7 @@ class GridLimeWriter : public BinaryIO
   }
 };
 
+/*! \brief Write a Scidac lattice */
 class ScidacWriter : public GridLimeWriter {
  public:
 
@@ -519,9 +530,7 @@ class ScidacWriter : public GridLimeWriter {
       writeLimeObject(0,1,_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
     }
   }
-  ////////////////////////////////////////////////
-  // Write generic lattice field in scidac format
-  ////////////////////////////////////////////////
+  /// \brief Write a generic lattice field in scidac format
   template <class vobj, class userRecord>
   void writeScidacFieldRecord(Lattice<vobj> &field,userRecord _userRecord,
                               const unsigned int recordScientificPrec = 0,
@@ -529,32 +538,36 @@ class ScidacWriter : public GridLimeWriter {
   {
     GridBase * grid = field.Grid();
 
-    ////////////////////////////////////////
-    // fill the Grid header
-    ////////////////////////////////////////
+    /// - Fill the Grid header with metadata
     FieldMetaData header;
     scidacRecord  _scidacRecord;
     scidacFile    _scidacFile;
 
     ScidacMetaData(field,header,_scidacRecord,_scidacFile);
 
-    //////////////////////////////////////////////
-    // Fill the Lime file record by record
-    //////////////////////////////////////////////
+    /*! - Fill the Lime file record by record
+     *    starting with `FieldMetaData` and ending with the 
+     *    binary data and the checksum 
+     * \note The Scidac metadata records are written only by a single MPI rank.
+     *       The binary record is written with a collective call. 
+     */
     if ( this->boss_node ) {
       writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
       writeLimeObject(0,0,_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML), recordScientificPrec);
       writeLimeObject(0,0,_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
     }
-    // Collective call
-    writeLimeLatticeBinaryObject<vobj,GroupName::SU,MatrixFormat::FULL>(field,std::string(ILDG_BINARY_DATA),control);      // Closes message with checksum
+    writeLimeLatticeBinaryObject<vobj,GroupName::SU,MatrixFormat::FULL>(field,std::string(ILDG_BINARY_DATA),control);
   }
 };
 
-
+/*! \brief Read a Scidac lattice. */
 class ScidacReader : public GridLimeReader {
  public:
 
+  /*! Read Scidac file metadata from lime records:
+   *         - `SCIDAC_PRIVATE_FILE_XML`
+   *         - `SCIDAC_FILE_XML`
+   */
    template<class SerialisableUserFile>
    void readScidacFileRecord(GridBase *grid,SerialisableUserFile &_userFile)
    {
@@ -562,9 +575,7 @@ class ScidacReader : public GridLimeReader {
      readLimeObject(_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
      readLimeObject(_userFile,_userFile.SerialisableClassName(),std::string(SCIDAC_FILE_XML));
    }
-  ////////////////////////////////////////////////
-  // Write generic lattice field in scidac format
-  ////////////////////////////////////////////////
+  /// \brief Read the Scidac field and field metadata
   template <class vobj, class userRecord>
   void readScidacFieldRecord(Lattice<vobj> &field,userRecord &_userRecord,
 			     int control=BINARYIO_LEXICOGRAPHIC) 
@@ -572,27 +583,24 @@ class ScidacReader : public GridLimeReader {
     typedef typename vobj::scalar_object sobj;
     GridBase * grid = field.Grid();
 
-    ////////////////////////////////////////
-    // fill the Grid header
-    ////////////////////////////////////////
+    /// - Fill the Grid header
     FieldMetaData header;
     scidacRecord  _scidacRecord;
     scidacFile    _scidacFile;
 
-    //////////////////////////////////////////////
-    // Fill the Lime file record by record
-    //////////////////////////////////////////////
+    /// - Read the Lime file record by record
     readLimeObject(header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
     readLimeObject(_userRecord,_userRecord.SerialisableClassName(),std::string(SCIDAC_RECORD_XML));
     readLimeObject(_scidacRecord,_scidacRecord.SerialisableClassName(),std::string(SCIDAC_PRIVATE_RECORD_XML));
     readLimeLatticeBinaryObject(field,std::string(ILDG_BINARY_DATA),control);
   }
+  /// \brief skip the "ildg-binary-data" record
   void skipPastBinaryRecord(void) {
     std::string rec_name(ILDG_BINARY_DATA);
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
       if ( !strncmp(limeReaderType(LimeR), rec_name.c_str(),strlen(rec_name.c_str()) )  ) {
-  // in principle should do the line below, but that breaks backard compatibility with old data
-  // skipPastObjectRecord(std::string(GRID_FIELD_NORM));
+  /*! \remark in principle should do `skipPastObjectRecord(std::string(GRID_FIELD_NORM));`,
+   *          but that breaks backwards compatibility with old data */
 	skipPastObjectRecord(std::string(SCIDAC_CHECKSUM));
 	return;
       }
@@ -613,15 +621,13 @@ class ScidacReader : public GridLimeReader {
   }
 };
 
-
+/*! \brief Write an ILDG lattice. */
 class IldgWriter : public ScidacWriter {
  public:
   
   IldgWriter(bool isboss) : ScidacWriter(isboss) {};
 
-  ///////////////////////////////////
-  // A little helper
-  ///////////////////////////////////
+  /// \brief helper function for writing Logical File Name after binary data
   void writeLimeIldgLFN(std::string &LFN)
   {
     if(this->boss_node) {
@@ -633,22 +639,28 @@ class IldgWriter : public ScidacWriter {
     }
   }
 
-  ////////////////////////////////////////////////////////////////
-  // Special ILDG operations ; gauge configs only.
-  // Don't require scidac records EXCEPT checksum
-  // Use Grid MetaData object if present.
-  ////////////////////////////////////////////////////////////////
+/*! Special ILDG operations, gauge configs _only_.
+ * Don't require scidac records EXCEPT checksum.
+ * Use Grid MetaData object if present.
+ * \tparam stats Gauge Implementation and Boundary Conditions
+ * \tparam group_name either GroupName::SU or GroupName::Sp
+ * \tparam MatrixFormat 
+ * \tparam FloatingPointFormat
+
+ * \param[in] Umu LatticeGaugeField to be written to disk
+ * \param[in] sequence markov chain position
+ * \param[in] LFN Logical File Name (identifier)
+ * \param[in] description Collaboration name or some other metadata
+ */
   template <class stats = PeriodicGaugeStatistics, class group_name = GroupName::SU, MatrixFormat matrix_fmt = MatrixFormat::FULL, FloatingPointFormat fp_fmt = FloatingPointFormat::IEEE64BIG, class vobj>
-  void writeConfiguration(Lattice<vobj> &Umu, int sequence, std::string LFN, std::string description) 
+  void writeConfiguration(Lattice<vobj> &Umu, int sequence, std::string LFN, std::string description)
   {
     GridBase * grid = Umu.Grid();
     
-    // catch malformed (wrt group_name) template instantiations at compile-time 
+    /// - catch malformed (wrt group_name) template instantiations at compile-time 
     static_assert( std::is_same_v<group_name, GroupName::SU> || (std::is_same_v<group_name, GroupName::Sp> && Nc%2==0), "IldgWriter supports SU(Nc) and Sp(Nc=2k) lattices. For Sp fields Nc must be even" );
 
-    ////////////////////////////////////////
-    // fill the Grid header
-    ////////////////////////////////////////
+    /// - Fill the Grid header
     FieldMetaData header;
     scidacRecord  _scidacRecord;
     scidacFile    _scidacFile;
@@ -662,13 +674,11 @@ class IldgWriter : public ScidacWriter {
     header.ensemble_label = description;
     header.sequence_number = sequence;
     header.ildg_lfn = LFN;
-    //////////////////////////////////////////////////////
-    // Fill ILDG header data struct
-    //////////////////////////////////////////////////////
+    /// - Fill ILDG header data struct
     ildgFormat ildgfmt ;
     const std::string stNC = std::to_string( Nc ) ;
 
-    // use the gauge group to populate the 'field' element of ildg header
+    /// - Use the `group_name` to populate the 'field' element of ildg header
     if constexpr ( is_su<group_name>::value ) {
       std::cout << GridLogMessage << "writing SU(" << stNC << ") field" << std::endl;
       ildgfmt.field = std::string("su"+stNC+"gauge");
@@ -679,7 +689,7 @@ class IldgWriter : public ScidacWriter {
       static_assert(1, "Unrecognised group; unable to determine field tag");
     }
 
-    // populate 'rows' element of ildg header
+    /// - populate 'rows' element of ildg header
     if constexpr( matrix_fmt==MatrixFormat::REDUCED && is_su<group_name>::value ) {
       ildgfmt.rows = Nc-1 ; 
     } else if constexpr( matrix_fmt==MatrixFormat::REDUCED && is_sp<group_name>::value ) {
@@ -690,7 +700,7 @@ class IldgWriter : public ScidacWriter {
       static_assert(1, "Unknown MatrixFormat specified");
     }
 
-    // set fmt string for single/double precision
+    /// - set fmt string for single/double precision
     if constexpr( fp_fmt == FloatingPointFormat::IEEE32BIG ) {
       header.floating_point = std::string("IEEE32BIG");
       ildgfmt.precision = 32;
@@ -709,24 +719,17 @@ class IldgWriter : public ScidacWriter {
     assert(header.nd==4);
     assert(header.nd==header.dimension.size());
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Field norm tests
-    //////////////////////////////////////////////////////////////////////////////
+    /// - Field norm tests
     FieldNormMetaData FieldNormMetaData_;
     FieldNormMetaData_.norm2 = norm2(Umu);
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Fill the USQCD info field
-    //////////////////////////////////////////////////////////////////////////////
+    /// - Fill the USQCD info field
     usqcdInfo info;
     info.version=1.0;
     info.plaq   = header.plaquette;
     info.linktr = header.link_trace;
 
-    //    std::cout << GridLogMessage << " Writing config; IldgIO n2 "<< FieldNormMetaData_.norm2<<std::endl;
-    //////////////////////////////////////////////
-    // Fill the Lime file record by record
-    //////////////////////////////////////////////
+    /// - Fill the Lime file record by record
     writeLimeObject(1,0,header ,std::string("FieldMetaData"),std::string(GRID_FORMAT)); // Open message 
     writeLimeObject(0,0,FieldNormMetaData_,FieldNormMetaData_.SerialisableClassName(),std::string(GRID_FIELD_NORM));
     writeLimeObject(0,0,_scidacFile,_scidacFile.SerialisableClassName(),std::string(SCIDAC_PRIVATE_FILE_XML));
@@ -740,27 +743,30 @@ class IldgWriter : public ScidacWriter {
   }
 };
 
+/*! \brief Read an ILDG lattice. */
 class IldgReader : public GridLimeReader {
  public:
 
-  //////////////////////////////////////////////////////////////////
-  // this helper function wraps the logic for choosing
-  // the correct munger and intermediate lattice data type
-  // when reading a lattice field from disk.  
-  // This is a runtime choice as Grid has to first read the 
-  // header of the lattice cfg. Therefore templating this function on
-  // FloatingPointFormat etc. does not work. It is a rather 
-  // cumbersome if statement with 6 branches, 
-  // but the benefit of organising IldgReader this way is it makes 
-  // readConfiguration clearer and more readable.
-  //////////////////////////////////////////////////////////////////
+  /*!
+   * This helper function wraps the logic for choosing
+   * the correct munger and intermediate lattice data type
+   * when reading a lattice field from disk.
+   * This is a runtime choice as Grid has to first read the
+   * header of the lattice cfg. Therefore templating this function on
+   * FloatingPointFormat etc. does not work. It is a rather
+   * cumbersome if statement with 6 branches,
+   * but the benefit of organising IldgReader this way is it makes
+   * readConfiguration clearer and more readable.
+   *
+   * \remark as we cannot template this function on the input field type
+   *         we declare all the types we could possibly read from,
+   *         including the intermediate data types for 
+   *         reduced format lattices and single/double precision
+   */
   template<bool unique_su, class vobj>
   void readLatticeBinaryObject(Lattice<vobj> &Umu, std::string filename, FloatingPointFormat fp_fmt, MatrixFormat matrix_fmt, bool is_grp_su, bool is_grp_sp, uint64_t &offset, uint32_t &nersc_csum, uint32_t &scidac_csuma, uint32_t &scidac_csumb) 
   {
 
-    // need all the types we could possibly read from
-    // including the intermediate data types for 
-    // reduced format lattices and single/double precision
     typedef typename vobj::scalar_object sobj;
     typedef LorentzColourMatrixF  fobj;
     typedef LorentzColourMatrixD  dobj;
@@ -799,13 +805,28 @@ class IldgReader : public GridLimeReader {
 
   }
 
-  ////////////////////////////////////////////////////////////////
-  // Read either Grid/SciDAC/ILDG configuration
-  // Don't require scidac records EXCEPT checksum
-  // Use Grid MetaData object if present.
-  // Else use ILDG MetaData object if present.
-  // Else use SciDAC MetaData object if present.
-  ////////////////////////////////////////////////////////////////
+  /*!
+   * \brief Read either Grid/SciDAC/ILDG configuration
+   * Don't require scidac records EXCEPT checksum
+   * Use Grid MetaData object if present.
+   * Else use ILDG MetaData object if present.
+   * Else use SciDAC MetaData object if present.
+   * \tparam stats Gauge implementation/Boundary Conditions
+   * \tparam unique_su Choose reconstruction method when reading reduced SU fields
+   * \param[in] Umu Lattice object to be read into
+   * \param[in] FieldMetaData_ Object to store parsed metadata
+   *
+   * \remark Loop over all records:
+   *           - Order is poorly guaranteed except ILDG header preceeds binary section.
+   *           - Run like an event loop.
+   *           - Impose trust hierarchy. Grid takes precedence & look for ILDG, and failing that Scidac. 
+   *           - Insist on Scidac checksum record.
+   *
+   *  \remark Older (<1.2) format ildg lattices don't have a `rows` element in their header.
+   *  Grid's XML parsing doesn't support optional parameters with default values. 
+   *  Rather than rewrite that, we explicitly add the `rows` element with default
+   *  value = Nc to the ildg header if it is missing, before passing it to XmlReader.
+   */  
   template <class stats = PeriodicGaugeStatistics, bool unique_su = false, class vobj>
   void readConfiguration(Lattice<vobj> &Umu, FieldMetaData &FieldMetaData_) {
 
@@ -815,14 +836,14 @@ class IldgReader : public GridLimeReader {
 
     assert(dims.size()==4);
 
-    // Metadata holders
+    /// - Metadata holders (ildgFormat etc.)
     ildgFormat     ildgFormat_    ;
     std::string    ildgLFN_       ;
     scidacChecksum scidacChecksum_; 
     usqcdInfo      usqcdInfo_     ;
     FieldNormMetaData FieldNormMetaData_;
 
-    // track what we read from file
+    /// - track what we read from file
     int found_ildgFormat    =0;
     int found_ildgLFN       =0;
     int found_scidacChecksum=0;
@@ -834,32 +855,20 @@ class IldgReader : public GridLimeReader {
     uint32_t scidac_csuma;
     uint32_t scidac_csumb;
 
-    // these variables store information about the lattice that is read
-    // from its ildg-format header. if matrix_fmt==MatrixFormat::REDUCED 
-    // then Grid will reconstruct the full matrix using the appropriate munger.
+    /*!this function also has variables to store information about the lattice that is read
+     * from its ildg-format header. if matrix_fmt==MatrixFormat::REDUCED 
+     * then Grid will reconstruct the full matrix using the appropriate munger.*/
     bool is_grp_su = false;
     bool is_grp_sp = false;
     MatrixFormat matrix_fmt;
-    // Binary format
     std::string format;
     FloatingPointFormat fp_fmt;
-
-    //////////////////////////////////////////////////////////////////////////
-    // Loop over all records
-    // -- Order is poorly guaranteed except ILDG header preceeds binary section.
-    // -- Run like an event loop.
-    // -- Impose trust hierarchy. Grid takes precedence & look for ILDG, and failing
-    //    that Scidac. 
-    // -- Insist on Scidac checksum record.
-    //////////////////////////////////////////////////////////////////////////
 
     while ( limeReaderNextRecord(LimeR) == LIME_SUCCESS ) { 
 
       uint64_t nbytes = limeReaderBytes(LimeR);//size of this record (configuration)
       
-      //////////////////////////////////////////////////////////////////
-      // If not BINARY_DATA read a string and parse
-      //////////////////////////////////////////////////////////////////
+      /// - If not BINARY_DATA read a string and parse
       if ( strncmp(limeReaderType(LimeR), ILDG_BINARY_DATA,strlen(ILDG_BINARY_DATA) )  ) {
 	
 	// Copy out the string
@@ -867,16 +876,10 @@ class IldgReader : public GridLimeReader {
 	limeReaderReadData((void *)&xmlc[0], &nbytes, LimeR);    
 	//	std::cout << GridLogMessage<< "Non binary record :" <<limeReaderType(LimeR) <<std::endl; //<<"\n"<<(&xmlc[0])<<std::endl;
 
-	//////////////////////////////////
-	// ILDG format record
-
+	/// - ILDG format record
 	std::string xmlstring(&xmlc[0]);
 	if ( !strncmp(limeReaderType(LimeR), ILDG_FORMAT,strlen(ILDG_FORMAT)) ) { 
 
-	  // 'older' format ildg lattices don't have a <rows/> element in their header.
-	  // Grid's XML parsing doesn't support optional parameters with default values. 
-	  // Rather than rewrite that, here we explicitly add the <rows/> element with default
-	  // value = Nc to the ildg header if it is missing, before passing it to XmlReader."
 	  pugi::xml_document doc;
 	  doc.load_string(xmlstring.c_str());
 
@@ -889,7 +892,7 @@ class IldgReader : public GridLimeReader {
 	    const std::string stNC = std::to_string(Nc);
 	    ildgfmt.insert_child_after("rows", ildgfmt.child("field")).text().set(stNC.c_str());
 
-	    // write result back into xmlstring
+	    /// - write result back into xmlstring
 	    std::ostringstream ss;
 	    doc.save(ss);
 	    xmlstring = ss.str();
@@ -901,15 +904,15 @@ class IldgReader : public GridLimeReader {
 	  if ( ildgFormat_.precision == 64 ) { fp_fmt = FloatingPointFormat::IEEE64BIG; }
 	  if ( ildgFormat_.precision == 32 ) { fp_fmt = FloatingPointFormat::IEEE32BIG; }
 
-	  // set vars to tell Grid if it needs to reconstruct the full field.
+	  /// - set vars to tell Grid if it needs to reconstruct the full field.
 	  std::cout << GridLogMessage << "ildgFormat_.rows is " << ildgFormat_.rows << std::endl;
 	  matrix_fmt = (ildgFormat_.rows < Nc) ? MatrixFormat::REDUCED : MatrixFormat::FULL;
 	  if( !strncmp(ildgFormat_.field.c_str(),"su",2) ) { is_grp_su = true; }
 	  if( !strncmp(ildgFormat_.field.c_str(),"sp",2) ) { is_grp_sp = true; }
-	  // check if field element corresponds to either su or sp
+	  /// - check if field element corresponds to either su or sp
 	  assert( is_grp_su || is_grp_sp );
     
-	  // check rows and Nc are related in the way we expect for each gauge group.
+	  /// - check rows and Nc are related in the way we expect for each gauge group.
 	  if (matrix_fmt==MatrixFormat::REDUCED && is_grp_su) {
 	    assert( ildgFormat_.rows == Nc-1 );
 	  }
@@ -985,16 +988,15 @@ class IldgReader : public GridLimeReader {
 
     }
 
-    //////////////////////////////////////////////////////
-    // Minimally must find binary segment and checksum
-    // Since this is an ILDG reader require ILDG format
-    //////////////////////////////////////////////////////
+    /*!
+     * - Minimally must find binary segment and checksum
+     *   Since this is an ILDG reader require ILDG format */
     assert(found_ildgLFN);
     assert(found_ildgBinary);
     assert(found_ildgFormat);
     assert(found_scidacChecksum);
 
-    // Must find something with the lattice dimensions
+    /// - Must find something with the lattice dimensions
     assert(found_FieldMetaData||found_ildgFormat);
 
     if ( found_FieldMetaData ) {
@@ -1007,9 +1009,7 @@ class IldgReader : public GridLimeReader {
       const std::string stNC = std::to_string( Nc ) ;
       assert ( ildgFormat_.field == std::string("su"+stNC+"gauge") );
 
-      ///////////////////////////////////////////////////////////////////////////////////////
-      // Populate our Grid metadata as best we can
-      ///////////////////////////////////////////////////////////////////////////////////////
+      /// - Populate Grid metadata as best we can
 
       std::ostringstream vers; vers << ildgFormat_.version;
       FieldMetaData_.hdr_version = vers.str();
@@ -1036,9 +1036,7 @@ class IldgReader : public GridLimeReader {
       }
     }
 
-    ////////////////////////////////////////////////////////////
-    // Really really want to mandate a scidac checksum
-    ////////////////////////////////////////////////////////////
+    /// - Really really want to mandate a scidac checksum
     if ( found_FieldNormMetaData ) { 
       RealD nn = norm2(Umu);
       GRID_FIELD_NORM_CHECK(FieldNormMetaData_,nn);
@@ -1069,9 +1067,9 @@ class IldgReader : public GridLimeReader {
   }
  };
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
-
+/// \endcond
 
 //HAVE_LIME
 #endif
-

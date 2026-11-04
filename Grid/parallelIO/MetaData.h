@@ -37,11 +37,28 @@
 #include <sys/utsname.h>
 #include <pwd.h>
 
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_BEGIN(Grid);
+/// \endcond
 
-///////////////////////////////////////////////////////
-// Precision mapping
-///////////////////////////////////////////////////////
+/*! \file 
+ *  \brief Class and function definitions needed by the `IO` classes.
+ *  \details Contained within:
+ *           - All the definitions of the munger classes and functions.
+ *           - The definitions of the intermediate lattice types.
+ *           - Functions for parsing metadata from headers.
+ *           - Functions for writing metada into headers.
+ *           - Grabbing machine characteristics.
+ *
+ *  \note By convention we use `munger` when describing a process
+ *        in which data is read into memory from disk, and `unmunger` 
+ *        when describing a process in which data is written to disk from memory.
+ */
+
+/*!
+ * \brief Precision mapping from given type to format string
+ * \tparam vobj is a Lattice type. 
+ */
 template<class vobj> static std::string getFormatString (void)
 {
   std::string format;
@@ -55,16 +72,16 @@ template<class vobj> static std::string getFormatString (void)
   return format;
 };
 
-  ////////////////////////////////////////////////////////////////////////////////
-  // header specification/interpretation
-  ////////////////////////////////////////////////////////////////////////////////
+    /*! \brief header for storing norm2 */
     class FieldNormMetaData : Serializable {
     public:
       GRID_SERIALIZABLE_CLASS_MEMBERS(FieldNormMetaData, double, norm2);
     };
+    /*! \brief header for storing Grid metadata */
     class FieldMetaData : Serializable {
     public:
-
+     /*! \warning non-initialised values might lead to twisted parallel IO issues.
+      *  `std::string` is fine because it initialises to size 0 as per the C++ standard.`*/
       GRID_SERIALIZABLE_CLASS_MEMBERS(FieldMetaData,
 				      int, nd,
 				      std::vector<int>, dimension,
@@ -87,9 +104,6 @@ template<class vobj> static std::string getFormatString (void)
 				      std::string, creation_date,
 				      std::string, archive_date,
 				      std::string, floating_point);
-      // WARNING: non-initialised values might lead to twisted parallel IO
-      // issues, std::string are fine because they initliase to size 0
-      // as per C++ standard.
       FieldMetaData(void) 
       : nd(4), dimension(4,0), boundary(4, ""), data_start(0),
       link_trace(0.), plaquette(0.), checksum(0),
@@ -97,13 +111,7 @@ template<class vobj> static std::string getFormatString (void)
       {}
   };
 
-// PB disable using namespace - this is a header and forces namesapce visibility for all 
-// including files
-//using namespace Grid;
-
-//////////////////////////////////////////////////////////////////////
-// Bit and Physical Checksumming and QA of data
-//////////////////////////////////////////////////////////////////////
+/*! Bit and Physical Checksumming and QA of data */
 inline void GridMetaData(GridBase *grid,FieldMetaData &header)
 {
   int nd = grid->_ndimension;
@@ -119,13 +127,17 @@ inline void GridMetaData(GridBase *grid,FieldMetaData &header)
   }
 }
 
+/*! \brief retrieve machine info and store in FieldMetaData object.
+ *  \param header holds metadata related to the machine runs.
+ *  \details Roughly speaking this records:
+ */
 inline void MachineCharacteristics(FieldMetaData &header)
 {
-  // Who
+  /// - __Who__ generated this data,
   struct passwd *pw = getpwuid (getuid());
   if (pw) header.creator = std::string(pw->pw_name); 
 
-  // When
+  /// - __When__ they generated it, and
   std::time_t t = std::time(nullptr);
   std::tm tm_ = *std::localtime(&t);
   std::ostringstream oss; 
@@ -133,7 +145,7 @@ inline void MachineCharacteristics(FieldMetaData &header)
   header.creation_date = oss.str();
   header.archive_date  = header.creation_date;
 
-  // What
+  /// - __What__ hardware was it generated on.
   struct utsname name;  uname(&name);
   header.creator_hardware = std::string(name.nodename)+"-";
   header.creator_hardware+= std::string(name.machine)+"-";
@@ -141,6 +153,7 @@ inline void MachineCharacteristics(FieldMetaData &header)
   header.creator_hardware+= std::string(name.release);
 }
 
+/*! \brief Write `Nersc` format header. */
 #define dump_meta_data(field, s)					\
   s << "BEGIN_HEADER"      << std::endl;				\
   s << "HDR_VERSION = "    << field.hdr_version    << std::endl;	\
@@ -168,15 +181,23 @@ inline void MachineCharacteristics(FieldMetaData &header)
   s << "FLOATING_POINT = "  << field.floating_point   << std::endl;	\
   s << "END_HEADER"         << std::endl;
 
+/*! \brief Populate Grid header with metadata
+ *  \tparam vobj type of the lattice object, inferred by compiler
+ *  \param[in] field the lattice object the metadata is about.
+ *  \param[in] header this stores the metadata information.
+ */
 template<class vobj> inline void PrepareMetaData(Lattice<vobj> & field, FieldMetaData &header)
 {
   GridBase *grid = field.Grid();
   std::string format = getFormatString<vobj>();
   header.floating_point = format;
-  header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
+  header.checksum = 0x0; /// \remark Nersc `checksum` unused in ILDG, Scidac
   GridMetaData(grid,header); 
   MachineCharacteristics(header);
 }
+/*! \brief Compute and store link trace and plaquette data.
+ *  \tparam Impl Gauge Implementation.   
+ */
 template<class Impl>
 class GaugeStatistics
 {
@@ -187,21 +208,31 @@ public:
     header.plaquette  = WilsonLoops<Impl>::avgPlaquette(data);
   }
 };
+/*!
+ * \typedef PeriodicGaugeStatistic
+ * \typedef ConjugateGaugeStatistics 
+ * These typedefs are used in IldgIO.h, NerscIO.h, and OpenQcdIO.h
+ */
 typedef GaugeStatistics<PeriodicGimplD> PeriodicGaugeStatistics;
 typedef GaugeStatistics<ConjugateGimplD> ConjugateGaugeStatistics;
+/*! \brief Template specialisation of PrepareMetaData for double precision fields */
 template<> inline void PrepareMetaData<vLorentzColourMatrixD>(Lattice<vLorentzColourMatrixD> & field, FieldMetaData &header)
 {
   GridBase *grid = field.Grid();
   std::string format = getFormatString<vLorentzColourMatrixD>();
   header.floating_point = format;
-  header.checksum = 0x0; // Nersc checksum unused in ILDG, Scidac
+  header.checksum = 0x0; /// \remark Nersc `checksum` unused in ILDG, Scidac
   GridMetaData(grid,header); 
   MachineCharacteristics(header);
 }
 
-//////////////////////////////////////////////////////////////////////
-// Utilities ; these are QCD aware
-//////////////////////////////////////////////////////////////////////
+/*!
+ * \ingroup mungers
+ * \brief Utilities; these are QCD aware
+ * \param[in,out] cm is a LorentzColourMatrix.
+ *
+ * Gauge3x2munger() uses this to reconstruct reduced SU(3) fields.
+ */
 inline void reconstruct3(LorentzColourMatrix & cm)
 {
   assert( Nc < 4 && Nc > 1 ) ;
@@ -218,14 +249,19 @@ inline void reconstruct3(LorentzColourMatrix & cm)
   }
 }
 
-// the elements of the final row of an SU(N) matrix
-// can be obtained from the determinants of the N N-1 by N-1 matrices
-// formed by deleting each column and the Nth row of the SU(N) matrix.
-// 1) create a ColourSubMatrix object to store the N-1 dim matrix.
-// 2) peek the colour matrix in a particular direction. 
-// 3) fill the ColourSubMatrix object from the peeked matrix.
-// 4) take the Determinant and fill the corresponding element
-// 5) repeat for each Lorentz index 
+/*! \brief Reconstruct reduced SU(N) fields, N>3
+ *
+ * The elements of the final row of an SU(N) matrix
+ * can be obtained from the determinants of the N N-1 by N-1 matrices
+ * formed by deleting each column and the Nth row of the SU(N) matrix.
+ * -# Create a ColourSubMatrix object to store the N-1 dim square matrix.
+ * -# Peek the N dim square ColourMatrix in a particular direction. 
+ * -# Fill the ColourSubMatrix object from the peeked matrix.
+ * -# Take the Determinant and fill the corresponding element
+ *    in the final row ColourMatrix.
+ * -# Repeat till final row filled in.
+ * -# Repeat for each Lorentz index.
+*/
 inline void reconstructSU(LorentzColourMatrix &cm)
 {
   using ColourSubMatrix = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
@@ -248,11 +284,15 @@ inline void reconstructSU(LorentzColourMatrix &cm)
     pokeIndex<LorentzIndex>(cm,SU,mu);
   }
 }
-
-// this function determines if a sequence of integers {i0...ik}
-// is an even or odd parity permutation. even/odd if the number of 
-// inversions needed to get back to the lexicographic 1st sequence is
-// even or odd. ex: {1,2,0} --> {1,0,2} --> {0,1,2} implies {1,2,0} is even. 
+/*! \brief Determine if a sequence is even (or odd).
+ *
+ * This function determines if a sequence of integers `{i0...ik}`
+ * is an even or odd parity permutation. Even/odd in this instance refers 
+ * to the number of inversions needed to get back to the lexicographic 1st sequence
+ * being even or odd.
+ *
+ * example: {1,2,0} --> {1,0,2} --> {0,1,2} implies {1,2,0} is even.
+ */
 inline bool is_perm_even(std::vector<int> &v) {
 
     int n = v.size();
@@ -278,17 +318,17 @@ inline bool is_perm_even(std::vector<int> &v) {
     }
 }
 
-/////////////////////////////////////////////////////////////
-//
-//  this function follows the prescription laid out by the
-//  ildg spec, forming a sum of products in lexicographic order.
-//
-// SU[N-1][k] = sum ( SU[0][i0].SU[1][i1]...SU[N-2][iN-2] )*
-//         {i0...iN-2!=k}
-//
-// see appendix A.2 of
-// https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
-/////////////////////////////////////////////////////////////
+/*! \brief reconstruct SU(N) reduced fields, N>3.
+ * 
+ *  This function follows the prescription laid out by the
+ *  ILDG spec, forming a sum of products in lexicographic order.
+ *
+ * SU[N-1][k] = sum ( SU[0][i0].SU[1][i1]...SU[N-2][iN-2] )*\n 
+ *       sum over {i0...iN-2!=k}
+ *
+ * See appendix A.2 of the ILDG file format
+ * [spec](https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf)
+ */
 inline void unique_reconstructSU(LorentzColourMatrix &cm)
 {
 
@@ -317,18 +357,18 @@ inline void unique_reconstructSU(LorentzColourMatrix &cm)
     }
   }
 }
-
-////////////////////////////////////////////////////////////////
-//  this function takes a reduced format
-//  Sp(2N) field with N rows and 2N columns 
-//  and reconstructs the full 2Nx2N matrix.
-//  the full matrix has block structure: 
-//      | A  B |
-//      |-B* A*|
-//  where A and B are NxN matrices.
-//  see appendix A.2 of
-// https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf
-////////////////////////////////////////////////////////////////
+/*! \brief Reconstruct Sp(2N) reduced fields.
+ *
+ *  This function takes a reduced format
+ *  Sp(2N) field with N rows and 2N columns 
+ *  and reconstructs the full 2Nx2N matrix.
+ *  the full matrix has block structure: 
+ *      | A | B |
+ *      |-B*| A*|
+ *  where A and B are NxN matrices.
+ *  See [appendix A.2](https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf)
+ *  of ILDG file format spec.
+ */
 inline void reconstructSp(LorentzColourMatrix & cm) 
 {
   assert( Nc%2==0 ); 
@@ -342,29 +382,33 @@ inline void reconstructSp(LorentzColourMatrix & cm)
     }
   }
 }
-////////////////////////////////////////////////////////////////////////////////
-// Some data types for intermediate storage
-////////////////////////////////////////////////////////////////////////////////
+/*! \name Intermediate types for SU(N) fields
+  @{ */
 template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, Nc-1>, Nd >;
 typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
 typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
+/*! @} */
 
-// intermediate types for Sp(2N) fields
+/*! \name Intermediate types for Sp(2N) fields
+ @{ */
 template<typename vtype> using iLorentzColourNx2N = iVector<iVector<iVector<vtype, Nc>, Nc/2>, Nd >;
 typedef iLorentzColourNx2N<ComplexF>  LorentzColourNx2NF;
 typedef iLorentzColourNx2N<ComplexD>  LorentzColourNx2ND;
+/*! @} */
 
-/////////////////////////////////////////////////////////////////////////////////
-// Simple classes for precision conversion
-/////////////////////////////////////////////////////////////////////////////////
+/*! \ingroup mungers
+ *  \brief Converts binary objects while respecting precision of the types.
+ *  \tparam fobj is the type of the output lattice object
+ *  \tparam sobj is the type of the input lattice object
+ */
 template <class fobj, class sobj>
 struct BinarySimpleUnmunger {
   typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
   
   void operator()(sobj &in, fobj &out) {
-    // take word by word and transform accoding to the status
+    /// - take word by word and transform accoding to the status
     fobj_stype *out_buffer = (fobj_stype *)&out;
     sobj_stype *in_buffer = (sobj_stype *)&in;
     size_t fobj_words = sizeof(out) / sizeof(fobj_stype);
@@ -372,18 +416,24 @@ struct BinarySimpleUnmunger {
     assert(fobj_words == sobj_words);
     
     for (unsigned int word = 0; word < sobj_words; word++)
-      out_buffer[word] = in_buffer[word];  // type conversion on the fly
+      out_buffer[word] = in_buffer[word];  /// - type conversion on the fly
     
   }
 };
 
+/*! \ingroup mungers
+ *  \brief returns a copy of its input while converting precision if needed.
+ *  \details Used when reading lattices from disk.
+ *  \tparam fobj is the input LorentzColour type
+ *  \tparam sobj is the output LorentzColour type
+ */
 template <class fobj, class sobj>
 struct BinarySimpleMunger {
   typedef typename getPrecision<fobj>::real_scalar_type fobj_stype;
   typedef typename getPrecision<sobj>::real_scalar_type sobj_stype;
 
   void operator()(fobj &in, sobj &out) {
-    // take word by word and transform accoding to the status
+    /// - take word by word and transform accoding to the status
     fobj_stype *in_buffer = (fobj_stype *)&in;
     sobj_stype *out_buffer = (sobj_stype *)&out;
     size_t fobj_words = sizeof(in) / sizeof(fobj_stype);
@@ -391,12 +441,17 @@ struct BinarySimpleMunger {
     assert(fobj_words == sobj_words);
     
     for (unsigned int word = 0; word < sobj_words; word++)
-      out_buffer[word] = in_buffer[word];  // type conversion on the fly
+      out_buffer[word] = in_buffer[word];  /// - type conversion on the fly
     
   }
 };
 
-
+/*! \ingroup mungers
+ *  \brief returns a copy of its input.
+ *  \details Used when reading lattices from disk.
+ *  \tparam fobj is the input LorentzColour type
+ *  \tparam sobj is the output LorentzColour type
+ */
 template<class fobj,class sobj>
 struct GaugeSimpleMunger{
   void operator()(fobj &in, sobj &out) {
@@ -408,7 +463,13 @@ struct GaugeSimpleMunger{
     }
   };
 };
-
+/*! \ingroup mungers
+ *  \brief returns a copy of its input.
+ *  \details This munger is used when writing lattices to disk
+ *  \tparam fobj is the type of the output LorentzColour object
+ *  \tparam sobj is the type of the input LorentzColour object 
+ *  \remark only used by NerscIO.h
+ */
 template <class fobj, class sobj>
 struct GaugeSimpleUnmunger {
   void operator()(sobj &in, fobj &out) {
@@ -421,6 +482,14 @@ struct GaugeSimpleUnmunger {
   };
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This is used when reading `DoubleStored` gauge fields.
+ * see OpenQcdIO.h for usage.
+ * \tparam fobj is the type of the input object.
+ * \tparam sobj is the type of the output object. 
+ * \param Nds is equal to 2*Nd (=2*4 in most cases)
+ */
 template<class fobj,class sobj>
 struct GaugeDoubleStoredMunger{
   void operator()(fobj &in, sobj &out) {
@@ -433,6 +502,14 @@ struct GaugeDoubleStoredMunger{
   };
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This is used when writing `DoubleStored` gauge fields.
+ * see OpenQcdIO.h for usage.
+ * \tparam fobj is the output type 
+ * \tparam sobj is the input type 
+ * \param Nds is equal to 2Nd (=2*4 in most cases)
+ */
 template <class fobj, class sobj>
 struct GaugeDoubleStoredUnmunger {
   void operator()(sobj &in, fobj &out) {
@@ -445,6 +522,18 @@ struct GaugeDoubleStoredUnmunger {
   };
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This munger reconstructs the full Nc by Nc matrix from an Nc-1 by Nc matrix.
+ * 
+ * This is intended for use when reading reduced format SU(Nc) gauge fields from the disk.
+ * The function reconstruct3(LorentzColourMatrix &cm) does the reconstruction.
+ * \param Nc number of colours, any Nc=2,3.
+ * \tparam fobj is the type of the resulting reduced matrix.
+ * \tparam sobj is the type of the inputted full matrix. 
+ * \param[in] in is an object of type LorentzColourMatrix
+ * \param[out] out is an object of type ::LorentzColour2x3
+ */
 template<class fobj,class sobj>
 struct Gauge3x2munger{
   void operator() (fobj &in,sobj &out){
@@ -458,6 +547,15 @@ struct Gauge3x2munger{
   }
 };
 
+/*!
+ * \ingroup mungers
+ * \brief This unmunger writes the first Nc-1 rows of an Nc by Nc matrix.
+ * This is intended for use when writing SU(Nc) gauge fields to disk in reduced format.
+ * \tparam fobj is the type of the resulting reduced matrix.
+ * \tparam sobj is the type of the inputted full matrix. 
+ * \param[in] in is an object of type LorentzColourMatrix
+ * \param[out] out is an object of type ::LorentzColour2x3
+ */
 template<class fobj,class sobj>
 struct Gauge3x2unmunger{
   void operator() (sobj &in,fobj &out){
@@ -472,9 +570,10 @@ struct Gauge3x2unmunger{
 
 template<class fobj,class sobj, bool unique_su>
 struct GaugeSUmunger;
-// two specialisations for two ways to reconstruct
-// NcxNc matrix from (Nc-1)xNc matrix
 
+/*! \brief For reconstructing SU(N) reduced fields for N>3.
+ *  \remark Two specialisations for two ways to reconstruct
+ *          NxN SU matrix from (N-1)xN matrix. */
 template<class fobj,class sobj>
 struct GaugeSUmunger<fobj,sobj,false>{
   void operator() (fobj &in,sobj &out){
@@ -489,6 +588,7 @@ struct GaugeSUmunger<fobj,sobj,false>{
   }
 };
 
+/*! \brief Unique SU field reconstruction */
 template<class fobj,class sobj>
 struct GaugeSUmunger<fobj,sobj,true>{
   void operator() (fobj &in,sobj &out){
@@ -503,7 +603,7 @@ struct GaugeSUmunger<fobj,sobj,true>{
   }
 };
 
-
+/*! \brief For writing reduced format SU fields */
 template<class fobj,class sobj>
 struct GaugeSUunmunger{
   void operator() (sobj &in,fobj &out){
@@ -517,6 +617,7 @@ struct GaugeSUunmunger{
   }
 };
 
+/*! \brief For reconstructing/reading reduced Sp(2N) fields. */
 template<class fobj,class sobj>
 struct GaugeSpmunger{
   void operator() (fobj &in,sobj &out){
@@ -531,7 +632,7 @@ struct GaugeSpmunger{
   }
 };
 
-// transform Sp(2N) fields into reduced Nx2N format.
+/*! \brief transform Sp(2N) fields into reduced Nx2N format for writing. */
 template<class fobj,class sobj>
 struct GaugeSpunmunger{
   void operator() (sobj &in,fobj &out){
@@ -545,25 +646,40 @@ struct GaugeSpunmunger{
   }
 };
 
-// these are used as non-type template parameters when
-// writing with GaugeUnMunger and as regular parameters
-// when reading with IldgReader.readConfiguration 
+
+/*! \enum FloatingPointFormat
+ *  Sets the FP precision of the IldgWriter.
+ *  \var FloatingPointFormat::IEEE64BIG 
+ *       Save lattice in double precision.
+ *  \var FloatingPointFormat::IEEE32BIG 
+ *       Save lattice in single precision.
+ *  \enum MatrixFormat
+ *  Sets the matrix format of the IldgWriter. 
+ *  \var MatrixFormat::FULL
+ *      Save lattice without reducing fields.
+ *  \var MatrixFormat::REDUCED
+ *      Save lattice with reduced fields.
+ *
+ * \details These enums are used as non-type template parameters.
+ *          They are specified when calling IldgWriter::writeConfiguration,
+ *          which passes them through to GaugeUnMunger. 
+ */ 
 enum struct FloatingPointFormat { IEEE64BIG, IEEE32BIG };
 enum struct MatrixFormat { FULL, REDUCED };
-/////////////////////////////////////////////////////////
-// this struct is used to choose the appropriate
-// unmunger (for writing) at compile time.
-// there are 3 partial template specialisations,
-// > no group reduction - treat SU and Sp the same
-// > group reduction for SU fields
-// > group reduction for Sp fields
-// It also exposes the intermediate out_type for use in 
-// IldgWriter.writeConfiguration
-/////////////////////////////////////////////////////////
+/*!
+ * \brief This struct is used to choose the appropriate
+ *        unmunger (for writing) at compile time.
+ * 
+ * There are 3 partial template specialisations,
+ * - no group reduction - treat SU and Sp the same
+ * - group reduction for SU fields
+ * - group reduction for Sp fields
+ * It also exposes the intermediate out_type for use in 
+ * IldgWriter.writeConfiguration */
 template<class vobj, class group_name, MatrixFormat m_fmt, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger;
 
-// no group reduction
+/*! \brief no group reduction */
 template<class vobj, class group_name>
 struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, FloatingPointFormat::IEEE64BIG>
 {
@@ -577,9 +693,9 @@ struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, FloatingPointFormat::
   }
 };
 
-// no group reduction
-// this specialisation only intended to be used by IldgWriter when
-// writing gauge fields.
+/*! \brief no group reduction 
+ *  \attention this specialisation only intended to be used by 
+ *             IldgWriter when writing gauge fields.*/
 template<class vobj, class group_name>
 struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, FloatingPointFormat::IEEE32BIG>
 {
@@ -593,7 +709,7 @@ struct GaugeUnMunger<vobj, group_name, MatrixFormat::FULL, FloatingPointFormat::
   }
 };
 
-//template specialisation for SU
+/*! \brief template specialisation for SU */
 template<class vobj, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
 {
@@ -611,7 +727,7 @@ struct GaugeUnMunger<vobj, GroupName::SU, MatrixFormat::REDUCED, fp_fmt>
   }
 };
 
-//template specialisation for Sp
+/*! \brief template specialisation for Sp */
 template<class vobj, FloatingPointFormat fp_fmt>
 struct GaugeUnMunger<vobj, GroupName::Sp, MatrixFormat::REDUCED, fp_fmt>
 {
@@ -629,6 +745,6 @@ struct GaugeUnMunger<vobj, GroupName::Sp, MatrixFormat::REDUCED, fp_fmt>
   }
 };
 
-
+/// \cond DO_NOT_DOCUMENT
 NAMESPACE_END(Grid);
-
+/// \endcond
