@@ -99,8 +99,8 @@ public:
     return field.data_start;
   }
 
-  /*! 
-   * \remark OpenQCD lattices always stored in little endian and double precision.
+  /*! \brief Read an OpenQCD configuration from disk
+   *  \remark OpenQCD lattices always stored in little endian and double precision.
    */
   template<class vsimd>
   static inline void readConfiguration(Lattice<iLorentzColourMatrix<vsimd>>& Umu,
@@ -117,7 +117,7 @@ public:
 
     FieldMetaData clone(header);
 
-    std::string format("IEEE64");
+    std::string format("IEEE64"); // OpenQCD lattices require little-endian double precision
     uint32_t    nersc_csum, scidac_csuma, scidac_csumb;
 
     GridCartesian*         grid_openqcd = createOpenQcdGrid(grid);

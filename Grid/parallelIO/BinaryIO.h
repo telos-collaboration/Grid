@@ -28,6 +28,7 @@
     /*  END LEGAL */
 
 /*! \file  BinaryIO.h
+ *  \anchor binaryio_h
  *  \brief Defines classes and functions to read and write binary lattice data.
  *
  *  Read or Write distributed lexico array of ANY object to a specific 

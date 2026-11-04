@@ -54,10 +54,10 @@ NAMESPACE_BEGIN(Grid);
 
 /*! \name Data representation of records that enter ILDG and Scidac formats
  * @{ */
-#define GRID_FORMAT               "grid-format"
-#define ILDG_FORMAT               "ildg-format"
-#define ILDG_BINARY_DATA          "ildg-binary-data"
-#define ILDG_DATA_LFN             "ildg-data-lfn"
+#define GRID_FORMAT      "grid-format"
+#define ILDG_FORMAT      "ildg-format"
+#define ILDG_BINARY_DATA "ildg-binary-data"
+#define ILDG_DATA_LFN    "ildg-data-lfn"
 #define SCIDAC_CHECKSUM           "scidac-checksum"
 #define SCIDAC_PRIVATE_FILE_XML   "scidac-private-file-xml"
 #define SCIDAC_FILE_XML           "scidac-file-xml"
@@ -107,7 +107,7 @@ public:
 				                          std::string, dims,
                                   int, volfmt);
 
-  /// converts string `dims` into `vector<int>` 
+  /// \brief Convert the dimension string `dims` into `vector<int>`
   std::vector<int> getDimensions(void) { 
     std::stringstream stream(dims);
     std::vector<int> dimensions;
@@ -118,6 +118,7 @@ public:
     return dimensions;
   }
 
+  /// \brief Set the dimension string `dims` from a Coordinate object
   void setDimensions(Coordinate dimensions) { 
     char delimiter = ' ';
     std::stringstream stream;
@@ -130,7 +131,11 @@ public:
     dims = stream.str();
   }
 
+  /// \brief Create an empty scidacFile instance
   scidacFile() =default;
+
+  /// \brief Create an instance and populate based on the supplied grid,
+  /// and some common default values
   scidacFile(GridBase * grid){
     version      = 1.0;
     spacetime    = grid->_ndimension;

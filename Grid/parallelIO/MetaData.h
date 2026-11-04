@@ -266,8 +266,8 @@ inline void reconstructSU(LorentzColourMatrix &cm)
 {
   using ColourSubMatrix = iScalar<iScalar<iMatrix<Complex, Nc-1> > > ;
 
-  ColourSubMatrix Su;
-  ColourMatrix SU;
+  ColourSubMatrix Su; // for the Nc-1 by Nc-1 matrix
+  ColourMatrix SU;   // for the Nc-1 by N matrix read from disk
 
   for(int mu=0; mu<Nd; mu++) {
     Su = Zero();
@@ -326,7 +326,7 @@ inline bool is_perm_even(std::vector<int> &v) {
  * SU[N-1][k] = sum ( SU[0][i0].SU[1][i1]...SU[N-2][iN-2] )*\n 
  *       sum over {i0...iN-2!=k}
  *
- * see appendix A.2 of the ILDG file format 
+ * See appendix A.2 of the ILDG file format
  * [spec](https://www-zeuthen.desy.de/apewww/ILDG/specifications/ildg-file-format-1.2.pdf)
  */
 inline void unique_reconstructSU(LorentzColourMatrix &cm)
@@ -382,16 +382,20 @@ inline void reconstructSp(LorentzColourMatrix & cm)
     }
   }
 }
-/*! Intermediate types for SU(N) fields */ 
+/*! \name Intermediate types for SU(N) fields
+  @{ */
 template<typename vtype> using iLorentzColour2x3 = iVector<iVector<iVector<vtype, Nc>, Nc-1>, Nd >;
 typedef iLorentzColour2x3<Complex>  LorentzColour2x3;
 typedef iLorentzColour2x3<ComplexF> LorentzColour2x3F;
 typedef iLorentzColour2x3<ComplexD> LorentzColour2x3D;
+/*! @} */
 
-/*! Intermediate types for Sp(2N) fields */
+/*! \name Intermediate types for Sp(2N) fields
+ @{ */
 template<typename vtype> using iLorentzColourNx2N = iVector<iVector<iVector<vtype, Nc>, Nc/2>, Nd >;
 typedef iLorentzColourNx2N<ComplexF>  LorentzColourNx2NF;
 typedef iLorentzColourNx2N<ComplexD>  LorentzColourNx2ND;
+/*! @} */
 
 /*! \ingroup mungers
  *  \brief Converts binary objects while respecting precision of the types.

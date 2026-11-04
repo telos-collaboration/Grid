@@ -31,9 +31,8 @@ directory
  *  \brief Alternative classes and functions for reading/writing OpenQCD format lattices.
  *
  *  The \c ParRdr \c class implements parallel I/O functionality *independent* of BinaryIO 
- *  for reading OpenQCD lattices. It appears to be based on the 
- *  [Chroma](https://jeffersonlab.github.io/chroma/) library implementation. For writing
- *  OpenQCD lattices look in OpenQcdIO.h.
+ *  for reading OpenQCD lattices.
+ *  For writing OpenQCD lattices look in OpenQcdIO.h.
  */
 
 #pragma once
@@ -207,17 +206,17 @@ public:
     {
       ParRdr rdr(MPI_COMM_WORLD, file, grid);
       rdr.readGauge(iodata, header);
-    }
+    } // equivalent to using binaryio
 
     std::vector<iDoubleStoredColourMatrix<typename vsimd::scalar_type>> Umu_ds_scalar(grid->lSites());
 
-    copyToLatticeObject(Umu_ds_scalar, iodata, grid);
+    copyToLatticeObject(Umu_ds_scalar, iodata, grid); // equivalent to munging
 
     DoubledGaugeField Umu_ds(grid);
 
     vectorizeFromLexOrdArray(Umu_ds_scalar, Umu_ds);
 
-    redistribute(Umu, Umu_ds);
+    redistribute(Umu, Umu_ds); // equivalent to undoDoublestore
 
     FieldMetaData clone(header);
 

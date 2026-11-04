@@ -102,6 +102,9 @@ public:
 
     field.data_start = fin.tellg();
 
+    //////////////////////////////////////////////////
+    // chomp the values
+    //////////////////////////////////////////////////
     field.hdr_version    = header["HDR_VERSION"];
     field.data_type      = header["DATATYPE"];
     field.storage_format = header["STORAGE_FORMAT"];
@@ -138,6 +141,7 @@ public:
   }
 
   /*!
+   * \brief Read a configuration from disk
    *  - Can read double or single precision, big or little endian.
    *  - Depending on datatype, set up munger.
    *  - munger is a function of <floating point, Real, data_type>.
@@ -218,7 +222,8 @@ public:
     std::cout<<GridLogMessage <<"NERSC Configuration "<<file<< " and plaquette, link trace, and checksum agree"<<std::endl;
   }
 
-  /*! \remark Preferred interface
+  /*! \brief Write a configuration to disk with default options
+   *  \remark Preferred interface
    *  \note Always writes lattices in double precision and big endian.
    */
   template<class GaugeStats=PeriodicGaugeStatistics>
@@ -231,6 +236,10 @@ public:
     writeConfiguration(Umu,file,0,1,ens_label,ens_id,sequence_number);
   }
 
+  /*! \brief Write a configuration to disk with controllable options.
+   *  \note This should be avoided in favour of the default interface,
+   *    defaulting to double-precision big-endian
+   */
   template<class GaugeStats=PeriodicGaugeStatistics>
   static inline void writeConfiguration(Lattice<vLorentzColourMatrixD > &Umu,
 					std::string file, 
@@ -295,7 +304,7 @@ public:
 
   }
  
-  /*!
+  /*! \brief Write the random number states to a file
    *  \todo `header` should become argument
    */
   static inline void writeRNGState(GridSerialRNG &serial,GridParallelRNG &parallel,std::string file)
@@ -348,7 +357,8 @@ public:
 	     <<std::dec<<std::endl;
 
   }
-    
+
+  /*! \brief Read the random number states from a file */
   static inline void readRNGState(GridSerialRNG &serial,GridParallelRNG & parallel,FieldMetaData& header,std::string file)
   {
     typedef typename GridParallelRNG::RngStateType RngStateType;

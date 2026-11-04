@@ -31,7 +31,7 @@ directory
 
 /*! \file IldgIO.h
  *  \brief Defines classes and functions for reading/writing [ILDG](https://hpc.desy.de/ildg) format lattices. 
- *  \details The International Lattice Data Grid (ILDG) defines a structured file format
+ *  \details The International %Lattice Data %Grid (ILDG) defines a structured file format
  *           for lattice gauge fields which encapsulates binary and meta data within a single file.
              The binary part of an ILDG-format file is packaged using the LIME library. 
  *           This file contains the `IldgReader` and `IldgWriter` Classes alongside helper functions and classes.
@@ -66,7 +66,8 @@ NAMESPACE_BEGIN(Grid);
 #define GRID_FIELD_NORM_CHECK(FieldNormMetaData_, n2ck) \
 assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
 
-/*! \name Encode word types as strings */
+/*! \name Encode word types as strings
+ * @{ */
  template<class word> inline std::string ScidacWordMnemonic(void){ return std::string("unknown"); }
  template<> inline std::string ScidacWordMnemonic<double>  (void){ return std::string("D"); }
  template<> inline std::string ScidacWordMnemonic<float>   (void){ return std::string("F"); }
@@ -156,10 +157,14 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
  {
    typedef typename getPrecision<vobj>::real_scalar_type stype;
 
+   /// <ol>
+   /// <li> Pull Grid's metadata
    PrepareMetaData(field,header);
 
+   /// <li> Set Scidac Private File structure
    _scidacFile              = scidacFile(field.Grid());
 
+   /// <li> Set Scidac Private Record structure
    scidacRecord sr;
    sr.datatype   = ScidacRecordTypeString(field,sr.colors,sr.spins,sr.typesize,sr.datacount);
    sr.date       = header.creation_date;
@@ -167,6 +172,7 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
    sr.recordtype = GRID_IO_FIELD;
 
    _scidacRecord = sr;
+   /// </ol>
  }
 
   /*! \brief Verify data integrity by comparing Scidac checksums */
@@ -184,6 +190,10 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
    };
    return 1;
  }
+
+//////////////////////////////////////////////////////////////////////////////////
+// Lime, ILDG and Scidac I/O classes
+////////////////////////////////////////////////////////////////////////////////////
 
 /*! \brief Read a generic lattice with C-LIME
  *
@@ -377,7 +387,10 @@ class GridLimeWriter : public BinaryIO
      }
      //  limeDestroyWriter(LimeW);
    }
-  /// \name Lime utility functions 
+  /// \name Lime utility functions
+  /// @{
+
+  /// \brief Create the LIME header for a record to be written
   int createLimeRecordHeader(std::string message, int MB, int ME, size_t PayloadSize)
   {
     if ( boss_node ) {
@@ -388,7 +401,7 @@ class GridLimeWriter : public BinaryIO
     }
     return LIME_SUCCESS;
   }
-  /// Write a generic serialisable object
+  /// \brief Write an already-constructed XML object
   void writeLimeObject(int MB,int ME,XmlWriter &writer,std::string object_name,std::string record_name)
   {
     if ( boss_node ) {
@@ -407,6 +420,7 @@ class GridLimeWriter : public BinaryIO
       limeDestroyHeader(h);
     }
   }
+  /// \brief Write a generic serialisable object
   template<class serialisable_object>
   void writeLimeObject(int MB,int ME,serialisable_object &object,std::string object_name,std::string record_name, const unsigned int scientificPrec = 0)
   {
@@ -546,7 +560,7 @@ class ScidacWriter : public GridLimeWriter {
   }
 };
 
-/*! \brief Read a Scidac Lattice. */ 
+/*! \brief Read a Scidac lattice. */
 class ScidacReader : public GridLimeReader {
  public:
 
