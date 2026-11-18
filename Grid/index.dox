@@ -1,4 +1,4 @@
-/** \mainpage %Grid developer documentation
+/** \mainpage %Grid Developer Documentation
  *
  * This Doxygen gives significant detail on
  * the functions and data structures in %Grid.
@@ -13,8 +13,8 @@
  * This documentation is a work in progress.
  * Areas of %Grid that have had particular attention paid to them include:
  *
- * - Gauge actions, starting at \ref action "Grid/qcd/action"
- * - Parallel I/O, starting at \ref parallelIO "Grid/parallelIO"
+ * - Gauge actions, starting at \link ../Grid/qcd/action `Grid/qcd/action` \endlink
+ * - Parallel I/O, starting at \link ../Grid/parallelIO `Grid/parallelIO` \endlink
  *
  * Certain \ref test_docs "tests from the test suite" are also documented separately.
  *
