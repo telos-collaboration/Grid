@@ -9,7 +9,7 @@
  * - NerscIO.h: The <a href="https://arxiv.org/pdf/1112.2193.pdf">NERSC</a> format
  * - OpenQcdIO.h: The <a href="https://luscher.web.cern.ch/luscher/openQCD/">openQCD</a> format
  *
- * \section mungers Mungers and unmungers
+ * ## Mungers and unmungers
  *
  * Some formats use a different matrix format on disk to that used by %Grid in memory.
  * For example,
