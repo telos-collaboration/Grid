@@ -1,0 +1,10 @@
+/** \page test_docs Test suite
+ * %Grid's test suite can be divided into two categories
+ *
+ *  - Correctness tests, ensuring that individual %Grid features function correctly individually and working together
+ *  - Minimal examples, providing minimal programs demonstrating a given feature
+ *
+ * Some of these  tests are documented in more detail here.
+ *
+ * \subpage test_ildg_io
+ */

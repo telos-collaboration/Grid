@@ -34,6 +34,7 @@ Author: paboyle <paboyle@ph.ed.ac.uk>
 #define GRID_QCD_ACTION_H
 
 /*! \dir
+ * \anchor action
  * This directory holds implementations of lattice quantum fields that Grid can work with.
  *
  * To construct a particular action of interest,
