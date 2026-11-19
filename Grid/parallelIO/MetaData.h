@@ -648,22 +648,29 @@ struct GaugeSpunmunger{
 
 
 /*! \enum FloatingPointFormat
- *  Sets the FP precision of the IldgWriter.
+ *        Sets the floating point precision of the binary lattice object
+ *        written to the disk. It's passed as a non-type template parameter to
+ *        `IldgWriter::writeConfiguration`, which passes it through to
+ *        a `GaugeUnMunger` object, which selects the appropriate unmunger.
  *  \var FloatingPointFormat::IEEE64BIG 
  *       Save lattice in double precision.
  *  \var FloatingPointFormat::IEEE32BIG 
  *       Save lattice in single precision.
- *  \enum MatrixFormat
- *  Sets the matrix format of the IldgWriter. 
- *  \var MatrixFormat::FULL
- *      Save lattice without reducing fields.
- *  \var MatrixFormat::REDUCED
- *      Save lattice with reduced fields.
  *
- * \details These enums are used as non-type template parameters.
- *          They are specified when calling IldgWriter::writeConfiguration,
- *          which passes them through to GaugeUnMunger. 
- */ 
+ *  \enum MatrixFormat
+ *        Sets the matrix format of the binary lattice object
+ *        written to the disk. It's passed as a non-type template parameter to
+ *        `IldgWriter::writeConfiguration`, which passes it through to a
+ *        `GaugeUnMunger` object, which selects the appropriate unmunger.
+ *  \important The effect of `MatrixFormat::REDUCED` _changes_ depending on the
+ *             `group_name` template argument passed to
+ *             `IldgWriter::writeConfiguration` so __extra care should be
+ *              taken when saving lattices in reduced format__.
+ *  \var MatrixFormat::FULL
+ *       Save lattice without reducing fields.
+ *  \var MatrixFormat::REDUCED
+ *       Save lattice with reduced fields.
+ */
 enum struct FloatingPointFormat { IEEE64BIG, IEEE32BIG };
 enum struct MatrixFormat { FULL, REDUCED };
 /*!
