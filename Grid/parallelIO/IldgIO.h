@@ -142,13 +142,13 @@ assert(GRID_FIELD_NORM_CALC(FieldNormMetaData_, n2ck) < 1.0e-5);
 
 
 /*!
- * Helper to fill out metadata
+ * Helper for preparing Scidac format metadata.
  * \param field Lattice object whose metadata we need
  * \param header Object for holding Grid metadata
  * \param _scidacFile   Scidac Private File structure for holding Scidac metadata
  * \param _scidacRecord Scidac Private Record structure for holding Scidac metadata
  *
- * MetaData::PrepareMetaData() retrieves Grid metadata.
+ * To generate the metadata:
  */
 template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
 					  FieldMetaData &header,
@@ -158,10 +158,10 @@ template<class vobj> void ScidacMetaData(Lattice<vobj> & field,
    typedef typename getPrecision<vobj>::real_scalar_type stype;
 
    /// <ol>
-   /// <li> Pull Grid's metadata
+   /// <li> Pull Grid's metadata using PrepareMetaData()
    PrepareMetaData(field,header);
 
-   /// <li> Set Scidac Private File structure
+   /// <li> Set Scidac Private File structure using scidacFile()
    _scidacFile              = scidacFile(field.Grid());
 
    /// <li> Set Scidac Private Record structure
